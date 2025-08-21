@@ -1,4 +1,6 @@
+import { COLORS } from "@/constants/ColorCpc";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
 import {
   Image,
@@ -10,92 +12,93 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
-
 export default function index() {
   const [isCheck, setIscheck] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <SafeAreaView style={styles.safeAreaview}>
-     
+    <LinearGradient
+      colors={[COLORS.Secondary, COLORS.Third, COLORS.Forth]}
+      style={styles.safeAreaview}
+    >
+      <SafeAreaView style={styles.safeAreaview}>
+        <View style={styles.loginContainer}>
+          <Image
+            source={require("@/assets/images/cpcLogo2.jpg")}
+            style={styles.ImageLogo}
+          ></Image>
 
-      <View style={styles.loginContainer}>
-        <Image
-          source={require("@/assets/images/cpcLogo2.jpg")}
-          style={styles.ImageLogo}
-        ></Image>
-
-        <Text style={styles.welcomeText}>Welcome back</Text>
-        <Text style={styles.welcomeTextInfo}>
-          Please enter your details to login
-        </Text>
-        <Text style={styles.textfieldText}>Email</Text>
-        <TextInput
-          style={styles.textfieldInput}
-          placeholder="2022000351"
-          placeholderTextColor="grey"
-        ></TextInput>
-
-        <Text style={styles.textfieldText}>Password</Text>
-        <View style={styles.inputWrapper}>
+          <Text style={styles.welcomeText}>Welcome back</Text>
+          <Text style={styles.welcomeTextInfo}>
+            Please enter your details to login
+          </Text>
+          <Text style={styles.textfieldText}>Email</Text>
           <TextInput
-            style={styles.textfieldInputPass}
-            placeholder="**********"
-            placeholderTextColor="gray"
-            secureTextEntry={!showPassword} // hide/show password
-            value={password}
-            onChangeText={setPassword}
-          />
+            style={styles.textfieldInput}
+            placeholder="2022000351"
+            placeholderTextColor="grey"
+          ></TextInput>
 
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? "eye-off" : "eye"}
-              size={22}
-              color="gray"
-              style={styles.icon}
+          <Text style={styles.textfieldText}>Password</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.textfieldInputPass}
+              placeholder="**********"
+              placeholderTextColor="gray"
+              secureTextEntry={!showPassword} // hide/show password
+              value={password}
+              onChangeText={setPassword}
             />
-          </TouchableOpacity>
-        </View>
 
-        <TouchableHighlight style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Login</Text>
-        </TouchableHighlight>
-        <View style={styles.deviderPanel}>
-          {/* <Text style={styles.orCss}>OR</Text> */}
-        </View>
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 5,
-            marginVertical: 10,
-          }}
-        >
-          <Text
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? "eye-off" : "eye"}
+                size={22}
+                color="gray"
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableHighlight style={styles.loginButton}>
+            <Text style={styles.loginButtonText}>Login</Text>
+          </TouchableHighlight>
+          <View style={styles.deviderPanel}>
+            {/* <Text style={styles.orCss}>OR</Text> */}
+          </View>
+          <View
             style={{
-              fontWeight: 400,
-              fontSize: 16,
+              flexDirection: "row",
+              gap: 5,
+              marginVertical: 10,
             }}
           >
-            Don't have an account?
-          </Text>
-          <Pressable>
             <Text
               style={{
-                textDecorationLine: "underline",
-                color: "blue",
-                fontWeight: 500,
+                fontWeight: 400,
                 fontSize: 16,
               }}
             >
-              Register
+              Don't have an account?
             </Text>
-          </Pressable>
+            <Pressable>
+              <Text
+                style={{
+                  textDecorationLine: "underline",
+                  color: COLORS.Primary,
+                  fontWeight: 500,
+                  fontSize: 16,
+                }}
+              >
+                Register
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -104,7 +107,7 @@ const styles = StyleSheet.create({
     height: "100%",
     width: "100%",
     position: "absolute",
-    backgroundColor: "white",
+    // backgroundColor: "white",
   },
 
   loginContainer: {
@@ -117,7 +120,7 @@ const styles = StyleSheet.create({
     margin: "auto",
     paddingBottom: 40,
     paddingHorizontal: 6,
-    backgroundColor: "white",
+    backgroundColor: COLORS.Forth,
     borderColor: "snow",
     borderWidth: 1,
 
@@ -173,7 +176,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: "black",
-    
   },
   icon: {
     marginLeft: 5,
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 30,
-    backgroundColor: "#607cdaff",
+    backgroundColor: COLORS.Primary,
   },
   loginButtonText: {
     color: "white",
