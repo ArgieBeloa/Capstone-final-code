@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   Image,
@@ -6,6 +7,7 @@ import {
   Text,
   TextInput,
   TouchableHighlight,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -13,14 +15,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function index() {
   const [isCheck, setIscheck] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeAreaview}>
-      <Text style={styles.topText}>Login now</Text>
+     
 
       <View style={styles.loginContainer}>
         <Image
-          source={require("@/assets/images/logoPurisima.png")}
+          source={require("@/assets/images/cpcLogo2.jpg")}
           style={styles.ImageLogo}
         ></Image>
 
@@ -36,11 +40,25 @@ export default function index() {
         ></TextInput>
 
         <Text style={styles.textfieldText}>Password</Text>
-        <TextInput
-          style={styles.textfieldInput}
-          placeholder="**********"
-          placeholderTextColor="gray"
-        ></TextInput>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.textfieldInputPass}
+            placeholder="**********"
+            placeholderTextColor="gray"
+            secureTextEntry={!showPassword} // hide/show password
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-off" : "eye"}
+              size={22}
+              color="gray"
+              style={styles.icon}
+            />
+          </TouchableOpacity>
+        </View>
 
         <TouchableHighlight style={styles.loginButton}>
           <Text style={styles.loginButtonText}>Login</Text>
@@ -57,7 +75,7 @@ export default function index() {
         >
           <Text
             style={{
-              fontWeight: 500,
+              fontWeight: 400,
               fontSize: 16,
             }}
           >
@@ -88,14 +106,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     backgroundColor: "white",
   },
-  topText: {
-    fontWeight: 700,
-    marginTop: 50,
-    marginLeft: 20,
-    color: "white",
-    fontSize: 30,
-    position: "absolute",
-  },
+
   loginContainer: {
     width: "95%",
 
@@ -105,6 +116,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     margin: "auto",
     paddingBottom: 40,
+    paddingHorizontal: 6,
     backgroundColor: "white",
     borderColor: "snow",
     borderWidth: 1,
@@ -118,20 +130,16 @@ const styles = StyleSheet.create({
     // These elevation properties are for Android
     elevation: 10,
   },
-  glass: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
+
   ImageLogo: {
-    width: 100,
-    height: 100,
+    width: 140,
+    height: 140,
     backgroundColor: "none",
-    borderRadius: "50%",
     marginVertical: 10,
   },
   welcomeText: {
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 17,
   },
   welcomeTextInfo: {
     fontWeight: 500,
@@ -151,9 +159,28 @@ const styles = StyleSheet.create({
     borderColor: "black",
     paddingLeft: 10,
   },
+  inputWrapper: {
+    width: "98%",
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "black",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+  },
+  textfieldInputPass: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "black",
+    
+  },
+  icon: {
+    marginLeft: 5,
+  },
   loginButton: {
     width: "98%",
-    height: 60,
+    height: 50,
     borderRadius: 10,
     borderWidth: 1,
     //borderColor: "black",
@@ -172,25 +199,5 @@ const styles = StyleSheet.create({
     width: "98%",
     height: 1,
     marginTop: 20,
-  },
-
-  svg: {
-    transform: [{ rotate: "180deg" }], // rotates like CSS
-    position: "absolute",
-
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "100%",
-    width: "100%",
-  },
-  container: {
-    position: "absolute",
-    // bottom: 0,
-    // left: 0,
-    // right: 0,
-    height: "100%",
-    width: "100%",
-    marginTop: 10,
   },
 });
