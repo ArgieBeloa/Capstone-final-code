@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "CPC-notify",
+    "name": "CPC notify",
     "slug": "CPC-notify",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/cpcLogo2.jpg",
     "scheme": "cpcnotify",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -34,6 +34,7 @@
           "backgroundColor": "#ffffff"
         }
       ]
+   
     ],
     "experiments": {
       "typedRoutes": true
