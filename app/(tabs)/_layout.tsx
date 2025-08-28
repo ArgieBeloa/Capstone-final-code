@@ -1,12 +1,14 @@
+import { COLORS } from "@/constants/ColorCpc";
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { Tabs } from "expo-router";
 import { useRef } from "react";
 import { Animated, StyleSheet, TouchableOpacity, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+
 const _layout = () => {
   const colorScheme = useColorScheme();
-  const activeTintColor = colorScheme === "dark" ? "#000" : "#3440e7ff";
+  const activeTintColor = colorScheme === "dark" ? "#000" : COLORS.Primary;
   const inactiveTintColor = "#888";
 const insets = useSafeAreaInsets();
   const tabBarStyle = {

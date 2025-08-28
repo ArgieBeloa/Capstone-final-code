@@ -1,6 +1,7 @@
 import { COLORS } from "@/constants/ColorCpc";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
@@ -13,11 +14,22 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-export default function index() {
-  const [isCheck, setIscheck] = useState(false);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+export default function Index() {
 
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const[loginButtonDisable, setButtonDisable] = useState(false)
+  const router = useRouter()
+
+  const handleLogin = ()=>{
+
+    setButtonDisable(true)
+  }
+  const haddleRegister = ()=>{
+    router.push("/(tabs)/home")
+    // router.push("/register")
+  }
   return (
     <LinearGradient
       colors={[COLORS.Secondary, COLORS.Third, COLORS.Forth]}
@@ -34,12 +46,15 @@ export default function index() {
           <Text style={styles.welcomeTextInfo}>
             Please enter your details to login
           </Text>
-          <Text style={styles.textfieldText}>Email</Text>
+          <Text style={styles.textfieldText}>Student Number</Text>
           <TextInput
             style={styles.textfieldInput}
             placeholder="2022000351"
             placeholderTextColor="grey"
-          ></TextInput>
+            value={username}
+            onChangeText={setUsername}
+
+          />
 
           <Text style={styles.textfieldText}>Password</Text>
           <View style={styles.inputWrapper}>
@@ -62,7 +77,10 @@ export default function index() {
             </TouchableOpacity>
           </View>
 
-          <TouchableHighlight style={styles.loginButton}>
+          <TouchableHighlight style={styles.loginButton}
+          onPress={handleLogin}
+          disabled={loginButtonDisable}
+          >
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableHighlight>
           <View style={styles.deviderPanel}>
@@ -83,7 +101,11 @@ export default function index() {
             >
               Don't have an account?
             </Text>
-            <Pressable>
+
+            {/* register button */}
+            <Pressable
+            onPress={haddleRegister}
+            >
               <Text
                 style={{
                   textDecorationLine: "underline",
@@ -111,8 +133,8 @@ const styles = StyleSheet.create({
   },
 
   loginContainer: {
-    width: "95%",
-
+    width: "93%",
+    maxWidth: 500,
     justifyContent: "center",
     alignItems: "center",
     // backgroundColor: "snow",
