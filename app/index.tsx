@@ -1,10 +1,14 @@
+import { authStudent } from "@/api/spring";
+import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
+import { useUser } from "@/src/userContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Image,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -14,22 +18,58 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-export default function Index() {
 
+export default function Index() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const[loginButtonDisable, setButtonDisable] = useState(false)
-  const router = useRouter()
+  const [loginButtonDisable, setButtonDisable] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const handleLogin = ()=>{
+  const {
+    setStudentData,
+    setEventData,
+    setStudentToken,
+    setStudentNumber,
+    studentToken,
+  } = useUser();
 
-    setButtonDisable(true)
-  }
-  const haddleRegister = ()=>{
-    router.push("/(tabs)/home")
+  const haddleRegister = () => {
+    router.push("/register");
     // router.push("/register")
-  }
+  };
+
+  // useEffect(()=>{
+  //   const timer = setTimeout(() => {
+  //     setLoading(false); // stop loading after 3 seconds
+  //   }, 5000);
+
+  //   return () => clearTimeout(timer);
+
+  // },[])
+
+  const haddleAuthStudent = async () => {
+    setLoading(true);
+    try {
+      const token = await authStudent(username, password);
+      console.log(token)
+      setStudentToken(token);
+      setStudentNumber(username);
+
+      // const studentData = await getStudentData(token, userName);
+
+      setLoading(false);
+
+      router.push("/(tabs)/home");
+      // console.log(studentData);
+    } catch (error) {
+      console.log("Login failed");
+      console.log(error);
+      setModalVisible(true);
+    }
+  };
   return (
     <LinearGradient
       colors={[COLORS.Secondary, COLORS.Third, COLORS.Forth]}
@@ -53,7 +93,6 @@ export default function Index() {
             placeholderTextColor="grey"
             value={username}
             onChangeText={setUsername}
-
           />
 
           <Text style={styles.textfieldText}>Password</Text>
@@ -77,9 +116,10 @@ export default function Index() {
             </TouchableOpacity>
           </View>
 
-          <TouchableHighlight style={styles.loginButton}
-          onPress={handleLogin}
-          disabled={loginButtonDisable}
+          <TouchableHighlight
+            style={styles.loginButton}
+            onPress={haddleAuthStudent}
+            disabled={loginButtonDisable}
           >
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableHighlight>
@@ -103,9 +143,7 @@ export default function Index() {
             </Text>
 
             {/* register button */}
-            <Pressable
-            onPress={haddleRegister}
-            >
+            <Pressable onPress={haddleRegister}>
               <Text
                 style={{
                   textDecorationLine: "underline",
@@ -119,6 +157,36 @@ export default function Index() {
             </Pressable>
           </View>
         </View>
+        {/* modal */}
+        <Modal
+          animationType="fade" // or "slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)} // Android back button
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalText}>
+                {" "}
+                Error: Student number not found or password not correct! Please
+                try again
+              </Text>
+
+              <Pressable
+                style={[styles.buttonClose]}
+                onPress={() => {
+                  setModalVisible(false);
+
+                  router.push("/");
+                }}
+              >
+                <Text style={styles.textStyle}>Try again</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+        {/* loading */}
+        <Loading text="Please wait..." color="#4F46E5" visible={loading} />;
       </SafeAreaView>
     </LinearGradient>
   );
@@ -157,10 +225,10 @@ const styles = StyleSheet.create({
   },
 
   ImageLogo: {
-    width: 140,
-    height: 140,
+    width: 120,
+    height: 120,
     backgroundColor: "none",
-    marginVertical: 10,
+    marginVertical: 5,
   },
   welcomeText: {
     fontWeight: 700,
@@ -181,6 +249,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 10,
     borderWidth: 1,
+    fontSize: 16,
     borderColor: "black",
     paddingLeft: 10,
   },
@@ -223,5 +292,44 @@ const styles = StyleSheet.create({
     width: "98%",
     height: 1,
     marginTop: 20,
+  },
+
+  //modal
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)", // transparent background
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+
+  buttonOpen: {
+    backgroundColor: "#e22b2bff",
+    borderRadius: 10,
+    padding: 10,
+  },
+  buttonClose: {
+    marginTop: 15,
+    backgroundColor: COLORS.Primary,
+    borderRadius: 10,
+    padding: 10,
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  modalText: {
+    fontSize: 18,
+    textAlign: "center",
   },
 });

@@ -2,15 +2,15 @@ import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import {
   AntDesign,
+  Entypo,
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
-  Platform,
-  ScrollView,
+  ImageBackground,
   StyleSheet,
   Text,
   View,
@@ -19,13 +19,51 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 const Home = () => {
-  const Container = Platform.OS === "web" ? ScrollView : SafeAreaView;
+  const [hasNotification, setHasNotification] = useState(true);
 
-  const data = [
-    { id: "1", color: "#FF6B6B", name: "Argie", location: "Manila" },
-    { id: "2", color: "#4ECDC4", name: "John", location: "Cebu" },
-    { id: "3", color: "#556270", name: "Jane", location: "Davao" },
-    { id: "4", color: "#C7F464", name: "Mark", location: "Baguio" },
+  // const data = [
+  //   { id: "1", color: "#FF6B6B", name: "Argie", location: "Manila" },
+  //   { id: "2", color: "#4ECDC4", name: "John", location: "Cebu" },
+  //   { id: "3", color: "#556270", name: "Jane", location: "Davao" },
+  //   { id: "4", color: "#C7F464", name: "Mark", location: "Baguio" },
+  // ];
+
+  const registerEvent = [
+    {
+      id: "123",
+      title: "Ceremony",
+      date: "2025-01-09",
+      time: "14:00 - 18:00",
+      location: "Auditorium",
+    },
+    {
+      id: "123",
+      title: "Ceremony",
+      date: "2025-01-09",
+      time: "14:00 - 18:00",
+      location: "Auditorium",
+    },
+    {
+      id: "123",
+      title: "Ceremony",
+      date: "2025-01-09",
+      time: "14:00 - 18:00",
+      location: "Auditorium",
+    },
+    {
+      id: "123",
+      title: "Ceremony",
+      date: "2025-01-09",
+      time: "14:00 - 18:00",
+      location: "Auditorium",
+    },
+    {
+      id: "123",
+      title: "Ceremony",
+      date: "2025-01-09",
+      time: "14:00 - 18:00",
+      location: "Auditorium",
+    },
   ];
 
   const data1 = [
@@ -78,14 +116,32 @@ const Home = () => {
           </View>
 
           <View style={styles.headerText}>
-            <Text style={styles.greeting}>Good Evening</Text>
+            <Text style={styles.greeting}>Good Day</Text>
             <Text style={styles.name}>John Mark Gregorio</Text>
           </View>
 
           <View>
+            {hasNotification && (
+              <View
+                style={{
+                  width: 20,
+                  height: 20,
+                  right: 5,
+                  position: "absolute",
+                  backgroundColor: "black",
+                  borderRadius: 40,
+
+                  zIndex: 10,
+                }}
+              >
+                <Text style={{ color: "white", margin: "auto", fontSize: 12 }}>
+                  1
+                </Text>
+              </View>
+            )}
             <Ionicons
               name="notifications-outline"
-              size={24}
+              size={30}
               style={styles.icon}
             />
           </View>
@@ -96,7 +152,7 @@ const Home = () => {
 
         <View>
           <Animated.FlatList
-            data={data}
+            data={registerEvent}
             keyExtractor={(item) => item.id}
             horizontal
             pagingEnabled
@@ -106,18 +162,60 @@ const Home = () => {
               { useNativeDriver: false }
             )}
             renderItem={({ item }) => (
-              <View style={[styles.page, { backgroundColor: item.color }]}>
-                <View style={styles.card}>
-                  {/* <Text style={styles.cardName}>{item.name}</Text>
-                  <Text style={styles.cardLocation}>{item.location}</Text> */}
+              // image bg
+
+              <ImageBackground
+                source={require("@/assets/images/auditorium.jpg")}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <View style={[styles.page]}>
+                  <Text
+                    style={{
+                      color: COLORS.textColorWhite,
+                      fontSize: 24,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {/* icon */}
+                    <AntDesign
+                      name="calendar"
+                      size={17}
+                      color={COLORS.textColorWhite}
+                    />
+                    <Text style={styles.pageConatinerText}>{item.date}</Text>
+                    <AntDesign
+                      name="clockcircleo"
+                      size={17}
+                      color={COLORS.textColorWhite}
+                    />
+                    <Text style={styles.pageConatinerText}>{item.time}</Text>
+                    <Entypo
+                      name="location"
+                      size={17}
+                      color={COLORS.textColorWhite}
+                    />
+                    <Text style={styles.pageConatinerText}>
+                      {item.location}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </ImageBackground>
             )}
             contentContainerStyle={{ flexGrow: 1 }}
           />
           {/* Pagination Dots */}
           <View style={styles.pagination}>
-            {data.map((_, i) => {
+            {registerEvent.map((_, i) => {
               const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
               const dotWidth = scrollX.interpolate({
                 inputRange,
@@ -143,63 +241,65 @@ const Home = () => {
         {/* upcoming events */}
 
         <Text style={styles.eventTextTitle}>Upcoming events</Text>
-        <Text style={{marginLeft:10, marginBottom: 6}}>10/50</Text>
-        <Container>
-          <Animated.FlatList
-            data={data1}
-            contentContainerStyle={{
-              marginHorizontal: 10,
-            }}
-            renderItem={({ item }) => {
-
-              const eventOrganizerAndLocation = item.organizer +" "+ item.location
-              return (
-                <View style={styles.upcomingEventView}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                    }}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={{fontWeight: 600, fontSize: 19}}>{item.title}</Text>
-                      <Text>{eventOrganizerAndLocation}</Text>
-                     
-                    </View>
-                    {/* check icon */}
-                    <AntDesign
-                      name="checkcircle"
-                      size={24}
-                      color={COLORS.Primary}
-                      style={{ margin: "auto" }}
-                    />
+        <Text style={{ marginLeft: 10, marginBottom: 6 }}>10/50</Text>
+        {/* <Container> */}
+        <Animated.FlatList
+          data={data1}
+          contentContainerStyle={{
+            marginHorizontal: 10,
+          }}
+          renderItem={({ item }) => {
+            const eventOrganizerAndLocation =
+              item.organizer + " " + item.location;
+            return (
+              <View style={styles.upcomingEventView}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 19 }}>
+                      {item.title}
+                    </Text>
+                    <Text>{eventOrganizerAndLocation}</Text>
                   </View>
-                  {/* divider line */}
-                  <View style={{
-                   height: 3,
-                   marginVertical: 10,
-                   backgroundColor: "grey",
-                   borderRadius:10,
-                  }}></View>
+                  {/* check icon */}
+                  <AntDesign
+                    name="checkcircle"
+                    size={24}
+                    color={COLORS.Primary}
+                    style={{ margin: "auto" }}
+                  />
+                </View>
+                {/* divider line */}
+                <View
+                  style={{
+                    height: 3,
+                    marginVertical: 10,
+                    backgroundColor: "grey",
+                    borderRadius: 10,
+                  }}
+                ></View>
 
-
-                  <View style={{flexDirection: "row"}}>
-                    <MaterialCommunityIcons
-                      name="calendar-outline"
-                      size={24}
-                      color="black"
-                    />
-                    <View style={{flex:1, flexDirection: "column", marginLeft:5}}>
-                      <Text>{item.eventLenght}</Text>
-                      <Text>{item.date}</Text>
-
-
-                    </View>
+                <View style={{ flexDirection: "row" }}>
+                  <MaterialCommunityIcons
+                    name="calendar-outline"
+                    size={24}
+                    color="black"
+                  />
+                  <View
+                    style={{ flex: 1, flexDirection: "column", marginLeft: 5 }}
+                  >
+                    <Text>{item.eventLenght}</Text>
+                    <Text>{item.date}</Text>
                   </View>
                 </View>
-              );
-            }}
-          />
-        </Container>
+              </View>
+            );
+          }}
+        />
+        {/* </Container> */}
       </SafeAreaView>
     </LinearbackGround>
   );
@@ -245,8 +345,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     height: 250,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "flex-end",
+    // alignItems: "f",
+  },
+  pageContainerFlatlist: {},
+  pageConatinerText: {
+    color: COLORS.textColorWhite,
   },
   pagination: {
     flexDirection: "row",
