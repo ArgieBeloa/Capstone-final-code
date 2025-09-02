@@ -37,28 +37,28 @@ const Home = () => {
       location: "Auditorium",
     },
     {
-      id: "123",
+      id: "124",
       title: "Ceremony",
       date: "2025-01-09",
       time: "14:00 - 18:00",
       location: "Auditorium",
     },
     {
-      id: "123",
+      id: "125",
       title: "Ceremony",
       date: "2025-01-09",
       time: "14:00 - 18:00",
       location: "Auditorium",
     },
     {
-      id: "123",
+      id: "126",
       title: "Ceremony",
       date: "2025-01-09",
       time: "14:00 - 18:00",
       location: "Auditorium",
     },
     {
-      id: "123",
+      id: "127",
       title: "Ceremony",
       date: "2025-01-09",
       time: "14:00 - 18:00",
@@ -166,7 +166,8 @@ const Home = () => {
 
               <ImageBackground
                 source={require("@/assets/images/auditorium.jpg")}
-                style={{ width: "100%", height: "100%" }}
+                style={[styles.page, { flex: 1 }]}
+                imageStyle={{ resizeMode: "cover" }}
               >
                 <View style={[styles.page]}>
                   <Text
@@ -345,8 +346,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     height: 250,
     borderRadius: 10,
+    overflow: "hidden",
     justifyContent: "flex-end",
-    // alignItems: "f",
   },
   pageContainerFlatlist: {},
   pageConatinerText: {

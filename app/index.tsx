@@ -37,7 +37,7 @@ export default function Index() {
   } = useUser();
 
   const haddleRegister = () => {
-    router.push("/register");
+    router.push("/(tabs)/home");
     // router.push("/register")
   };
 

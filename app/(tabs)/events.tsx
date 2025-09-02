@@ -27,12 +27,12 @@ const Events = () => {
     {
       id: "124",
       title: "PSIT",
-      imagePath: require("@/assets/images/auditorium.jpg"),
+      imagePath: require("@/assets/images/eventPic1.jpg"),
     },
     {
       id: "125",
       title: "PSIT",
-      imagePath: require("@/assets/images/auditorium.jpg"),
+      imagePath: require("@/assets/images/eventPic2.png"),
     },
   ];
   return (
@@ -106,16 +106,15 @@ const Events = () => {
             // overflow: "hidden",
             paddingVertical: 5,
 
-            
-
             // backgroundColor: COLORS.EGGWHITE,
           }}
           renderItem={({ item }) => {
             return (
               <View style={styles.eventFlatListContainer}>
                 <ImageBackground
-                  style={styles.imageBgFlatlist}
                   source={item.imagePath}
+                  style={[styles.imageBgFlatlist, { flex: 1 }]}
+                  imageStyle={{ resizeMode: "cover" }}
                 >
                   <Text>{item.id}</Text>
                   <Text>{item.title}</Text>
@@ -181,7 +180,7 @@ const styles = StyleSheet.create({
     fontWeight: 500,
   },
   activeButton: {
-    backgroundColor: COLORS.Third,
+    backgroundColor: COLORS.Secondary,
   },
   // flatlist events
 
@@ -193,7 +192,7 @@ const styles = StyleSheet.create({
       width: 5, // Horizontal offset
       height: 5, // Vertical offset
     },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.7,
     shadowRadius: 4,
     // These elevation properties are for Android
     elevation: 10,
