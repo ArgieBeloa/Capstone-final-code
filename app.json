@@ -13,11 +13,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/cpcLogo2.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.argie_beloa.CPCnotify"
+      "package": "com.argie_beloa.CPCnotify",
+       "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",

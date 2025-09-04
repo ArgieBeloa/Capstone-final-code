@@ -3,7 +3,7 @@ import ViewPanel from "@/components/ViewPanel";
 import { COLORS } from "@/constants/ColorCpc";
 import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { registerForPushNotificationsAsync } from "../src/pushToken";
 
 const Register = () => {
   const [fullname, setFullname] = useState("");
@@ -24,16 +25,28 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmShowPassword, setConfirmShowPassword] = useState(false);
   const [registerBtnDisable, setRegisterBtnDisable] = useState(false);
-  const router = useRouter()
+  const [expoPushToken, setExpoPushToken] = useState<string>();
+  const router = useRouter();
 
-  
   // Function
   const haddleRegister = () => {
     console.log(username);
   };
-  const haddleLoginBack =()=>{
-    router.push("/")
-  }
+  const haddleLoginBack = () => {
+    router.push("/");
+  };
+
+  useEffect(() => {
+    const getToken = async () => {
+      const token = await registerForPushNotificationsAsync();
+      console.log("token :", token)
+      if (token) {
+        setExpoPushToken(token);
+      }
+    };
+
+    getToken();
+  }, []);
   return (
     <LinearbackGround>
       <SafeAreaView style={styles.safeAreaView}>
@@ -116,7 +129,7 @@ const Register = () => {
               />
             </TouchableOpacity>
           </View>
-        
+
           {/* register button */}
           <TouchableHighlight
             style={styles.registerBtn}
@@ -128,8 +141,9 @@ const Register = () => {
           <View style={styles.alreadyContainer}>
             <Text style={styles.alreadyContainerText}>Already Register ? </Text>
 
-            <Pressable style={styles.alreadyContainerBtn} 
-            onPress={haddleLoginBack}
+            <Pressable
+              style={styles.alreadyContainerBtn}
+              onPress={haddleLoginBack}
             >
               <Text style={styles.alreadyContainerBtnText}>Login Now</Text>
             </Pressable>
@@ -180,7 +194,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "black",
     backgroundColor: "#fff",
-    paddingLeft: 3
+    paddingLeft: 3,
   },
   icon: {
     marginLeft: 5,
@@ -205,9 +219,7 @@ const styles = StyleSheet.create({
     paddingLeft: 5,
   },
 
-  acceptText:{
-
-  },
+  acceptText: {},
   registerBtn: {
     height: 50,
     borderRadius: 10,

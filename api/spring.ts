@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = "https://capstonestudentloginapi-1.onrender.com/api"; // Use your local IP and port
-// const BASE_URL = "http://192.168.140.25:8080/api"; // Use your local IP and port
+// const BASE_URL = "https://capstonestudentloginapi-1.onrender.com/api"; // Use your local IP and port
+const BASE_URL = "http://192.168.254.101:8080/api"; // Use your local IP and port
 
 // auth student
 export const authStudent = async (
@@ -68,11 +68,13 @@ export const studentDataFunction = async (
   token: string
 ) => {
   try {
+    const trimmedToken = token.trim();
     const studentData = await axios.get(
       `${BASE_URL}/students/${studentNumber}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${trimmedToken}`,
+          "Content-Type": "application/json",
         },
       }
     );

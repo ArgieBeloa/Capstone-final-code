@@ -1,4 +1,4 @@
-import { authStudent } from "@/api/spring";
+import { authStudent, eventsDataFunction, studentDataFunction } from "@/api/spring";
 import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -37,8 +37,8 @@ export default function Index() {
   } = useUser();
 
   const haddleRegister = () => {
-    router.push("/(tabs)/home");
-    // router.push("/register")
+    // router.push("/");
+    router.push("/register")
   };
 
   // useEffect(()=>{
@@ -54,14 +54,19 @@ export default function Index() {
     setLoading(true);
     try {
       const token = await authStudent(username, password);
-      console.log(token)
+      console.log(token);
       setStudentToken(token);
       setStudentNumber(username);
 
-      // const studentData = await getStudentData(token, userName);
+      // const studentData = await studentDataFunction(token, username);
 
+      // setStudentData(studentData)
       setLoading(false);
 
+      const studentData = await studentDataFunction(username, token);
+      const events = await eventsDataFunction(token);
+      setEventData(events)
+      setStudentData(studentData);
       router.push("/(tabs)/home");
       // console.log(studentData);
     } catch (error) {
@@ -70,6 +75,7 @@ export default function Index() {
       setModalVisible(true);
     }
   };
+
   return (
     <LinearGradient
       colors={[COLORS.Secondary, COLORS.Third, COLORS.Forth]}
