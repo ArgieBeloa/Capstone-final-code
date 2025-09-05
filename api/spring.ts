@@ -1,7 +1,9 @@
 import axios from "axios";
-
+// interface
+import { StudentAttended } from "./ApiType";
 // const BASE_URL = "https://capstonestudentloginapi-1.onrender.com/api"; // Use your local IP and port
-const BASE_URL = "http://192.168.254.101:8080/api"; // Use your local IP and port
+// const BASE_URL = "http://192.168.43.25:8080/api"; // Use your local IP and port
+ const BASE_URL = "http://192.168.254.101:8080/api"; // Use your local IP and port
 
 // auth student
 export const authStudent = async (
@@ -186,3 +188,26 @@ type StudentUpcomingEvents = {
   numberOfStudentAttending?: number;
   studentWant: string;
 }[];
+
+// add student to event attended
+export const addStudentAttended = async (
+  id: string,
+  token: string,
+  studentAttend: StudentAttended[]
+) => {
+  const api = `${BASE_URL}/students/${id}/eventAttended`;
+
+
+  try {
+    const studentAttended = await axios.post(api, studentAttend, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return studentAttended.data;
+  } catch (error) {
+    console.log(error);
+  }
+};

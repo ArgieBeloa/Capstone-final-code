@@ -43,3 +43,43 @@ export interface Event {
   eventPerformanceDetails: EventPerformanceDetail[] | null;
   eventAveragePerformance: number;
 }
+// Student.ts
+
+export interface StudentUpcomingEvents {
+  id: string;
+  eventName: string;
+  eventDate: string; // ISO date string (e.g., "2025-09-04T10:00:00Z")
+}
+
+export interface StudentEventAttended {
+  id: string;
+  eventName: string;
+  attendedDate: string; // ISO date string
+}
+
+export interface StudentRecentEvaluation {
+  id: string;
+  evaluatorName: string;
+  rating: number;
+  comments?: string;
+  evaluatedDate: string; // ISO date string
+}
+
+export interface Student {
+  id: string;
+  studentName: string;
+  studentNumber: string;
+  studentPassword: string;
+  course: string;
+  department: string;
+  notificationId: string;
+  macAddress: string;
+  studentAverageAttendance: number;
+  studentAverageRatings: number;
+  tokenId: string;
+  category: string;
+  studentUpcomingEvents: StudentUpcomingEvents[];
+  studentEventAttended: StudentEventAttended[];
+  studentRecentEvaluations: StudentRecentEvaluation[];
+}
+

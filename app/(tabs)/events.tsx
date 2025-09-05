@@ -1,6 +1,7 @@
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Animated,
@@ -17,6 +18,7 @@ const Events = () => {
 
   const navigationTitle: string[] = ["All", "Technology", "Academic"];
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
+  const router = useRouter();
 
   const data = [
     {
@@ -35,6 +37,10 @@ const Events = () => {
       imagePath: require("@/assets/images/eventPic2.png"),
     },
   ];
+
+  const haddleViewDetails = (id: string) => {
+    router.push(`./EventDetails/${id}`);
+  };
   return (
     <LinearbackGround>
       <SafeAreaView style={styles.safeAreaView}>
@@ -118,6 +124,11 @@ const Events = () => {
                 >
                   <Text>{item.id}</Text>
                   <Text>{item.title}</Text>
+                  <TouchableHighlight
+                    onPress={() => haddleViewDetails(item.id)}
+                  >
+                    <Text>View Details</Text>
+                  </TouchableHighlight>
                 </ImageBackground>
               </View>
             );

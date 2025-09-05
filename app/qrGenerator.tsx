@@ -1,15 +1,16 @@
+import { StudentAttended } from "@/api/ApiType";
 import React from "react";
 import { Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 
 export default function QrGenerator() {
+  const date = new Date(Date.now())
+  const dateString = date.toString();
   // sample data
-  const eventData = {
-    id: "12345",
-    title: "Ceremony",
-    date: "2025-01-09",
-    time: "14:00 - 18:00",
-    location: "Auditorium",
+  const eventData: StudentAttended= {
+      eventId: "123445566",
+      eventTitle: "PSIT DAY",
+      studentDateAttended: dateString 
   };
 
   return (

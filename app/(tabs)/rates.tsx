@@ -1,5 +1,7 @@
+import { StudentAttended } from "@/api/ApiType";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
+import { useUser } from "@/src/userContext";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
@@ -11,10 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 const Rates = () => {
-  const data = [
-    { id: "123", title: "PSIT DAY", dateAttended: "September 02, 2025" },
-    { id: "124", title: "PSIT DAY", dateAttended: "September 02, 2025" },
-  ];
+  // student attended data
+  const {studentData} = useUser()
+
+  const studentDataAttended = studentData.studentEventAttended
 
   const router = useRouter();
 
@@ -33,16 +35,16 @@ const Rates = () => {
         </View>
         <View>
           <Animated.FlatList
-            data={data}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
+            data={studentDataAttended}
+            keyExtractor={(item) => item.eventId}
+            renderItem={({ item}: {item: StudentAttended}) => {
               return (
                 <TouchableHighlight
-                onPress={()=>haddleEvaluationPage(item.id)}
+                onPress={()=>haddleEvaluationPage(item.eventId)}
                 >
                   <View style={styles.flatlistContainer}>
-                    <Text>{item.title}</Text>
-                    <Text>{item.dateAttended}</Text>
+                    <Text>{item.eventId}</Text>
+                    <Text>{item.studentDateAttended}</Text>
                   </View>
                 </TouchableHighlight>
               );

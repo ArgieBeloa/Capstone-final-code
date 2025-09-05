@@ -37,6 +37,7 @@ const Register = () => {
   };
 
   useEffect(() => {
+    console.log("Use effect")
     const getToken = async () => {
       const token = await registerForPushNotificationsAsync();
       console.log("token :", token)

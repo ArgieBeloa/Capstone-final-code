@@ -1,3 +1,6 @@
+import { StudentAttended } from "@/api/ApiType";
+import { addStudentAttended } from "@/api/spring";
+import { useUser } from "@/src/userContext";
 import { useIsFocused } from "@react-navigation/native";
 import { CameraView } from "expo-camera";
 import { Stack, useRouter } from "expo-router";
@@ -23,6 +26,11 @@ export default function Qrscanner() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
+  // userContext
+  const { studentToken, studentData } = useUser();
+  const studentId = studentData.id;
+  const alreadyAttendedArray = studentData.studentEventAttended;
+  // console.log(alreadyAttendedArray)
   // handle app going background/foreground
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -41,26 +49,32 @@ export default function Qrscanner() {
   // handle QR scan
   async function handleQRScan(data: string) {
     try {
-      const parsedData = JSON.parse(data); // QR contains JSON: {id, title, ...}
+      // console.log("Data from qr ", data);
+      let parsedData: StudentAttended = JSON.parse(data);
+      // const eventIdNow = parsedData.eventId
+      //  const isAlreadyAttended = alreadyAttendedArray.find(eventIdNow)
+      //  console.log("Already attended ", isAlreadyAttended)
+      const date = new Date(parsedData.studentDateAttended);
+      parsedData.studentDateAttended = date.toISOString().split("T")[0];
 
-      const response = await fetch("https://your-backend-url.com/api/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: parsedData.id,
-          eventTitle: parsedData.title,
-          timestamp: new Date().toISOString(),
-        }),
-      });
+      const isAlreadyAttended = alreadyAttendedArray.find(
+        (attended: StudentAttended) => attended.eventId === parsedData.eventId
+      );
 
-      if (response.ok) {
-        setModalMessage(`${parsedData.title} attendance recorded!`);
-      } else {
-        setModalMessage("Failed to record attendance.");
+      if (isAlreadyAttended) {
+        // console.log("Already attended:", isAlreadyAttended);
+        setModalMessage(`${parsedData.eventTitle} has already been recorded!`);
+        setModalVisible(true);
+        return; // stop here to avoid duplication
       }
 
-      setModalVisible(true); // show modal
+      const response = await addStudentAttended(studentId, studentToken, [
+        parsedData,
+      ]);
 
+      setModalMessage(`${parsedData.eventTitle} attendance recorded!`);
+
+      setModalVisible(true); // show modal
     } catch (err) {
       console.log("Error scanning QR:", err);
       setModalMessage("Invalid QR code.");
