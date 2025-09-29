@@ -1,96 +1,17 @@
+import { Event, Student } from "@/app/Oop/Types";
 import React, { createContext, useContext, useState } from "react";
-
-interface StudentRecentEvaluations {
-  eventId: string;
-  eventTitle: string;
-  studentRatingsGive: number;
-  studentDateRated: string;
-}
-interface StudentEventAttended {
-  eventId: string;
-  eventTitle: string;
-  studentDateAttended: string;
-}
-type StudentData = {
-  id: string;
-  studentName: string;
-  studentPassword: string;
-  course: string;
-  department: string;
-  notificationId: string;
-  studentAverageAttendance: number;
-  studentUpcomingEvents: StudentUpcomingEvents[];
-
-  studentAverageRatings: number;
-
-  studentEventAttended: StudentEventAttended[];
-  studentRecantEvaluations: StudentRecentEvaluations[];
-};
-
-interface EventAgendas {
-  agendaTime: string;
-  agendaTitle: string;
-  agendaHost: string;
-}
-
-interface EventStats {
-  attending: number;
-  interested: number;
-}
-interface EventOrganizer {
-  organizerName: string;
-  organizerEmail: string;
-}
-
-interface EventEvaluationDetails {
-  evaluationQuestion: string;
-  studentRate: number;
-  studentSuggestion: string;
-}
-interface EventPerformanceDetails {
-  numberOfStudent: number;
-  numberOfStudentGive: number;
-}
-interface StudentUpcomingEvents {
-  eventId: string;
-  eventTitle: string;
-  eventDate: string;
-  eventTime: string;
-  eventLocation: string;
-  numberOfStudentAttending: number;
-}
-
-type EventData = {
-  id: string;
-  eventTitle: string;
-  eventShortDescription: string;
-  eventBody: string;
-  eventDate: string;
-  eventTime: string;
-  eventLocation: string;
-  eventCategory: string;
-  eventTimeLength: string;
-  eventAgendas: EventAgendas[];
-  eventStats: EventStats;
-  eventOrganizer: EventOrganizer;
-  studentUpcomingEvents: StudentUpcomingEvents[];
-  eventEvaluationDetails: EventEvaluationDetails[];
-  eventPerformanceDetails: EventPerformanceDetails[];
-  allStudentAttending: number;
-};
-
 // Types
 type UserContextType = {
   // studentNumber
   studentNumber: string;
   setStudentNumber: (studentNumber: string) => void;
   // student data
-  studentData: StudentData | any;
-  setStudentData: (studentData: StudentData) => void;
+  studentData: Student | any;
+  setStudentData: (studentData: Student) => void;
 
   // events data
-  eventData: EventData | any;
-  setEventData: (eventData: EventData) => void;
+  eventData: Event | any;
+  setEventData: (eventData: Event) => void;
 
   studentToken: string;
   setStudentToken: (token: string) => void;
@@ -103,7 +24,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [studentNumber, setStudentNumber] = useState("");
   const [studentData, setStudentData] = useState<any>(null);
-  const [eventData, setEventData] = useState<EventData>();
+  const [eventData, setEventData] = useState<Event>();
 
   const [studentToken, setStudentToken] = useState<string>("no token");
 

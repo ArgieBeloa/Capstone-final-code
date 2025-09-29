@@ -14,15 +14,34 @@ export interface EventOrganizer {
   organizerEmail: string;
 }
 
-export interface EventEvaluationDetail {
-  evaluationQuestion: string | null;
-  studentRate: number;
-  studentSuggestion: string | null;
-}
-
 export interface EventPerformanceDetail {
   numberOfStudent: number;
   numberOfStudentRatedGive: number;
+}
+export interface EventAttendance {
+  id: string;
+  studentName: string;
+  timeAttended: string;
+}
+export interface EventStudentEvaluation {
+  id: string;
+  studentName: string;
+  timeEvaluated: string;
+}
+export interface EvaluationQuestion {
+  questionId: string;
+  questionText: string;
+}
+export interface EventEvaluationDetail {
+  studentName: string;
+  studentAverageRate: number;
+  studentSuggestion: string;
+
+  studentEvaluationInfos: StudentEvaluationInfo[];
+}
+export interface StudentEvaluationInfo {
+  question: string;
+  studentRate: number;
 }
 
 export interface Event {
@@ -40,15 +59,25 @@ export interface Event {
   eventStats: EventStats | null;
   eventOrganizer: EventOrganizer | null;
   eventEvaluationDetails: EventEvaluationDetail[] | null;
+  evaluationQuestions: EvaluationQuestion[] | null;
   eventPerformanceDetails: EventPerformanceDetail[] | null;
+  eventAttendance: EventAttendance[] | null;
+  eventStudentEvaluations: EventStudentEvaluation[] | null;
   eventAveragePerformance: number;
 }
 // Student.ts
-
+export interface StudentNotification {
+  eventId: string;
+  eventTitle: string;
+  eventShortDescription: string;
+}
 export interface StudentUpcomingEvents {
-  id: string;
-  eventName: string;
-  eventDate: string; // ISO date string (e.g., "2025-09-04T10:00:00Z")
+  eventId: string;
+  eventTitle: string;
+  eventDate: string;
+  eventTime: string | null;
+  eventLocation: string;
+  numberOfStudentAttending: number;
 }
 
 export interface StudentEventAttended {
@@ -66,7 +95,7 @@ export interface StudentRecentEvaluation {
 }
 
 export interface Student {
-  id: string;
+  id?: string;
   studentName: string;
   studentNumber: string;
   studentPassword: string;
@@ -78,8 +107,9 @@ export interface Student {
   studentAverageRatings: number;
   tokenId: string;
   category: string;
+  numberOfNotification: number;
   studentUpcomingEvents: StudentUpcomingEvents[];
+  studentNotifications: StudentNotification[];
   studentEventAttended: StudentEventAttended[];
   studentRecentEvaluations: StudentRecentEvaluation[];
 }
-

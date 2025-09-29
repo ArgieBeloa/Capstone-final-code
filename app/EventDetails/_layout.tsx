@@ -29,7 +29,7 @@ export default function RootLayout() {
 
         <Stack>
           {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
-          <Stack.Screen name="[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="[id]" options={{ headerTitle: "Event Details", headerTitleAlign: "center" }} />
 
           <Stack.Screen name="+not-found" />
         </Stack>

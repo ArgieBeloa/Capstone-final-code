@@ -8,8 +8,8 @@ export default function QrGenerator() {
   const dateString = date.toString();
   // sample data
   const eventData: StudentAttended= {
-      eventId: "123445566",
-      eventTitle: "PSIT DAY",
+      eventId: "68d6aa9aa686292244552d95",
+      eventTitle: "Enrollment Hub",
       studentDateAttended: dateString 
   };
 

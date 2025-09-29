@@ -1,10 +1,13 @@
 import axios from "axios";
 // interface
+import { EventAttendance, Student, StudentUpcomingEvents } from "@/app/Oop/Types";
 import { StudentAttended } from "./ApiType";
 // const BASE_URL = "https://capstonestudentloginapi-1.onrender.com/api"; // Use your local IP and port
-// const BASE_URL = "http://192.168.43.25:8080/api"; // Use your local IP and port
- const BASE_URL = "http://192.168.254.101:8080/api"; // Use your local IP and port
-
+// export const BASE_URL = "http://192.168.254.151:8080/api"; // Use your local IP and port
+export const BASE_URL = "http://172.200.1.151:8080/api"; // Use your local IP and port
+  // const BASE_URL = "http://192.168.254.102:8080/api"; // Use your local IP and port
+//  const BASE_URL = "http://172.200.10.85:8080/api"; // Use your local IP and port
+// 172.200.10.85
 // auth student
 export const authStudent = async (
   studentNumber: string,
@@ -27,35 +30,9 @@ export const authStudent = async (
 
 // const API_URL = 'https://capstonestudentloginapi.onrender.com/api/students/register';
 
-export interface RegisterStudentParams {
-  studentName: string;
-  studentNumber: string;
-  selectedCourse: string;
-  selectedDeparment: string;
-  expoPushToken: string | undefined;
-}
-
-export async function registerStudent({
-  studentName,
-  studentNumber,
-  selectedCourse,
-  selectedDeparment,
-  expoPushToken,
-}: RegisterStudentParams): Promise<any> {
+export async function registerStudent(newStudent: Student): Promise<any> {
   try {
-    const response = await axios.post(`${BASE_URL}/students/register`, {
-      studentName,
-      studentNumber,
-      studentPassword: studentNumber,
-      course: selectedCourse,
-      department: selectedDeparment,
-      notificationId: expoPushToken,
-      category: "student",
-      studentAverageAttendance: 0.0,
-      studentAverageRatings: 0.0,
-      studentEventAttended: [],
-      studentRecentEvaluations: [],
-    });
+    const response = await axios.post(`${BASE_URL}/students/register`,newStudent);
 
     return response.data;
   } catch (error) {
@@ -161,7 +138,7 @@ export const updateStudentEventData = async (
 export const addStudentUpcomingEvent = async (
   studentId: string,
   token: string,
-  upcomingEventData: StudentUpcomingEvents
+  upcomingEventData: StudentUpcomingEvents[]
 ) => {
   const api = `${BASE_URL}/students/${studentId}/upcomingEvents`;
   try {
@@ -177,17 +154,27 @@ export const addStudentUpcomingEvent = async (
     console.log(error);
   }
 };
+// add event student attendance
+export const addEventAttendance = async (
+  id: string,
+  token: string,
+  eventAttendance: EventAttendance
+) => {
+  const api = `${BASE_URL}/events/${id}/addEventAttendance`;
+  try {
+    const eventStudentAttendance = await axios.post(api, eventAttendance, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-// prop for student upcomingEvent
-type StudentUpcomingEvents = {
-  eventId?: string;
-  eventTitle?: string;
-  eventDate?: string;
-  eventTime?: string;
-  eventLocation?: string;
-  numberOfStudentAttending?: number;
-  studentWant: string;
-}[];
+    return eventStudentAttendance.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 
 // add student to event attended
 export const addStudentAttended = async (
@@ -211,3 +198,27 @@ export const addStudentAttended = async (
     console.log(error);
   }
 };
+
+
+// increase student notication number
+
+export async function increaseStudentNotification(
+  id: string,
+  numberOfNotification: number
+) {
+  try {
+    const response = await axios.patch(
+      `${BASE_URL}/${id}/increaseNumberOfNotification`,
+      {}, // empty body
+      {
+        params: { numberOfNotification },
+      }
+    );
+    return response.data; // StudentModel returned
+  } catch (error) {
+    console.error("Error increasing student notification:", error);
+    throw error;
+  }
+}
+
+

@@ -9,6 +9,7 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -16,10 +17,11 @@ import {
   ImageBackground,
   StyleSheet,
   Text,
-  View,
+  TouchableHighlight,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event } from "../Oop/Types";
+import { Event, Student, StudentUpcomingEvents } from "../Oop/Types";
 const { width } = Dimensions.get("window");
 
 const Home = () => {
@@ -30,9 +32,21 @@ const Home = () => {
     setStudentData,
     eventData,
   } = useUser();
-  const [hasNotification, setHasNotification] = useState(true);
+  const student: Student = studentData;
+  const firstLetter = student.studentName.charAt(0);
+
+  const [studentNotification, setStudentNotification] = useState(Number);
   const [hasEventRegister, setHasEventRegister] = useState<boolean>(false);
+  const [studentUpcomingEvents, setStudentUpcomingEvents] = useState([]);
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  // program event
+  const haddleRegisterClick = (id: string) => {
+    router.push(`../EventDetails/${id}`);
+  };
+  const haddleNotificationClick = () => {
+    router.push(`../Notification/studentNotication`);
+  };
 
   // Fetch student data on mount
   useEffect(() => {
@@ -41,7 +55,11 @@ const Home = () => {
         if (!studentNumber || !studentToken) return;
 
         const data = await studentDataFunction(studentNumber, studentToken);
+        setStudentUpcomingEvents(data.studentUpcomingEvents);
+        // console.log("Student upcoming events ", data.studentUpcomingEvents);
+        setHasEventRegister(true);
         setStudentData(data);
+        setStudentNotification(data.numberOfNotification);
         // setHasEventRegister(true);
         // // Check if student has upcoming events
         // if (data.studentUpcomingEvents && data.studentUpcomingEvents.length > 0) {
@@ -56,7 +74,7 @@ const Home = () => {
     };
 
     getStudentData();
-  }, [studentNumber, studentToken]);
+  }, []);
 
   // console.log(hasEventRegister);
 
@@ -66,36 +84,42 @@ const Home = () => {
         {/* Header */}
         <View style={styles.headContainer}>
           <View style={styles.profileCircle}>
-            <Text style={styles.profileText}>J</Text>
+            <Text style={styles.profileText}>{firstLetter}</Text>
           </View>
 
           <View style={styles.headerText}>
             <Text style={styles.greeting}>Good Day</Text>
-            <Text style={styles.name}>John Mark Gregorio</Text>
+            <Text style={styles.name}>{student.studentName}</Text>
           </View>
 
-          <View>
-            {hasNotification && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationText}>1</Text>
-              </View>
-            )}
-            <Ionicons
-              name="notifications-outline"
-              size={30}
-              style={styles.icon}
-            />
-          </View>
+          {/* //  notication area */}
+
+          <TouchableHighlight onPress={()=> haddleNotificationClick()}>
+            <View>
+              {studentNotification !== 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationText}>
+                    {studentNotification}
+                  </Text>
+                </View>
+              )}
+              <Ionicons
+                name="notifications-outline"
+                size={30}
+                style={styles.icon}
+              />
+            </View>
+          </TouchableHighlight>
         </View>
 
         {/* Registered events */}
         <Text style={styles.eventTextTitle}>Events you registered for</Text>
         <View style={{ minHeight: 250 }}>
-          {hasEventRegister ? (
+          {studentUpcomingEvents.length !== 0 ? (
             <>
               <Animated.FlatList
-                data={eventData}
-                keyExtractor={(item) => item.id}
+                data={studentUpcomingEvents}
+                keyExtractor={(item) => item.eventId}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
@@ -103,48 +127,52 @@ const Home = () => {
                   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
                   { useNativeDriver: false }
                 )}
-                renderItem={({ item }) => (
-                  <ImageBackground
-                    source={require("@/assets/images/auditorium.jpg")}
-                    style={[styles.page, { flex: 1 }]}
-                    imageStyle={{ resizeMode: "cover" }}
+                renderItem={({ item }: { item: StudentUpcomingEvents }) => (
+                  <TouchableHighlight
+                    onPress={() => haddleRegisterClick(item.eventId)}
                   >
-                    <View style={styles.page}>
-                      <Text style={styles.pageTitle}>{item.title}</Text>
-                      <View style={styles.pageInfoRow}>
-                        <AntDesign
-                          name="calendar"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.pageConatinerText}>
-                          {item.date}
-                        </Text>
-                        <AntDesign
-                          name="clockcircleo"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.pageConatinerText}>
-                          {item.time}
-                        </Text>
-                        <Entypo
-                          name="location"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.pageConatinerText}>
-                          {item.location}
-                        </Text>
+                    <ImageBackground
+                      source={require("@/assets/images/auditorium.jpg")}
+                      style={[styles.page, { flex: 1 }]}
+                      imageStyle={{ resizeMode: "cover" }}
+                    >
+                      <View style={styles.page}>
+                        <Text style={styles.pageTitle}>{item.eventTitle}</Text>
+                        <View style={styles.pageInfoRow}>
+                          <AntDesign
+                            name="calendar"
+                            size={17}
+                            color={COLORS.textColorWhite}
+                          />
+                          <Text style={styles.pageConatinerText}>
+                            {item.eventDate}
+                          </Text>
+                          <AntDesign
+                            name="clockcircleo"
+                            size={17}
+                            color={COLORS.textColorWhite}
+                          />
+                          <Text style={styles.pageConatinerText}>
+                            {item.eventTime}
+                          </Text>
+                          <Entypo
+                            name="location"
+                            size={17}
+                            color={COLORS.textColorWhite}
+                          />
+                          <Text style={styles.pageConatinerText}>
+                            {item.eventLocation}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
-                  </ImageBackground>
+                    </ImageBackground>
+                  </TouchableHighlight>
                 )}
               />
 
               {/* Pagination Dots */}
               <View style={styles.pagination}>
-                {eventData.map((_: any, i: number) => {
+                {studentUpcomingEvents.map((_: any, i: number) => {
                   const inputRange = [
                     (i - 1) * width,
                     i * width,
@@ -178,7 +206,21 @@ const Home = () => {
               }}
             >
               <Text>No events available!</Text>
-              <Text>Please Go To Event tab to register</Text>
+              <Text>
+                Please Go To{" "}
+                <TouchableHighlight
+                  onPress={() => router.push("/(tabs)/events")}
+                >
+                  <Text
+                    style={{
+                      textDecorationLine: "underline",
+                      color: COLORS.Primary,
+                    }}
+                  >
+                    Event tab to register
+                  </Text>
+                </TouchableHighlight>
+              </Text>
             </View>
           )}
         </View>
@@ -189,20 +231,24 @@ const Home = () => {
           data={eventData}
           contentContainerStyle={{ marginHorizontal: 10 }}
           renderItem={({ item }: { item: Event }) => (
+
+             <TouchableHighlight
+                    onPress={() => haddleRegisterClick(item.id)}
+                  >
             <View style={styles.upcomingEventView}>
               <View style={{ flexDirection: "row" }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontWeight: "600", fontSize: 19 }}>
                     {item.eventTitle}
                   </Text>
-                  <Text>{item.eventOrganizer + " " + item.eventLocation}</Text>
+                  <Text>{item.eventLocation}</Text>
                 </View>
-                <AntDesign
+                {/* <AntDesign
                   name="checkcircle"
                   size={24}
                   color={COLORS.Primary}
                   style={{ margin: "auto" }}
-                />
+                /> */}
               </View>
 
               <View style={styles.dividerLine} />
@@ -221,6 +267,7 @@ const Home = () => {
                 </View>
               </View>
             </View>
+            </TouchableHighlight>
           )}
         />
       </SafeAreaView>
@@ -263,6 +310,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   notificationText: { color: "white", fontSize: 12 },
+  //end of header
+  
   eventTextTitle: { fontSize: 20, fontWeight: "500", margin: 10 },
   page: {
     width: width - 20,

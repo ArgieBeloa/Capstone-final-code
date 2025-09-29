@@ -1,9 +1,10 @@
 import { StudentAttended } from "@/api/ApiType";
+import { studentDataFunction } from "@/api/spring";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Animated,
   StyleSheet,
@@ -14,42 +15,83 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 const Rates = () => {
   // student attended data
-  const {studentData} = useUser()
+  const { studentData, setStudentData, studentToken, studentNumber} = useUser();
 
-  const studentDataAttended = studentData.studentEventAttended
+
+  const studentDataAttended = studentData.studentEventAttended;
 
   const router = useRouter();
 
   const haddleEvaluationPage = (id: string) => {
     router.push({
       pathname: `../Evaluation/${id}`,
-      params: { id },
     });
   };
 
+  useEffect(()=>{
+
+    const getStudentData = async () => {
+       
+      const student = await studentDataFunction( studentNumber, studentToken)
+      setStudentData(student)
+    }
+
+    getStudentData()
+
+  },[])
+
   return (
     <LinearbackGround>
-      <SafeAreaView>
+      <SafeAreaView style ={{flex: 1}}>
         <View style={styles.containerEventHeader}>
           <Text style={styles.containerEventHeaderText}>Event Attended</Text>
         </View>
-        <View>
-          <Animated.FlatList
-            data={studentDataAttended}
-            keyExtractor={(item) => item.eventId}
-            renderItem={({ item}: {item: StudentAttended}) => {
-              return (
+        <View style={{ flex: 1 }}>
+          {studentDataAttended.length !== 0 ? (
+            <>
+              <Animated.FlatList
+                data={studentDataAttended}
+                keyExtractor={(item) => item.eventId}
+                renderItem={({ item }: { item: StudentAttended }) => {
+                  return (
+                    <TouchableHighlight
+                      onPress={() => haddleEvaluationPage(item.eventId)}
+                    >
+                      <View style={styles.flatlistContainer}>
+                        <Text>{item.eventTitle}</Text>
+                        <Text>{item.studentDateAttended}</Text>
+                      </View>
+                    </TouchableHighlight>
+                  );
+                }}
+              />
+            </>
+          ) : (
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                flex: 1,
+              }}
+            >
+              <Text>No Event Attended </Text>
+              <Text>
+                Please Go To{" "}
                 <TouchableHighlight
-                onPress={()=>haddleEvaluationPage(item.eventId)}
+                  onPress={() => router.push("/(tabs)/qrscanner")}
                 >
-                  <View style={styles.flatlistContainer}>
-                    <Text>{item.eventId}</Text>
-                    <Text>{item.studentDateAttended}</Text>
-                  </View>
+                  <Text
+                    style={{
+                      textDecorationLine: "underline",
+                      color: COLORS.Primary,
+                    }}
+                  >
+                    QR Scanner
+                  </Text>
                 </TouchableHighlight>
-              );
-            }}
-          />
+              </Text>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </LinearbackGround>
@@ -64,7 +106,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.Forth,
     alignItems: "center",
     borderRadius: 10,
-    paddingVertical: 5,
+    paddingVertical: 10,
   },
   containerEventHeaderText: {
     fontWeight: 600,

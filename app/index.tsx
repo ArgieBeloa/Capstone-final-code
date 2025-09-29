@@ -46,6 +46,8 @@ export default function Index() {
 
   const haddleAuthStudent = async () => {
     setLoading(true);
+    // console.log("username :", username)
+    // console.log("password :", password)
     try {
       const token = await authStudent(username, password);
       setStudentToken(token);
@@ -62,7 +64,17 @@ export default function Index() {
       setStudentData(studentData);
 
       setLoading(false);
+      const category = studentData.category;
+      if (category === "officer") {
+      router.push("/(officer)/home");
+
+      }else if(category === "OSA"){
+      router.push("/(osa)/home");
+        
+      }else{
       router.push("/(tabs)/home");
+
+      }
     } catch (error) {
       console.log("Login failed", error);
       setLoading(false);
@@ -111,7 +123,7 @@ export default function Index() {
       <SafeAreaView style={styles.safeAreaview}>
         <View style={styles.loginContainer}>
           <Image
-            source={require("@/assets/images/cpcLogo2.jpg")}
+            source={require("@/assets/images/cpcLogo2-removebg.png")}
             style={styles.ImageLogo}
           />
 
@@ -200,19 +212,26 @@ export default function Index() {
               </Text>
 
               {remainingAttempts > 0 && (
-                <Text style={[styles.modalText, { marginTop: 10, color: "red" }]}>
+                <Text
+                  style={[styles.modalText, { marginTop: 10, color: "red" }]}
+                >
                   Attempts remaining: {remainingAttempts}
                 </Text>
               )}
 
               {countdown !== null && (
-                <Text style={[styles.modalText, { marginTop: 10, color: "red" }]}>
+                <Text
+                  style={[styles.modalText, { marginTop: 10, color: "red" }]}
+                >
                   Closing in {countdown}...
                 </Text>
               )}
 
               <Pressable
-                style={[styles.buttonClose, loginButtonDisable && { opacity: 0.6 }]}
+                style={[
+                  styles.buttonClose,
+                  loginButtonDisable && { opacity: 0.6 },
+                ]}
                 onPress={() => {
                   if (!loginButtonDisable) setModalVisible(false);
                 }}
@@ -253,17 +272,76 @@ const styles = StyleSheet.create({
   ImageLogo: { width: 120, height: 120, marginVertical: 5 },
   welcomeText: { fontWeight: "700", fontSize: 17 },
   welcomeTextInfo: { fontWeight: "500", marginBottom: 10 },
-  textfieldText: { fontWeight: "600", marginVertical: 5, marginRight: "auto", marginLeft: 10 },
-  textfieldInput: { width: "98%", height: 50, borderRadius: 10, borderWidth: 1, fontSize: 16, borderColor: "black", paddingLeft: 10 },
-  inputWrapper: { width: "98%", flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "black", borderRadius: 8, paddingHorizontal: 10 },
-  textfieldInputPass: { flex: 1, paddingVertical: 10, fontSize: 16, color: "black" },
+  textfieldText: {
+    fontWeight: "600",
+    marginVertical: 5,
+    marginRight: "auto",
+    marginLeft: 10,
+  },
+  textfieldInput: {
+    width: "98%",
+    height: 50,
+    borderRadius: 10,
+    borderWidth: 1,
+    fontSize: 16,
+    borderColor: "black",
+    paddingLeft: 10,
+  },
+  inputWrapper: {
+    width: "98%",
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "black",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+  },
+  textfieldInputPass: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "black",
+  },
   icon: { marginLeft: 5 },
-  loginButton: { width: "98%", height: 50, borderRadius: 10, justifyContent: "center", alignItems: "center", marginTop: 30, backgroundColor: COLORS.Primary },
+  loginButton: {
+    width: "98%",
+    height: 50,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 30,
+    backgroundColor: COLORS.Primary,
+  },
   loginButtonText: { color: "white", fontWeight: "500", fontSize: 17 },
-  deviderPanel: { backgroundColor: "black", width: "98%", height: 1, marginTop: 20 },
-  modalOverlay: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
-  modalView: { margin: 20, backgroundColor: "white", borderRadius: 20, padding: 30, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
-  buttonClose: { marginTop: 15, backgroundColor: COLORS.Primary, borderRadius: 10, padding: 10 },
+  deviderPanel: {
+    backgroundColor: "black",
+    width: "98%",
+    height: 1,
+    marginTop: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonClose: {
+    marginTop: 15,
+    backgroundColor: COLORS.Primary,
+    borderRadius: 10,
+    padding: 10,
+  },
   textStyle: { color: "white", fontWeight: "bold" },
   modalText: { fontSize: 18, textAlign: "center" },
 });

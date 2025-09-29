@@ -1,4 +1,5 @@
 import { StudentAttended } from "@/api/ApiType";
+import { addStudentToEventAttendance, getEventById } from "@/api/EventService";
 import { addStudentAttended } from "@/api/spring";
 import { useUser } from "@/src/userContext";
 import { useIsFocused } from "@react-navigation/native";
@@ -16,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { EventAttendance } from "../Oop/Types";
 
 export default function Qrscanner() {
   const qrLock = useRef(false); // lock to prevent multiple scans
@@ -25,11 +27,19 @@ export default function Qrscanner() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [eventAttendance, setEventAttendance] = useState<EventAttendance[]>([]);
 
   // userContext
-  const { studentToken, studentData } = useUser();
+  const { studentToken, studentData, eventData } = useUser();
   const studentId = studentData.id;
+  const studentName = studentData.studentName;
   const alreadyAttendedArray = studentData.studentEventAttended;
+
+  // default event id
+  const eventId = "68d6aa9aa686292244552d95";
+
+  // check if they already attended to event
+
   // console.log(alreadyAttendedArray)
   // handle app going background/foreground
   useEffect(() => {
@@ -43,8 +53,72 @@ export default function Qrscanner() {
       appState.current = nextAppState;
     });
 
+    // if (isAlreadyInAttendedEvent) {
+    //   // console.log("Already attended:", isAlreadyAttended);
+    //   setModalMessage(`${eventId} has already been recorded!`);
+    //   setModalVisible(true);
+    //   return; // stop here to avoid duplication
+    // }
+
+    // test now
+    // testEventAttendance();
+    // checkEvent()
+
     return () => subscription.remove();
   }, []);
+
+  const getEventAttendance = async () => {
+    const event = await getEventById(studentToken, eventId);
+    setEventAttendance(event[0].eventAttendances); // careful: backend field is plural
+    // console.log("event get",event)
+    return event.eventAttendances;
+  };
+
+  const checkEvent = async () => {
+    getEventAttendance();
+    // console.log( "attendance", eventAttendance)
+
+    if (eventAttendance && eventAttendance.length > 0) {
+      const isAlreadyInAttendedEvent = eventAttendance.find(
+        (attendance: EventAttendance) => attendance.id === studentId
+      );
+
+      if (isAlreadyInAttendedEvent) {
+        console.log("✅ Student already attended");
+        setModalMessage(
+          `Hello ${isAlreadyInAttendedEvent.studentName}, you have already been recorded!`
+        );
+        setModalVisible(true);
+
+        return true;
+      } else {
+        console.log("🆕 Student not yet attended");
+        testEventAttendance();
+        return false;
+      }
+    } else {
+      console.log("⚠️ No attendance records yet");
+      return false;
+    }
+  };
+
+  // add to event addAttendance
+
+  const testEventAttendance = async () => {
+    const eventAttendance = [
+      {
+        id: studentId,
+        studentName: studentName,
+        timeAttended: new Date().toISOString(),
+      },
+    ];
+    const event = await addStudentToEventAttendance(
+      eventId,
+      studentToken,
+      eventAttendance
+    );
+    console.log("event attendance ", event);
+  };
 
   // handle QR scan
   async function handleQRScan(data: string) {
@@ -71,7 +145,7 @@ export default function Qrscanner() {
       const response = await addStudentAttended(studentId, studentToken, [
         parsedData,
       ]);
-
+      checkEvent();
       setModalMessage(`${parsedData.eventTitle} attendance recorded!`);
 
       setModalVisible(true); // show modal

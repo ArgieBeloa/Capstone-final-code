@@ -1,6 +1,7 @@
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
-import { Ionicons } from "@expo/vector-icons";
+import { useUser } from "@/src/userContext";
+import { AntDesign, Entypo, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -12,73 +13,61 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Event, Student } from "../Oop/Types";
 
 const Events = () => {
   const [hasNotification, setHasNotification] = useState(true);
-
+  const {
+    studentToken,
+    studentNumber,
+    studentData,
+    setStudentData,
+    eventData,
+  } = useUser();
   const navigationTitle: string[] = ["All", "Technology", "Academic"];
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const router = useRouter();
 
-  const data = [
-    {
-      id: "123",
-      title: "PSIT",
-      imagePath: require("@/assets/images/auditorium.jpg"),
-    },
-    {
-      id: "124",
-      title: "PSIT",
-      imagePath: require("@/assets/images/eventPic1.jpg"),
-    },
-    {
-      id: "125",
-      title: "PSIT",
-      imagePath: require("@/assets/images/eventPic2.png"),
-    },
-  ];
+  const student: Student = studentData;
+  const firstLetter = student.studentName.charAt(0);
+
+  const [studentNotification, setStudentNotification] = useState(Number);
 
   const haddleViewDetails = (id: string) => {
-    router.push(`./EventDetails/${id}`);
+    router.push(`../EventDetails/${id}`);
+  };
+  const haddleNotificationClick = () => {
+    router.push(`../Notification/studentNotication`);
   };
   return (
     <LinearbackGround>
       <SafeAreaView style={styles.safeAreaView}>
         <View style={styles.headContainer}>
           <View style={styles.profileCircle}>
-            <Text style={styles.profileText}>J</Text>
+            <Text style={styles.profileText}>{firstLetter}</Text>
           </View>
 
           <View style={styles.headerText}>
             <Text style={styles.greeting}>Good Day</Text>
-            <Text style={styles.name}>John Mark Gregorio</Text>
+            <Text style={styles.name}>{student.studentName}</Text>
           </View>
 
-          <View>
-            {hasNotification && (
-              <View
-                style={{
-                  width: 20,
-                  height: 20,
-                  right: 5,
-                  position: "absolute",
-                  backgroundColor: "black",
-                  borderRadius: 40,
-
-                  zIndex: 10,
-                }}
-              >
-                <Text style={{ color: "white", margin: "auto", fontSize: 12 }}>
-                  1
-                </Text>
-              </View>
-            )}
-            <Ionicons
-              name="notifications-outline"
-              size={30}
-              style={styles.icon}
-            />
-          </View>
+          <TouchableHighlight onPress={() => haddleNotificationClick()}>
+            <View>
+              {studentNotification !== 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationText}>
+                    {studentNotification}
+                  </Text>
+                </View>
+              )}
+              <Ionicons
+                name="notifications-outline"
+                size={30}
+                style={styles.icon}
+              />
+            </View>
+          </TouchableHighlight>
         </View>
 
         <View style={styles.eventsNavigationContainer}>
@@ -104,7 +93,7 @@ const Events = () => {
 
         {/* events data */}
         <Animated.FlatList
-          data={data}
+          data={eventData}
           contentContainerStyle={{
             marginHorizontal: 10,
             // marginTop: 30,
@@ -114,23 +103,57 @@ const Events = () => {
 
             // backgroundColor: COLORS.EGGWHITE,
           }}
-          renderItem={({ item }) => {
+          renderItem={({ item }: { item: Event }) => {
             return (
-              <View style={styles.eventFlatListContainer}>
-                <ImageBackground
-                  source={item.imagePath}
-                  style={[styles.imageBgFlatlist, { flex: 1 }]}
-                  imageStyle={{ resizeMode: "cover" }}
-                >
-                  <Text>{item.id}</Text>
-                  <Text>{item.title}</Text>
-                  <TouchableHighlight
-                    onPress={() => haddleViewDetails(item.id)}
+              <TouchableHighlight onPress={() => haddleViewDetails(item.id)}>
+                <View style={styles.eventFlatListContainer}>
+                  <ImageBackground
+                    source={require("@/assets/images/auditorium.jpg")}
+                    style={[styles.imageBgFlatlist, { flex: 1 }]}
+                    imageStyle={{ resizeMode: "cover" }}
                   >
-                    <Text>View Details</Text>
-                  </TouchableHighlight>
-                </ImageBackground>
-              </View>
+                    <View style={{ marginTop: "auto", paddingLeft: 10 }}>
+                      {/* <Text>{item.id}</Text> */}
+                      <Text style={[styles.eventTitleFlatlist, {}]}>
+                        {item.eventTitle}
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: 5,
+                        paddingLeft: 5,
+                        marginBottom: 5,
+                      }}
+                    >
+                      <AntDesign
+                        name="calendar"
+                        size={17}
+                        color={COLORS.textColorWhite}
+                      />
+                      <Text style={styles.eventTitleTextFlatlist}>
+                        {item.eventDate}
+                      </Text>
+                      <AntDesign
+                        name="clockcircleo"
+                        size={17}
+                        color={COLORS.textColorWhite}
+                      />
+                      <Text style={styles.eventTitleTextFlatlist}>
+                        {item.eventTime}
+                      </Text>
+                      <Entypo
+                        name="location"
+                        size={17}
+                        color={COLORS.textColorWhite}
+                      />
+                      <Text style={styles.eventTitleTextFlatlist}>
+                        {item.eventLocation}
+                      </Text>
+                    </View>
+                  </ImageBackground>
+                </View>
+              </TouchableHighlight>
             );
           }}
         />
@@ -210,6 +233,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
 
     width: "100%",
+    // width: "100%",
+    height: 200,
     // marginTop:10,
   },
   imageBgFlatlist: {
@@ -217,4 +242,40 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
   },
+  eventTitleFlatlist: {
+    color: COLORS.textColorWhite,
+    fontSize: 18,
+  },
+  eventTitleTextFlatlist: {
+    color: COLORS.textColorWhite,
+  },
+  eventFlatlistButton: {
+    // paddingHorizontal:4,
+    // paddingVertical:2,
+    // backgroundColor: COLORS.Primary,
+    marginLeft: "auto",
+    marginRight: 5,
+    borderRadius: 5,
+  },
+  eventFlatlistButtonText: {
+    textDecorationLine: "underline",
+    // color: "#2f2ff0ff",
+    color: COLORS.Third,
+    textAlign: "center",
+    marginBottom: 0,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  notificationBadge: {
+    width: 20,
+    height: 20,
+    right: 5,
+    position: "absolute",
+    backgroundColor: "black",
+    borderRadius: 40,
+    zIndex: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  notificationText: { color: "white", fontSize: 12 },
 });

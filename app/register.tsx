@@ -1,10 +1,13 @@
+import { registerStudent } from "@/api/spring";
 import LinearbackGround from "@/components/LinearBackGround";
+import Loading from "@/components/Loading";
 import ViewPanel from "@/components/ViewPanel";
 import { COLORS } from "@/constants/ColorCpc";
 import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -15,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { registerForPushNotificationsAsync } from "../src/pushToken";
+import { Student } from "./Oop/Types";
 
 const Register = () => {
   const [fullname, setFullname] = useState("");
@@ -26,21 +30,57 @@ const Register = () => {
   const [confirmShowPassword, setConfirmShowPassword] = useState(false);
   const [registerBtnDisable, setRegisterBtnDisable] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState<string>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isSuccess, setIsSuccess] = useState<boolean | null>(null); // null = not set
+
   const router = useRouter();
 
-  // Function
-  const haddleRegister = () => {
-    console.log(username);
+  const newStudent: Student = {
+    studentName: fullname,
+    studentNumber: username,
+    studentPassword: password,
+    course: course,
+    department: "no set",
+    notificationId: "not set",
+    macAddress: "not set",
+    studentAverageAttendance: 0.0,
+    studentAverageRatings: 0.0,
+    tokenId: expoPushToken || "no token",
+    category: "Student",
+    studentUpcomingEvents: [],
+    studentEventAttended: [],
+    studentRecentEvaluations: [],
+    numberOfNotification: 0,
+    studentNotifications: [],
   };
+ const haddleRegister = async () => {
+  setLoading(true);
+  try {
+    const studentAdded = await registerStudent(newStudent);
+    console.log("Student Added: ", studentAdded);
+
+    setIsSuccess(true);   // ✅ set result first
+    setModalVisible(true); 
+  } catch (error) {
+    console.log("Register failed: ", error);
+
+    setIsSuccess(false);  // ❌ set fail first
+    setModalVisible(true);
+  } finally {
+    setLoading(false);    // ✅ always stop loading
+  }
+};
+
   const haddleLoginBack = () => {
     router.push("/");
   };
 
   useEffect(() => {
-    console.log("Use effect")
+    console.log("Use effect");
     const getToken = async () => {
       const token = await registerForPushNotificationsAsync();
-      console.log("token :", token)
+      console.log("token :", token);
       if (token) {
         setExpoPushToken(token);
       }
@@ -135,6 +175,7 @@ const Register = () => {
           <TouchableHighlight
             style={styles.registerBtn}
             disabled={registerBtnDisable}
+            onPress={haddleRegister}
           >
             <Text style={styles.registerBtnText}>Register</Text>
           </TouchableHighlight>
@@ -149,6 +190,70 @@ const Register = () => {
               <Text style={styles.alreadyContainerBtnText}>Login Now</Text>
             </Pressable>
           </View>
+          {/* loading */}
+          <Loading text="Please wait..." color="#4F46E5" visible={loading} />
+
+          {/* modal */}
+
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalView}>
+                {isSuccess ? (
+                  <Text
+                    style={{
+                      color: "green",
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    ✅ Successfully Registered!
+                  </Text>
+                ) : (
+                  <Text
+                    style={{
+                      color: "red",
+                      fontSize: 18,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    ⚠️ Registration Failed. Please try again.
+                  </Text>
+                )}
+
+                <Pressable
+                  style={{
+                    marginTop: 20,
+                    padding: 10,
+                    backgroundColor: isSuccess ? "#4CAF50" : "#f44336", // green if success, red if fail
+                    borderRadius: 8,
+                  }}
+                  onPress={() => {
+                    setModalVisible(false);
+                    if (isSuccess) {
+                      router.push("/"); // only redirect on success
+                    }
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    {isSuccess ? "Login now" : "Close"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
         </ViewPanel>
       </SafeAreaView>
     </LinearbackGround>
@@ -255,4 +360,29 @@ const styles = StyleSheet.create({
     color: COLORS.Primary,
     fontWeight: "600",
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  buttonClose: {
+    marginTop: 15,
+    backgroundColor: COLORS.Primary,
+    borderRadius: 10,
+    padding: 10,
+  },
+  textStyle: { color: "white", fontWeight: "bold" },
+  modalText: { fontSize: 18, textAlign: "center" },
 });
