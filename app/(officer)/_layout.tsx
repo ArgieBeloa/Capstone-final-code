@@ -1,5 +1,5 @@
 import { COLORS } from "@/constants/ColorCpc";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StyleSheet, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,11 +50,11 @@ const Layout = () => {
       />
 
       <Tabs.Screen
-        name="qrGenerator" // ✅ match the file name
+        name="statistic" // ✅ match the file name
         options={{
-          title: "QR Generator",
+          title: "statistic",
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome5 name="qrcode" size={size} color={color} />
+       <FontAwesome6 name="ranking-star" size={size} color={color} />
           ),
         }}
       />

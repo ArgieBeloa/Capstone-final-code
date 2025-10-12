@@ -1,8 +1,8 @@
+import { getAllEvents } from "@/api/EventService";
 import { studentDataFunction } from "@/api/spring";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-
 import {
   AntDesign,
   Entypo,
@@ -14,14 +14,18 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  FlatList,
   ImageBackground,
   StyleSheet,
   Text,
+  TextInput,
   TouchableHighlight,
-  View
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Event, Student, StudentUpcomingEvents } from "../Oop/Types";
+
 const { width } = Dimensions.get("window");
 
 const Home = () => {
@@ -38,14 +42,25 @@ const Home = () => {
   const [studentNotification, setStudentNotification] = useState(Number);
   const [hasEventRegister, setHasEventRegister] = useState<boolean>(false);
   const [studentUpcomingEvents, setStudentUpcomingEvents] = useState([]);
+  const [searchSuggestion, setSearchSuggestion] = useState<Event[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [searchId, setSearchId] = useState("no id");
   const scrollX = useRef(new Animated.Value(0)).current;
 
-  // program event
   const haddleRegisterClick = (id: string) => {
     router.push(`../EventDetails/${id}`);
   };
+
   const haddleNotificationClick = () => {
     router.push(`../Notification/studentNotication`);
+  };
+
+  const handleSelect = (id: string, title: string) => {
+    setSearchText(title);
+    setShowSuggestions(false);
+    // router.push(`../EventDetails/${id}`);
+    setSearchId(id);
   };
 
   // Fetch student data on mount
@@ -56,27 +71,74 @@ const Home = () => {
 
         const data = await studentDataFunction(studentNumber, studentToken);
         setStudentUpcomingEvents(data.studentUpcomingEvents);
-        // console.log("Student upcoming events ", data.studentUpcomingEvents);
         setHasEventRegister(true);
         setStudentData(data);
-        setStudentNotification(data.numberOfNotification);
-        // setHasEventRegister(true);
-        // // Check if student has upcoming events
-        // if (data.studentUpcomingEvents && data.studentUpcomingEvents.length > 0) {
-        //   setHasEventRegister(true);
-        // } else {
-        //   setHasEventRegister(false);
-        // }
+        setStudentNotification(data.studentNotifications.length || 0);
       } catch (error) {
         console.log("Failed to fetch student data:", error);
-        // setHasEventRegister(false);
       }
     };
 
     getStudentData();
+
+   
   }, []);
 
-  // console.log(hasEventRegister);
+  // 🔍 Smart search with sorting and live update
+  useEffect(() => {
+    const getAllEventsFunction = async () => {
+      if (!studentToken || searchText.trim() === "") {
+        setSearchSuggestion([]);
+        return;
+      }
+
+      const allEvents = await getAllEvents(studentToken);
+      const query = searchText.toLowerCase();
+
+      const filtered = allEvents
+        .filter((event: Event) =>
+          event.eventTitle.toLowerCase().includes(query)
+        )
+        .sort((a: Event, b: Event) => {
+          const aTitle = a.eventTitle.toLowerCase();
+          const bTitle = b.eventTitle.toLowerCase();
+
+          if (aTitle === query) return -1;
+          if (bTitle === query) return 1;
+          if (aTitle.startsWith(query) && !bTitle.startsWith(query)) return -1;
+          if (bTitle.startsWith(query) && !aTitle.startsWith(query)) return 1;
+
+          return aTitle.indexOf(query) - bTitle.indexOf(query);
+        });
+
+      setSearchSuggestion(filtered);
+    };
+
+    getAllEventsFunction();
+  }, [searchText]);
+
+  // ✨ Highlight matched part in title
+  const highlightMatch = (text: string, query: string) => {
+    if (!query) return <Text>{text}</Text>;
+
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const startIndex = lowerText.indexOf(lowerQuery);
+
+    if (startIndex === -1) return <Text>{text}</Text>;
+
+    const endIndex = startIndex + query.length;
+
+    return (
+      <Text>
+        {text.substring(0, startIndex)}
+        <Text style={{ fontWeight: "bold", color: COLORS.Primary }}>
+          {text.substring(startIndex, endIndex)}
+        </Text>
+        {text.substring(endIndex)}
+      </Text>
+    );
+  };
 
   return (
     <LinearbackGround>
@@ -92,9 +154,120 @@ const Home = () => {
             <Text style={styles.name}>{student.studentName}</Text>
           </View>
 
-          {/* //  notication area */}
+          {/* 🔎 Search bar */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "white",
+              borderRadius: 10,
+              minWidth: 135,
+              position: "relative",
+              paddingRight: 8,
+            }}
+          >
+            <TextInput
+              style={{
+                flex: 1,
+                paddingLeft: 10,
+                fontSize: 12,
+                color: "#000",
+              }}
+              placeholder="Search..."
+              value={searchText}
+              onChangeText={(text) => {
+                setSearchText(text);
+                setShowSuggestions(text.length > 0);
+              }}
+              onSubmitEditing={async () => {
+                const query = searchText.trim();
+                if (!query) return;
 
-          <TouchableHighlight onPress={()=> haddleNotificationClick()}>
+                try {
+                  const allEvents = await getAllEvents(studentToken);
+                  const filtered = allEvents.filter((event: Event) =>
+                    event.eventTitle.toLowerCase().includes(query.toLowerCase())
+                  );
+                  setSearchSuggestion(filtered);
+                  setShowSuggestions(true);
+                } catch (error) {
+                  console.log("Search error:", error);
+                }
+              }}
+              placeholderTextColor="#999"
+              returnKeyType="search"
+            />
+
+            {/* 💡 Popup suggestion */}
+            {showSuggestions && searchSuggestion.length > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 25,
+                  left: 0,
+                  right: 0,
+                  backgroundColor: "#fff",
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  elevation: 5,
+                  shadowColor: "#000",
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  maxHeight: 100,
+                  zIndex: 1000,
+                }}
+              >
+                <FlatList
+                  data={searchSuggestion}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => handleSelect(item.id, item.eventTitle)}
+                      style={{
+                        paddingVertical: 5,
+                        paddingHorizontal: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#eee",
+                      }}
+                    >
+                      <Text style={{ fontSize: 10 }}>
+                        {highlightMatch(item.eventTitle, searchText)}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            )}
+
+            {/* 🔍 Search button */}
+            <TouchableOpacity
+              //
+              onPress={() => router.push(`../EventDetails/${searchId}`)}
+            >
+              <Ionicons
+                name="search"
+                size={18}
+                color="#555"
+                style={{ marginRight: 6 }}
+              />
+            </TouchableOpacity>
+
+            {/* ❌ Clear */}
+            {searchText.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchText("");
+                  setShowSuggestions(false);
+                }}
+              >
+                <Ionicons name="close-circle" size={20} color="#888" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* 🔔 Notification */}
+          <TouchableHighlight onPress={() => haddleNotificationClick()}>
             <View>
               {studentNotification !== 0 && (
                 <View style={styles.notificationBadge}>
@@ -105,14 +278,14 @@ const Home = () => {
               )}
               <Ionicons
                 name="notifications-outline"
-                size={30}
+                size={22}
                 style={styles.icon}
               />
             </View>
           </TouchableHighlight>
         </View>
 
-        {/* Registered events */}
+        {/* Registered Events */}
         <Text style={styles.eventTextTitle}>Events you registered for</Text>
         <View style={{ minHeight: 250 }}>
           {studentUpcomingEvents.length !== 0 ? (
@@ -169,8 +342,6 @@ const Home = () => {
                   </TouchableHighlight>
                 )}
               />
-
-              {/* Pagination Dots */}
               <View style={styles.pagination}>
                 {studentUpcomingEvents.map((_: any, i: number) => {
                   const inputRange = [
@@ -206,70 +377,76 @@ const Home = () => {
               }}
             >
               <Text>No events available!</Text>
-              <Text>
-                Please Go To{" "}
+              <View style={{ flexDirection: "row", marginTop: 5 }}>
+                <Text>Please go to </Text>
                 <TouchableHighlight
                   onPress={() => router.push("/(tabs)/events")}
+                  underlayColor="transparent"
                 >
                   <Text
                     style={{
                       textDecorationLine: "underline",
                       color: COLORS.Primary,
+                      fontWeight: "500",
                     }}
                   >
-                    Event tab to register
+                    Event tab
                   </Text>
                 </TouchableHighlight>
-              </Text>
+                <Text> to register.</Text>
+              </View>
             </View>
           )}
         </View>
 
-        {/* Upcoming events */}
+        {/* Upcoming Events */}
         <Text style={styles.eventTextTitle}>Upcoming events</Text>
-        <Animated.FlatList
-          data={eventData}
-          contentContainerStyle={{ marginHorizontal: 10 }}
-          renderItem={({ item }: { item: Event }) => (
-
-             <TouchableHighlight
-                    onPress={() => haddleRegisterClick(item.id)}
-                  >
-            <View style={styles.upcomingEventView}>
-              <View style={{ flexDirection: "row" }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontWeight: "600", fontSize: 19 }}>
-                    {item.eventTitle}
-                  </Text>
-                  <Text>{item.eventLocation}</Text>
+        {eventData.length !== 0 ? (
+          <Animated.FlatList
+            data={eventData}
+            contentContainerStyle={{ marginHorizontal: 10 }}
+            renderItem={({ item }: { item: Event }) => (
+              <TouchableHighlight onPress={() => haddleRegisterClick(item.id)}>
+                <View style={styles.upcomingEventView}>
+                  <View style={{ flexDirection: "row" }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: "600", fontSize: 19 }}>
+                        {item.eventTitle}
+                      </Text>
+                      <Text>{item.eventLocation}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.dividerLine} />
+                  <View style={{ flexDirection: "row" }}>
+                    <MaterialCommunityIcons
+                      name="calendar-outline"
+                      size={24}
+                      color="black"
+                    />
+                    <View
+                      style={{
+                        flex: 1,
+                        flexDirection: "column",
+                        marginLeft: 5,
+                      }}
+                    >
+                      <Text>{item.eventTimeLength}</Text>
+                      <Text>{item.eventDate}</Text>
+                    </View>
+                  </View>
                 </View>
-                {/* <AntDesign
-                  name="checkcircle"
-                  size={24}
-                  color={COLORS.Primary}
-                  style={{ margin: "auto" }}
-                /> */}
-              </View>
-
-              <View style={styles.dividerLine} />
-
-              <View style={{ flexDirection: "row" }}>
-                <MaterialCommunityIcons
-                  name="calendar-outline"
-                  size={24}
-                  color="black"
-                />
-                <View
-                  style={{ flex: 1, flexDirection: "column", marginLeft: 5 }}
-                >
-                  <Text>{item.eventTimeLength}</Text>
-                  <Text>{item.eventDate}</Text>
-                </View>
-              </View>
-            </View>
-            </TouchableHighlight>
-          )}
-        />
+              </TouchableHighlight>
+            )}
+          />
+        ) : (
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{ textAlign: "center", fontWeight: "500", margin: "auto" }}
+            >
+              No Event for Now
+            </Text>
+          </View>
+        )}
       </SafeAreaView>
     </LinearbackGround>
   );
@@ -284,6 +461,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     alignItems: "center",
     margin: 10,
+    position: "relative",
+    zIndex: 10,
   },
   profileCircle: {
     width: 60,
@@ -299,19 +478,17 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: "bold", color: "#222" },
   icon: { marginHorizontal: 5 },
   notificationBadge: {
-    width: 20,
-    height: 20,
+    width: 14,
+    height: 14,
     right: 5,
     position: "absolute",
-    backgroundColor: "black",
+    backgroundColor: "red",
     borderRadius: 40,
     zIndex: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  notificationText: { color: "white", fontSize: 12 },
-  //end of header
-  
+  notificationText: { color: "white", fontSize: 9},
   eventTextTitle: { fontSize: 20, fontWeight: "500", margin: 10 },
   page: {
     width: width - 20,

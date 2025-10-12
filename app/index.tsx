@@ -14,6 +14,7 @@ import {
   Alert,
   BackHandler,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -35,6 +36,7 @@ export default function Index() {
   const [modalVisible, setModalVisible] = useState(false);
   const [attempts, setAttempts] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showModalOfficer, setShowModalOfficer] = useState(false);
 
   const router = useRouter();
   const { setStudentData, setEventData, setStudentToken, setStudentNumber } =
@@ -66,14 +68,13 @@ export default function Index() {
       setLoading(false);
       const category = studentData.category;
       if (category === "officer") {
-      router.push("/(officer)/home");
-
-      }else if(category === "OSA"){
-      router.push("/(osa)/home");
-        
-      }else{
-      router.push("/(tabs)/home");
-
+        // show modal log in as officer or student
+        // router.push("/(officer)/home");
+        setShowModalOfficer(true)
+      } else if (category === "osa") {
+        router.push("/osa/osa");
+      } else {
+        router.push("/(tabs)/home");
       }
     } catch (error) {
       console.log("Login failed", error);
@@ -120,132 +121,215 @@ export default function Index() {
       colors={[COLORS.Secondary, COLORS.Third, COLORS.Forth]}
       style={styles.safeAreaview}
     >
-      <SafeAreaView style={styles.safeAreaview}>
-        <View style={styles.loginContainer}>
-          <Image
-            source={require("@/assets/images/cpcLogo2-removebg.png")}
-            style={styles.ImageLogo}
-          />
-
-          <Text style={styles.welcomeText}>Welcome back</Text>
-          <Text style={styles.welcomeTextInfo}>
-            Please enter your details to login
-          </Text>
-
-          <Text style={styles.textfieldText}>Student Number</Text>
-          <TextInput
-            style={styles.textfieldInput}
-            placeholder="2022000351"
-            placeholderTextColor="grey"
-            value={username}
-            onChangeText={setUsername}
-          />
-
-          <Text style={styles.textfieldText}>Password</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.textfieldInputPass}
-              placeholder="**********"
-              placeholderTextColor="gray"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <SafeAreaView style={styles.safeAreaview}>
+          <View style={styles.loginContainer}>
+            <Image
+              source={require("@/assets/images/cpcLogo2-removebg.png")}
+              style={styles.ImageLogo}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons
-                name={showPassword ? "eye-off" : "eye"}
-                size={22}
-                color="gray"
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </View>
 
-          <TouchableHighlight
-            style={[styles.loginButton, loginButtonDisable && { opacity: 0.6 }]}
-            onPress={haddleAuthStudent}
-            disabled={loginButtonDisable}
-          >
-            <Text style={styles.loginButtonText}>Login</Text>
-          </TouchableHighlight>
-
-          <View style={styles.deviderPanel}></View>
-
-          {/* register section */}
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 5,
-              marginVertical: 10,
-            }}
-          >
-            <Text style={{ fontWeight: "400", fontSize: 16 }}>
-              Don't have an account?
+            <Text style={styles.welcomeText}>Welcome back</Text>
+            <Text style={styles.welcomeTextInfo}>
+              Please enter your details to login
             </Text>
 
-            <Pressable onPress={haddleRegister}>
-              <Text
-                style={{
-                  textDecorationLine: "underline",
-                  color: COLORS.Primary,
-                  fontWeight: "500",
-                  fontSize: 16,
-                }}
-              >
-                Register
+            <Text style={styles.textfieldText}>Student Number</Text>
+            <TextInput
+              style={styles.textfieldInput}
+              placeholder="2022000351"
+              placeholderTextColor="grey"
+              value={username}
+              onChangeText={setUsername}
+            />
+
+            <Text style={styles.textfieldText}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textfieldInputPass}
+                placeholder="**********"
+                placeholderTextColor="gray"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={22}
+                  color="gray"
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableHighlight
+              style={[
+                styles.loginButton,
+                loginButtonDisable && { opacity: 0.6 },
+              ]}
+              onPress={haddleAuthStudent}
+              disabled={loginButtonDisable}
+            >
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableHighlight>
+
+            <View style={styles.deviderPanel}></View>
+
+            {/* register section */}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 5,
+                marginVertical: 10,
+              }}
+            >
+              <Text style={{ fontWeight: "400", fontSize: 16 }}>
+                Don't have an account?
               </Text>
-            </Pressable>
-          </View>
-        </View>
 
-        {/* modal */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalText}>
-                Error: Student number not found or password not correct!
-              </Text>
-
-              {remainingAttempts > 0 && (
+              <Pressable onPress={haddleRegister}>
                 <Text
-                  style={[styles.modalText, { marginTop: 10, color: "red" }]}
+                  style={{
+                    textDecorationLine: "underline",
+                    color: COLORS.Primary,
+                    fontWeight: "500",
+                    fontSize: 16,
+                  }}
                 >
-                  Attempts remaining: {remainingAttempts}
+                  Register
                 </Text>
-              )}
-
-              {countdown !== null && (
-                <Text
-                  style={[styles.modalText, { marginTop: 10, color: "red" }]}
-                >
-                  Closing in {countdown}...
-                </Text>
-              )}
-
-              <Pressable
-                style={[
-                  styles.buttonClose,
-                  loginButtonDisable && { opacity: 0.6 },
-                ]}
-                onPress={() => {
-                  if (!loginButtonDisable) setModalVisible(false);
-                }}
-                disabled={loginButtonDisable}
-              >
-                <Text style={styles.textStyle}>Try again</Text>
               </Pressable>
             </View>
           </View>
-        </Modal>
 
-        {/* loading */}
-        <Loading text="Please wait..." color="#4F46E5" visible={loading} />
-      </SafeAreaView>
+          {/* modal */}
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalView}>
+                <Text style={styles.modalText}>
+                  Error: Student number not found or password not correct!
+                </Text>
+
+                {remainingAttempts > 0 && (
+                  <Text
+                    style={[styles.modalText, { marginTop: 10, color: "red" }]}
+                  >
+                    Attempts remaining: {remainingAttempts}
+                  </Text>
+                )}
+
+                {countdown !== null && (
+                  <Text
+                    style={[styles.modalText, { marginTop: 10, color: "red" }]}
+                  >
+                    Closing in {countdown}...
+                  </Text>
+                )}
+
+                <Pressable
+                  style={[
+                    styles.buttonClose,
+                    loginButtonDisable && { opacity: 0.6 },
+                  ]}
+                  onPress={() => {
+                    if (!loginButtonDisable) setModalVisible(false);
+                  }}
+                  disabled={loginButtonDisable}
+                >
+                  <Text style={styles.textStyle}>Try again</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          {/* loading */}
+          <Loading text="Please wait..." color="#4F46E5" visible={loading} />
+
+          {/* show modal for officer choice   */}
+          <Modal visible={showModalOfficer} transparent animationType="fade">
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "black",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: COLORS.Forth,
+                  padding: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  marginHorizontal: 10,
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 19,
+                    marginBottom: 15,
+                  }}
+                >
+                  System detected you are officer
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    router.push("/(tabs)/home");
+                    setShowModalOfficer(false);
+                  }}
+                  style={{
+                    backgroundColor: "green",
+                    marginVertical: 10,
+                    borderRadius: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      paddingHorizontal: 15,
+                      paddingVertical: 10,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "white",
+                    }}
+                  >
+                    Login as Student
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    router.push("/(officer)/home");
+                    setShowModalOfficer(false);
+                  }}
+                  style={{ borderRadius: 6, backgroundColor: "red" }}
+                >
+                  <Text
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "white",
+                    }}
+                  >
+                    Login as Officer
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }

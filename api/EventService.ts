@@ -3,7 +3,7 @@ import axios from "axios";
 import { BASE_URL } from "./spring";
 
 // parameter import
-import { EventAttendance, EventEvaluationDetail } from "@/app/Oop/Types";
+import { EventAttendance, StudentEvaluationInfo } from "@/app/Oop/Types";
 
 // GET
 export const getEventById = async (token: string, id: any) => {
@@ -22,12 +22,54 @@ export const getEventById = async (token: string, id: any) => {
   }
 };
 
+// GET ALL EVENT
+export const getAllEvents = async (token:string) => {
+
+  const api =  `${BASE_URL}/events/getAll`
+
+  try {
+    const allEvent = await axios.get(api, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+
+    return allEvent.data
+  } catch (error) {
+    
+  }
+  
+}
+
+// by title
+export const getEventByTitle = async (token: string, title: string) => {
+  
+  try {
+    const api = `${BASE_URL}/events/category/${title}`
+    const event = await axios.get(api, {
+      headers:{
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    return event.data
+    
+
+  } catch (error) {
+    console.log(error)
+    
+  }
+  
+}
+
 // POST
 export interface EventEvaluation {
+  studentId: string;                // backend needs ID too
   studentName: string;
   studentAverageRate: number;
   studentSuggestion: string;
-  studentEvaluationInfos: EventEvaluationDetail[];
+  studentEvaluationInfos: StudentEvaluationInfo[]; // ✅ correct type
 }
 
 export const addEventEvaluation = async (
@@ -38,7 +80,7 @@ export const addEventEvaluation = async (
   try {
     const api = `${BASE_URL}/events/${eventId}/eventEvaluationDetails`;
 
-    // backend expects [ { ... } ]
+    // backend expects an array of evaluations
     const response = await axios.post(api, [evaluationData], {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -53,7 +95,7 @@ export const addEventEvaluation = async (
   }
 };
 
-
+// add student to event data
 export const addStudentToEventAttendance = async (
   id: string,
   token: string,
@@ -68,11 +110,16 @@ export const addStudentToEventAttendance = async (
       },
     });
 
+    console.log(eventAttendance)
+
     return eventAttendance.data;
   } catch (error) {
     console.log(error);
   }
 };
+
+// 
+
 
 // DELETE
 
@@ -99,4 +146,36 @@ export const deleteStudentAttendance = async (
 };
 
 
+// update area
+// updateAttending.ts
+export async function updateAllStudentAttending(token: string, eventId: string, count: number) {
+  try {
+    const url = `${BASE_URL}/events/${eventId}/attending?count=${count}`;
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update attending: ${response.statusText}`);
+    }
+
+    const data = await response.text(); // or response.json() if your API returns JSON
+    // console.log('Update response:', data);
+    return data;
+  } catch (error) {
+    console.error('Error updating attending:', error);
+    throw error;
+  }
+}
+
+
 // http://localhost:8080/api/students/20250001/delete/studentNotification/evt101
+
+
+// props generated 
+

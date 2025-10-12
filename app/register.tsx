@@ -7,7 +7,9 @@ import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -32,7 +34,16 @@ const Register = () => {
   const [expoPushToken, setExpoPushToken] = useState<string>();
   const [loading, setLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isSuccess, setIsSuccess] = useState<boolean | null>(null); // null = not set
+  const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
+
+  // 🔴 Add validation state
+  const [errors, setErrors] = useState<{
+    fullname?: string;
+    course?: string;
+    username?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
 
   const router = useRouter();
 
@@ -53,209 +64,250 @@ const Register = () => {
     studentRecentEvaluations: [],
     numberOfNotification: 0,
     studentNotifications: [],
+    studentEventAttendedAndEvaluationDetails: [],
   };
- const haddleRegister = async () => {
-  setLoading(true);
-  try {
-    const studentAdded = await registerStudent(newStudent);
-    console.log("Student Added: ", studentAdded);
 
-    setIsSuccess(true);   // ✅ set result first
-    setModalVisible(true); 
-  } catch (error) {
-    console.log("Register failed: ", error);
+  // ✅ Validate inputs (like HTML required)
+  const validateFields = () => {
+    const newErrors: any = {};
+    if (!fullname.trim()) newErrors.fullname = "Full name is required";
+    if (!course.trim()) newErrors.course = "Course is required";
+    if (!username.trim()) newErrors.username = "Student number is required";
+    if (!password.trim()) newErrors.password = "Password is required";
+    if (!confirmPassword.trim())
+      newErrors.confirmPassword = "Confirm password is required";
+    if (password && confirmPassword && password !== confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
+    if (password.length > 0 && password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
 
-    setIsSuccess(false);  // ❌ set fail first
-    setModalVisible(true);
-  } finally {
-    setLoading(false);    // ✅ always stop loading
-  }
-};
-
-  const haddleLoginBack = () => {
-    router.push("/");
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
+
+  const haddleRegister = async () => {
+    if (!validateFields()) return;
+
+    setLoading(true);
+    setRegisterBtnDisable(true);
+
+    try {
+      const studentAdded = await registerStudent(newStudent);
+      console.log("Student Added: ", studentAdded);
+
+      setIsSuccess(true);
+      setModalVisible(true);
+    } catch (error) {
+      console.log("Register failed: ", error);
+      setIsSuccess(false);
+      setModalVisible(true);
+    } finally {
+      setLoading(false);
+      setRegisterBtnDisable(false);
+    }
+  };
+
+  const haddleLoginBack = () => router.push("/");
 
   useEffect(() => {
-    console.log("Use effect");
     const getToken = async () => {
       const token = await registerForPushNotificationsAsync();
-      console.log("token :", token);
-      if (token) {
-        setExpoPushToken(token);
-      }
+      if (token) setExpoPushToken(token);
     };
-
     getToken();
   }, []);
+
   return (
-    <LinearbackGround>
-      <SafeAreaView style={styles.safeAreaView}>
-        <ViewPanel style={styles.viewContainer}>
-          <Text style={styles.registerText}>Register</Text>
-          <Text style={styles.text}>Full name</Text>
-          <View style={styles.container}>
-            <Ionicons name="person" size={20} color="black" />
-            <TextInput
-              style={styles.textfield}
-              placeholderTextColor="grey"
-              placeholder="Name"
-              value={fullname}
-              onChangeText={setFullname}
-            />
-          </View>
-          <Text style={styles.text}>Course</Text>
-          <View style={styles.container}>
-            <Entypo name="graduation-cap" size={20} color="black"></Entypo>
-            <TextInput
-              style={styles.textfield}
-              placeholderTextColor="grey"
-              placeholder="Course"
-              value={course}
-              onChangeText={setCourse}
-            />
-          </View>
-          <Text style={styles.text}>Student Number</Text>
-          <View style={styles.container}>
-            <FontAwesome name="id-card" size={19} color="black" />
-            <TextInput
-              style={styles.textfield}
-              placeholderTextColor="grey"
-              placeholder="Student number"
-              value={username}
-              onChangeText={setUsername}
-            />
-          </View>
-          <Text style={styles.text}>Password</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="lock-closed" size={20} color="black" />
-            <TextInput
-              style={styles.textfieldInputPass}
-              placeholder="Password"
-              placeholderTextColor="gray"
-              secureTextEntry={!showPassword} // hide/show password
-              value={password}
-              onChangeText={setPassword}
-            />
+    <LinearbackGround style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <SafeAreaView style={styles.safeAreaView}>
+          <ViewPanel style={styles.viewContainer}>
+            <Text style={styles.registerText}>Register</Text>
 
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Ionicons
-                name={showPassword ? "eye-off" : "eye"}
-                size={22}
-                color="gray"
-                style={styles.icon}
+            {/* FULL NAME */}
+            <Text style={styles.text}>Full name</Text>
+            <View style={styles.container}>
+              <Ionicons name="person" size={20} color="black" />
+              <TextInput
+                style={styles.textfield}
+                placeholderTextColor="grey"
+                placeholder="Name"
+                value={fullname}
+                onChangeText={(text) => {
+                  setFullname(text);
+                  setErrors((prev) => ({ ...prev, fullname: undefined }));
+                }}
               />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.text}>Confirm Password</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="lock-closed" size={20} color="black" />
-            <TextInput
-              style={styles.textfieldInputPass}
-              placeholder="Confirm password"
-              placeholderTextColor="gray"
-              secureTextEntry={!confirmShowPassword} // hide/show password
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-
-            <TouchableOpacity
-              onPress={() => setConfirmShowPassword(!confirmShowPassword)}
-            >
-              <Ionicons
-                name={confirmShowPassword ? "eye-off" : "eye"}
-                size={22}
-                color="gray"
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* register button */}
-          <TouchableHighlight
-            style={styles.registerBtn}
-            disabled={registerBtnDisable}
-            onPress={haddleRegister}
-          >
-            <Text style={styles.registerBtnText}>Register</Text>
-          </TouchableHighlight>
-
-          <View style={styles.alreadyContainer}>
-            <Text style={styles.alreadyContainerText}>Already Register ? </Text>
-
-            <Pressable
-              style={styles.alreadyContainerBtn}
-              onPress={haddleLoginBack}
-            >
-              <Text style={styles.alreadyContainerBtnText}>Login Now</Text>
-            </Pressable>
-          </View>
-          {/* loading */}
-          <Loading text="Please wait..." color="#4F46E5" visible={loading} />
-
-          {/* modal */}
-
-          <Modal
-            animationType="fade"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalView}>
-                {isSuccess ? (
-                  <Text
-                    style={{
-                      color: "green",
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      textAlign: "center",
-                    }}
-                  >
-                    ✅ Successfully Registered!
-                  </Text>
-                ) : (
-                  <Text
-                    style={{
-                      color: "red",
-                      fontSize: 18,
-                      fontWeight: "bold",
-                      textAlign: "center",
-                    }}
-                  >
-                    ⚠️ Registration Failed. Please try again.
-                  </Text>
-                )}
-
-                <Pressable
-                  style={{
-                    marginTop: 20,
-                    padding: 10,
-                    backgroundColor: isSuccess ? "#4CAF50" : "#f44336", // green if success, red if fail
-                    borderRadius: 8,
-                  }}
-                  onPress={() => {
-                    setModalVisible(false);
-                    if (isSuccess) {
-                      router.push("/"); // only redirect on success
-                    }
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                      textAlign: "center",
-                    }}
-                  >
-                    {isSuccess ? "Login now" : "Close"}
-                  </Text>
-                </Pressable>
-              </View>
             </View>
-          </Modal>
-        </ViewPanel>
-      </SafeAreaView>
+            {errors.fullname && (
+              <Text style={styles.errorText}>{errors.fullname}</Text>
+            )}
+
+            {/* COURSE */}
+            <Text style={styles.text}>Course</Text>
+            <View style={styles.container}>
+              <Entypo name="graduation-cap" size={20} color="black" />
+              <TextInput
+                style={styles.textfield}
+                placeholderTextColor="grey"
+                placeholder="Course"
+                value={course}
+                onChangeText={(text) => {
+                  setCourse(text);
+                  setErrors((prev) => ({ ...prev, course: undefined }));
+                }}
+              />
+            </View>
+            {errors.course && (
+              <Text style={styles.errorText}>{errors.course}</Text>
+            )}
+
+            {/* STUDENT NUMBER */}
+            <Text style={styles.text}>Student Number</Text>
+            <View style={styles.container}>
+              <FontAwesome name="id-card" size={19} color="black" />
+              <TextInput
+                style={styles.textfield}
+                placeholderTextColor="grey"
+                placeholder="Student number"
+                value={username}
+                onChangeText={(text) => {
+                  setUsername(text);
+                  setErrors((prev) => ({ ...prev, username: undefined }));
+                }}
+              />
+            </View>
+            {errors.username && (
+              <Text style={styles.errorText}>{errors.username}</Text>
+            )}
+
+            {/* PASSWORD */}
+            <Text style={styles.text}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed" size={20} color="black" />
+              <TextInput
+                style={styles.textfieldInputPass}
+                placeholder="Password"
+                placeholderTextColor="gray"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors((prev) => ({ ...prev, password: undefined }));
+                }}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={22}
+                  color="gray"
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
+
+            {/* CONFIRM PASSWORD */}
+            <Text style={styles.text}>Confirm Password</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed" size={20} color="black" />
+              <TextInput
+                style={styles.textfieldInputPass}
+                placeholder="Confirm password"
+                placeholderTextColor="gray"
+                secureTextEntry={!confirmShowPassword}
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setErrors((prev) => ({
+                    ...prev,
+                    confirmPassword: undefined,
+                  }));
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setConfirmShowPassword(!confirmShowPassword)}
+              >
+                <Ionicons
+                  name={confirmShowPassword ? "eye-off" : "eye"}
+                  size={22}
+                  color="gray"
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.confirmPassword && (
+              <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+            )}
+
+            {/* REGISTER BUTTON */}
+            <TouchableHighlight
+              style={styles.registerBtn}
+              disabled={registerBtnDisable}
+              onPress={haddleRegister}
+            >
+              <Text style={styles.registerBtnText}>Register</Text>
+            </TouchableHighlight>
+
+            {/* Already Registered */}
+            <View style={styles.alreadyContainer}>
+              <Text style={styles.alreadyContainerText}>
+                Already Registered?{" "}
+              </Text>
+              <Pressable
+                style={styles.alreadyContainerBtn}
+                onPress={haddleLoginBack}
+              >
+                <Text style={styles.alreadyContainerBtnText}>Login Now</Text>
+              </Pressable>
+            </View>
+
+            {/* LOADING */}
+            <Loading text="Please wait..." color="#4F46E5" visible={loading} />
+
+            {/* MODAL */}
+            <Modal
+              animationType="fade"
+              transparent
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalView}>
+                  {isSuccess ? (
+                    <Text style={styles.successText}>
+                      ✅ Successfully Registered!
+                    </Text>
+                  ) : (
+                    <Text style={styles.failText}>
+                      ⚠️ Registration Failed. Please try again.
+                    </Text>
+                  )}
+                  <Pressable
+                    style={[
+                      styles.buttonClose,
+                      { backgroundColor: isSuccess ? "#4CAF50" : "#f44336" },
+                    ]}
+                    onPress={() => {
+                      setModalVisible(false);
+                      if (isSuccess) router.push("/");
+                    }}
+                  >
+                    <Text style={styles.textStyle}>
+                      {isSuccess ? "Login now" : "Close"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
+          </ViewPanel>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </LinearbackGround>
   );
 };
@@ -263,26 +315,24 @@ const Register = () => {
 export default Register;
 
 const styles = StyleSheet.create({
-  safeAreaView: {
-    width: "100%",
-    height: "100%",
-  },
+  safeAreaView: { flex: 1 },
   viewContainer: {
     width: "95%",
     maxWidth: 1000,
-
     margin: "auto",
     padding: 15,
   },
-  registerText: {
-    fontSize: 30,
-    fontWeight: 600,
-    marginVertical: 10,
-  },
-  text: {
-    fontWeight: 500,
-    fontSize: 14,
-    marginBottom: 5,
+  registerText: { fontSize: 30, fontWeight: "600", marginVertical: 10 },
+  text: { fontWeight: "500", fontSize: 14, marginBottom: 5 },
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#000000ff",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "#fff",
+    marginBottom: 10,
   },
   inputWrapper: {
     width: "100%",
@@ -294,6 +344,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 10,
   },
+  textfield: {
+    flex: 1,
+    paddingVertical: 8,
+    fontSize: 16,
+    color: "#333",
+    paddingLeft: 5,
+  },
   textfieldInputPass: {
     flex: 1,
     paddingVertical: 10,
@@ -302,64 +359,31 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingLeft: 3,
   },
-  icon: {
-    marginLeft: 5,
-  },
-
-  container: {
-    flexDirection: "row", // puts icon and input side by side
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#000000ff",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-  },
-
-  textfield: {
-    flex: 1, // take the remaining space
-    paddingVertical: 8,
-    fontSize: 16,
-    color: "#333",
-    paddingLeft: 5,
-  },
-
-  acceptText: {},
+  icon: { marginLeft: 5 },
+  errorText: { color: "red", fontSize: 12, marginBottom: 8 },
   registerBtn: {
     height: 50,
     borderRadius: 10,
-    borderWidth: 1,
-    //borderColor: "black",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 30,
     backgroundColor: COLORS.Primary,
   },
-  registerBtnText: {
-    color: "white",
-    fontWeight: 500,
-    fontSize: 17,
-  },
+  registerBtnText: { color: "white", fontWeight: "500", fontSize: 17 },
   alreadyContainer: {
     marginVertical: 10,
     flexDirection: "row",
     backgroundColor: "white",
-    // borderWidth: 1,
     borderColor: COLORS.Primary,
     paddingVertical: 15,
     justifyContent: "center",
     borderRadius: 8,
   },
-  alreadyContainerText: {
-    fontWeight: "600",
+  alreadyContainerText: { fontWeight: "600" },
+  alreadyContainerBtn: {
+    paddingHorizontal: 4,
   },
-  alreadyContainerBtn: {},
-
-  alreadyContainerBtnText: {
-    color: COLORS.Primary,
-    fontWeight: "600",
-  },
+  alreadyContainerBtnText: { color: COLORS.Primary, fontWeight: "600" },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -377,12 +401,22 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  buttonClose: {
-    marginTop: 15,
-    backgroundColor: COLORS.Primary,
-    borderRadius: 10,
-    padding: 10,
+  successText: {
+    color: "green",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
   },
-  textStyle: { color: "white", fontWeight: "bold" },
-  modalText: { fontSize: 18, textAlign: "center" },
+  failText: {
+    color: "red",
+    fontSize: 18,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  buttonClose: {
+    marginTop: 20,
+    padding: 10,
+    borderRadius: 8,
+  },
+  textStyle: { color: "white", fontWeight: "bold", textAlign: "center" },
 });

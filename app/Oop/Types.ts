@@ -33,6 +33,7 @@ export interface EvaluationQuestion {
   questionText: string;
 }
 export interface EventEvaluationDetail {
+  studentId: string;
   studentName: string;
   studentAverageRate: number;
   studentSuggestion: string;
@@ -44,27 +45,38 @@ export interface StudentEvaluationInfo {
   studentRate: number;
 }
 
-export interface Event {
+export interface Event{
   id: string;
+
+  // Basic Info
   eventTitle: string;
   eventShortDescription: string;
   eventBody: string;
-  allStudentAttending: number;
+
+  // Schedule
   eventDate: string;
   eventTime: string | null;
+  eventTimeLength: string | null;
   eventLocation: string;
   eventCategory: string | null;
-  eventTimeLength: string | null;
+
+  // Attendance & Evaluation
+  allStudentAttending: number;
+  attendanceRate: number | null;
+  evaluationAvg: number | null;
+
+  // Event Data
   eventAgendas: EventAgenda[] | null;
   eventStats: EventStats | null;
   eventOrganizer: EventOrganizer | null;
-  eventEvaluationDetails: EventEvaluationDetail[] | null;
   evaluationQuestions: EvaluationQuestion[] | null;
+  eventEvaluationDetails: EventEvaluationDetail[] | null;
   eventPerformanceDetails: EventPerformanceDetail[] | null;
-  eventAttendance: EventAttendance[] | null;
+  eventAttendances: EventAttendance[] | null;
   eventStudentEvaluations: EventStudentEvaluation[] | null;
   eventAveragePerformance: number;
 }
+
 // Student.ts
 export interface StudentNotification {
   eventId: string;
@@ -81,17 +93,25 @@ export interface StudentUpcomingEvents {
 }
 
 export interface StudentEventAttended {
+  eventId: string;
   id: string;
   eventName: string;
-  attendedDate: string; // ISO date string
+  attendedDate: string;
+  evaluated: boolean;
 }
 
 export interface StudentRecentEvaluation {
-  id: string;
-  evaluatorName: string;
-  rating: number;
-  comments?: string;
-  evaluatedDate: string; // ISO date string
+  eventId: string;
+  eventTitle: string;
+  studentRatingsGive: number;
+  studentDateRated: string;
+}
+export interface StudentEventAttendedAndEvaluationDetails {
+  eventId: string;
+  eventTitle: string;
+  eventDateAndTime: string;
+  attended: boolean;
+  evaluated: boolean;
 }
 
 export interface Student {
@@ -112,4 +132,5 @@ export interface Student {
   studentNotifications: StudentNotification[];
   studentEventAttended: StudentEventAttended[];
   studentRecentEvaluations: StudentRecentEvaluation[];
+  studentEventAttendedAndEvaluationDetails: StudentEventAttendedAndEvaluationDetails[];
 }

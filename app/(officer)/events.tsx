@@ -1,121 +1,118 @@
-import { addEvent, EventPayload } from "@/api/AddEventOfficer";
-import React, { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-
-import ErrorModal from "@/components/ErrorModal";
+import { getAllStudents, sendExpoNotification } from "@/api/StudentService";
+import FloatingButton from "@/components/FloatingButton";
+import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
-import Loading from "@/components/Loading";
-import Mymodal from "@/components/Mymodal";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
+import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  ImageBackground,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableHighlight,
+  View,
+} from "react-native";
+import QRCode from "react-native-qrcode-svg";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Event } from "../Oop/Types";
 
-const Event = () => {
-  // userContext
-  const { studentToken } = useUser();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [successModalVisible, setSuccessModalVisible] =
-    useState<boolean>(false);
-  const [errorModel, setErrorModal] = useState<boolean>(false);
+interface QrGeneratorProps {
+  eventId: string;
+  eventTitle: string;
+  studentDateAttended: string;
+}
 
-  // Event fields
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventShortDescription, setEventShortDescription] = useState("");
-  const [eventBody, setEventBody] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [eventTime, setEventTime] = useState("");
-  const [eventLocation, setEventLocation] = useState("");
-  const [eventCategory, setEventCategory] = useState("");
-  const [eventTimeLength, setEventTimeLength] = useState("");
+const Events = () => {
+  const { eventData, studentData, studentToken } = useUser();
+  const router = useRouter();
 
-  // Organizer
-  const [organizerName, setOrganizerName] = useState("");
-  const [organizerEmail, setOrganizerEmail] = useState("");
+  const [suggestionTitleState, setSuggestedTitleState] = useState([]);
+  const [allTokens, setAllTokens] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [eventState, setEventState] = useState<Event[]>(eventData);
+  const [modalIsVisible, setModalIsVisible] = useState<boolean>(false);
+  const [eventDataQR, setEventDataQR] = useState<QrGeneratorProps>();
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [selectedTitle, setSelectedTitle] = useState("All");
 
-  // Agendas
-  const [eventAgendas, setEventAgendas] = useState<
-    { agendaTime: string; agendaTitle: string; agendaHost: string }[]
-  >([]);
+  const navigationTitle = ["All", "Technology", "Academic", "Health", "Others"];
+  const dateString = new Date(Date.now()).toString();
 
-  // Evaluation questions
-  const [evaluationQuestions, setEvaluationQuestions] = useState<
-    { questionId: string; questionText: string }[]
-  >([]);
-
-  // Add agenda
-  const addAgenda = () => {
-    setEventAgendas([
-      ...eventAgendas,
-      { agendaTime: "", agendaTitle: "", agendaHost: "" },
-    ]);
+  const handleViewDetails = (id: string) => {
+    router.push(`../officerEventDetails/${id}`);
   };
 
-  // Update agenda
-  const updateAgenda = (index: number, field: string, value: string) => {
-    const updated = [...eventAgendas];
-    updated[index] = { ...updated[index], [field]: value };
-    setEventAgendas(updated);
+  const handleQrGenerator = (
+    eventId: string,
+    eventTitle: string,
+    studentDateAttended: string
+  ) => {
+    const data: QrGeneratorProps = { eventId, eventTitle, studentDateAttended };
+    setEventDataQR(data);
   };
 
-  // Add evaluation question
-  const addQuestion = () => {
-    setEvaluationQuestions([
-      ...evaluationQuestions,
-      {
-        questionId: (evaluationQuestions.length + 1).toString(),
-        questionText: "",
-      },
-    ]);
-  };
+  // Fetch all students for Expo tokens
+  useEffect(() => {
+    if (eventData?.length) {
+      const eventIdAndTitles = eventData.map(
+        (event: { id: any; eventTitle: any }) => ({
+          eventId: event.id,
+          eventTitle: event.eventTitle,
+        })
+      );
+      setSuggestedTitleState(eventIdAndTitles);
+    }
 
-  // Update question
-  const updateQuestion = (index: number, value: string) => {
-    const updated = [...evaluationQuestions];
-    updated[index].questionText = value;
-    setEvaluationQuestions(updated);
-  };
+    const getStudents = async () => {
+      try {
+        const students = await getAllStudents(studentToken);
+        const tokens = students
+          .map((s: { tokenId?: string }) => s.tokenId)
+          .filter(Boolean);
+        setAllTokens(tokens);
+      } catch (error) {
+        console.error("❌ Failed to fetch students:", error);
+      }
+    };
+    getStudents();
+  }, []);
 
-  const submitEvent = async () => {
-    setLoading(true);
+  // Filter events by category
+  useEffect(() => {
+    if (selectedTitle === "All") {
+      setEventState(eventData);
+    } else {
+      const filtered = eventData.filter(
+        (e: { eventCategory: string }) => e.eventCategory === selectedTitle
+      );
+      setEventState(filtered);
+    }
+  }, [selectedTitle, eventData]);
+
+  // Send Announcement
+  const handleSendAnnouncement = async (title: string, message: string) => {
+    if (!title.trim() || !message.trim()) {
+      Alert.alert("Missing fields", "Please fill out both title and message!");
+      return;
+    }
+
     try {
-      const payload: EventPayload = {
-        eventTitle,
-        eventShortDescription,
-        eventBody,
-        eventDate,
-        eventTime,
-        eventLocation,
-        eventCategory,
-        eventTimeLength,
-        allStudentAttending: 0,
-        eventAgendas,
-        eventStats: { attending: 0, interested: 0 },
-        eventOrganizer: {
-          organizerName,
-          organizerEmail,
-        },
-        evaluationQuestions,
-        eventEvaluationDetails: [],
-        eventPerformanceDetails: [],
-        eventStudentEvaluations: [],
-        eventAveragePerformance: 0.0,
-      };
-
-      const result = await addEvent(studentToken, payload);
-      setSuccessModalVisible(true);
-
-      console.log("Server response:", result);
-    } catch (error) {
-      setErrorModal(true);
-      console.error("❌ Error while adding event:", error);
+      setLoading(true);
+      await sendExpoNotification({ tokens: allTokens, title, message });
+      Alert.alert("✅ Success", "Announcement sent successfully!");
+    } catch (error: any) {
+      console.error(
+        "❌ Error sending announcement:",
+        error.response?.data || error.message
+      );
+      Alert.alert("Error", "Failed to send announcement!");
     } finally {
       setLoading(false);
     }
@@ -123,207 +120,272 @@ const Event = () => {
 
   return (
     <LinearbackGround>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.header}>Add Event</Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* HEADER */}
+        <HeaderOfficer
+          officerName={studentData.studentName}
+          eventSuggestionData={suggestionTitleState}
+          handleSendAnnouncement={handleSendAnnouncement}
+        />
 
-          {/* Event Info */}
-          <TextInput
-            style={styles.input}
-            placeholder="Event Title"
-            value={eventTitle}
-            onChangeText={setEventTitle}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Short Description"
-            value={eventShortDescription}
-            onChangeText={setEventShortDescription}
-          />
-          <TextInput
-            style={[styles.input, { height: 100 }]}
-            placeholder="Event Body"
-            value={eventBody}
-            onChangeText={setEventBody}
-            multiline
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Event Date (YYYY-MM-DD)"
-            value={eventDate}
-            onChangeText={setEventDate}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Event Time (e.g., 08:00 AM)"
-            value={eventTime}
-            onChangeText={setEventTime}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Location"
-            value={eventLocation}
-            onChangeText={setEventLocation}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Category"
-            value={eventCategory}
-            onChangeText={setEventCategory}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Event Time Length"
-            value={eventTimeLength}
-            onChangeText={setEventTimeLength}
-          />
+        {/* CATEGORY NAVIGATION */}
+        <View style={styles.categoryNav}>
+          {navigationTitle.map((title, index) => {
+            const isActive = selectedIndex === index;
+            return (
+              <TouchableHighlight
+                key={index}
+                style={[styles.categoryButton, isActive && styles.activeButton]}
+                underlayColor="#ddd"
+                onPress={() => {
+                  setSelectedIndex(index);
+                  setSelectedTitle(title);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.categoryButtonText,
+                    isActive && { color: COLORS.textColorWhite },
+                  ]}
+                >
+                  {title}
+                </Text>
+              </TouchableHighlight>
+            );
+          })}
+        </View>
 
-          {/* Organizer */}
-          <Text style={styles.subHeader}>Organizer</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Organizer Name"
-            value={organizerName}
-            onChangeText={setOrganizerName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Organizer Email"
-            value={organizerEmail}
-            onChangeText={setOrganizerEmail}
-          />
+        {/* EVENTS LIST */}
+        <View style={{ flex: 1 }}>
+          {eventState.length ? (
+            <FlatList
+              data={eventState}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }: { item: Event }) => (
+                <TouchableHighlight
+                  onPress={() => handleViewDetails(item.id)}
+                  underlayColor="transparent"
+                >
+                  <View style={styles.eventFlatListContainer}>
+                    <ImageBackground
+                      source={require("@/assets/images/auditorium.jpg")}
+                      style={styles.imageBgFlatlist}
+                      imageStyle={{ resizeMode: "cover" }}
+                    >
+                      {/* QR Button */}
+                      <Pressable
+                        style={styles.qrGeneratorbtn}
+                        onPress={() => {
+                          setModalIsVisible(true);
+                          handleQrGenerator(
+                            item.id,
+                            item.eventTitle,
+                            dateString
+                          );
+                        }}
+                      >
+                        <MaterialIcons
+                          name="qr-code-2"
+                          size={24}
+                          color="black"
+                        />
+                      </Pressable>
 
-          {/* Agendas */}
-          <Text style={styles.subHeader}>Agendas</Text>
-          {eventAgendas.map((agenda, index) => (
-            <View key={index} style={styles.card}>
-              <TextInput
-                style={styles.input}
-                placeholder="Agenda Time"
-                value={agenda.agendaTime}
-                onChangeText={(text) => updateAgenda(index, "agendaTime", text)}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Agenda Title"
-                value={agenda.agendaTitle}
-                onChangeText={(text) =>
-                  updateAgenda(index, "agendaTitle", text)
-                }
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Agenda Host"
-                value={agenda.agendaHost}
-                onChangeText={(text) => updateAgenda(index, "agendaHost", text)}
-              />
-            </View>
-          ))}
-          <TouchableOpacity style={styles.addBtn} onPress={addAgenda}>
-            <Text style={styles.addBtnText}>+ Add Agenda</Text>
-          </TouchableOpacity>
+                      {/* Event Title */}
+                      <View style={{ marginTop: "auto", paddingLeft: 10 }}>
+                        <Text style={styles.eventTitleFlatlist}>
+                          {item.eventTitle}
+                        </Text>
+                      </View>
 
-          {/* Evaluation Questions */}
-          <Text style={styles.subHeader}>Evaluation Questions</Text>
-          {evaluationQuestions.map((q, index) => (
-            <TextInput
-              key={index}
-              style={styles.input}
-              placeholder={`Question ${index + 1}`}
-              value={q.questionText}
-              onChangeText={(text) => updateQuestion(index, text)}
+                      {/* Info */}
+                      <View style={styles.eventInfoRow}>
+                        <AntDesign
+                          name="calendar"
+                          size={17}
+                          color={COLORS.textColorWhite}
+                        />
+                        <Text style={styles.eventTitleTextFlatlist}>
+                          {item.eventDate}
+                        </Text>
+                        <AntDesign
+                          name="clockcircleo"
+                          size={17}
+                          color={COLORS.textColorWhite}
+                        />
+                        <Text style={styles.eventTitleTextFlatlist}>
+                          {item.eventTime}
+                        </Text>
+                        <Entypo
+                          name="location"
+                          size={17}
+                          color={COLORS.textColorWhite}
+                        />
+                        <Text style={styles.eventTitleTextFlatlist}>
+                          {item.eventLocation}
+                        </Text>
+                      </View>
+                    </ImageBackground>
+                  </View>
+                </TouchableHighlight>
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={{ color: "white" }}>No events available!</Text>
+                </View>
+              }
             />
-          ))}
-          <TouchableOpacity style={styles.addBtn} onPress={addQuestion}>
-            <Text style={styles.addBtnText}>+ Add Question</Text>
-          </TouchableOpacity>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={{ color: "white" }}>No events available!</Text>
+            </View>
+          )}
+        </View>
 
-          {/* Submit */}
-          <TouchableOpacity style={styles.submitBtn} onPress={submitEvent}>
-            <Text style={styles.submitText}>Submit Event</Text>
-          </TouchableOpacity>
+        {/* QR MODAL */}
+        <Modal
+          visible={modalIsVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setModalIsVisible(false)}
+        >
+          <View style={styles.modalBackground}>
+            <View style={styles.modalContainer}>
+              <Text
+                style={{ marginBottom: 20, fontSize: 18, fontWeight: "bold" }}
+              >
+                Event QR Code
+              </Text>
+              <QRCode
+                value={JSON.stringify(eventDataQR)}
+                size={200}
+                backgroundColor="white"
+                color="black"
+              />
+              <Pressable
+                style={styles.closeButton}
+                onPress={() => setModalIsVisible(false)}
+              >
+                <Text>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
-          {/* modal */}
+        {/* LOADING OVERLAY */}
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={COLORS.textColorWhite} />
+          </View>
+        )}
 
-          <Mymodal
-            visible={successModalVisible}
-            onClose={() => setSuccessModalVisible(false)}
-            message="Event created successfully!"
-            redirectPath="/(officer)/home"
-            buttonLabel="Home" // ✅ custom button text
-          />
-          <ErrorModal
-            visible={errorModel}
-            onClose={() => setErrorModal(false)}
-          />
-        </ScrollView>
-        <Loading text="Please wait..." color="#4F46E5" visible={loading} />
-      </KeyboardAvoidingView>
+        {/* FLOATING BUTTON */}
+        <FloatingButton
+          iconName="plus"
+          onPress={() => router.push("../officerAddEvent/addEvent")}
+        />
+      </SafeAreaView>
     </LinearbackGround>
   );
 };
 
-export default Event;
+export default Events;
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    padding: 20,
-    paddingBottom: 50,
-    // backgroundColor: "#fff",
+  categoryNav: {
+    backgroundColor: COLORS.Forth,
+    marginHorizontal: 10,
+    marginVertical: 5,
+    borderRadius: 10,
+    paddingHorizontal: 2,
+    paddingVertical: 5,
+    flexDirection: "row",
+
+    gap: 5,
+    overflow: "hidden",
+    zIndex: -1,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
+  categoryButton: {
+    backgroundColor: COLORS.Forth,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
-  subHeader: {
+  categoryButtonText: {
+    fontWeight: "500",
+    color: "#000",
+  },
+  activeButton: {
+    backgroundColor: COLORS.Secondary,
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 99,
+  },
+  eventFlatListContainer: {
+    margin: 10,
+    borderRadius: 12,
+    overflow: "hidden",
+    minHeight: 150,
+  },
+  imageBgFlatlist: {
+    flex: 1,
+    justifyContent: "flex-end",
+    padding: 10,
+  },
+  eventTitleFlatlist: {
     fontSize: 18,
-    fontWeight: "600",
-    marginTop: 20,
-    marginBottom: 10,
+    fontWeight: "700",
+    color: COLORS.textColorWhite,
+    marginBottom: 5,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-
-    marginBottom: 10,
+  eventTitleTextFlatlist: {
+    fontSize: 14,
+    color: COLORS.textColorWhite,
+    marginRight: 8,
   },
-  card: {
-    // backgroundColor: "#f9f9f9",
-    backgroundColor: "#fff",
-
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  addBtn: {
-    backgroundColor: "#fff",
-
-    padding: 10,
+  eventInfoRow: {
+    flexDirection: "row",
     alignItems: "center",
-    borderRadius: 8,
-    marginBottom: 15,
+    gap: 5,
+    paddingLeft: 5,
+    marginBottom: 5,
   },
-  addBtnText: {
-    color: "#333",
-    fontWeight: "600",
+  qrGeneratorbtn: {
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 20,
+    padding: 5,
+    marginLeft: "auto",
   },
-  submitBtn: {
-    backgroundColor: COLORS.Primary,
-    padding: 15,
-    borderRadius: 8,
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
   },
-  submitText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    minWidth: 250,
+    alignItems: "center",
+  },
+  closeButton: {
+    backgroundColor: "#e74c3c",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  emptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
   },
 });

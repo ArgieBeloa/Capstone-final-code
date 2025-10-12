@@ -1,24 +1,32 @@
-import { StudentAttended } from "@/api/ApiType";
 import { studentDataFunction } from "@/api/spring";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
+import { Entypo } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableHighlight,
-  View,
-} from "react-native";
+import React, { useCallback, useState } from "react";
+import { StyleSheet, Text, TouchableHighlight, View } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+interface Attendance {
+  eventId: string;
+
+  eventTitle: string;
+
+  studentDateAttended: string;
+  evaluated: boolean;
+}
+
 const Rates = () => {
   // student attended data
-  const { studentData, setStudentData, studentToken, studentNumber} = useUser();
+  const { studentData, setStudentData, studentToken, studentNumber } =
+    useUser();
 
-
-  const studentDataAttended = studentData.studentEventAttended;
+  const [studentAttendentState, setStudentAttendedState] = useState<
+    Attendance[]
+  >(studentData.studentEventAttended);
 
   const router = useRouter();
 
@@ -27,40 +35,71 @@ const Rates = () => {
       pathname: `../Evaluation/${id}`,
     });
   };
-
-  useEffect(()=>{
-
-    const getStudentData = async () => {
-       
-      const student = await studentDataFunction( studentNumber, studentToken)
-      setStudentData(student)
-    }
-
-    getStudentData()
-
-  },[])
+  useFocusEffect(
+    useCallback(() => {
+      const getStudentData = async () => {
+        const student = await studentDataFunction(studentNumber, studentToken);
+        setStudentData(student);
+        setStudentAttendedState(student.studentEventAttended);
+      };
+      getStudentData();
+    }, [studentNumber, studentToken])
+  );
 
   return (
     <LinearbackGround>
-      <SafeAreaView style ={{flex: 1}}>
+      <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.containerEventHeader}>
           <Text style={styles.containerEventHeaderText}>Event Attended</Text>
         </View>
         <View style={{ flex: 1 }}>
-          {studentDataAttended.length !== 0 ? (
+          {studentAttendentState.length !== 0 ? (
             <>
               <Animated.FlatList
-                data={studentDataAttended}
+                data={studentAttendentState}
                 keyExtractor={(item) => item.eventId}
-                renderItem={({ item }: { item: StudentAttended }) => {
+                contentContainerStyle={{ marginHorizontal: 10 }}
+                renderItem={({ item }) => {
                   return (
                     <TouchableHighlight
                       onPress={() => haddleEvaluationPage(item.eventId)}
                     >
-                      <View style={styles.flatlistContainer}>
-                        <Text>{item.eventTitle}</Text>
-                        <Text>{item.studentDateAttended}</Text>
-                      </View>
+                      <Animated.View
+                        entering={FadeInUp.duration(500)}
+                        style={styles.eventCard}
+                      >
+                        <View>
+                          <Text style={styles.eventText}>
+                            {item.eventTitle}
+                          </Text>
+                          <Text style={styles.eventText}>
+                            {item.studentDateAttended}
+                          </Text>
+                          {/* <Text style={styles.eventText}>{item.eventTime}</Text> */}
+                        </View>
+                        <View
+                          style={{
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          {item.evaluated ? (
+                            <View style={{ alignItems: "center" }}>
+                              <Entypo name="check" size={22} color="green" />
+                              <Text style={{ fontSize: 10, fontWeight: "500" }}>
+                                Evaluated
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={{ alignItems: "center" }}>
+                              <Entypo name="warning" size={22} color="red" />
+                              <Text style={{ fontSize: 10, fontWeight: "500" }}>
+                                Required
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </Animated.View>
                     </TouchableHighlight>
                   );
                 }}
@@ -74,22 +113,25 @@ const Rates = () => {
                 flex: 1,
               }}
             >
-              <Text>No Event Attended </Text>
-              <Text>
-                Please Go To{" "}
+              <Text>No events Attended available!</Text>
+              <View style={{ flexDirection: "row", marginTop: 5 }}>
+                <Text>Please go to </Text>
                 <TouchableHighlight
                   onPress={() => router.push("/(tabs)/qrscanner")}
+                  underlayColor="transparent"
                 >
                   <Text
                     style={{
                       textDecorationLine: "underline",
                       color: COLORS.Primary,
+                      fontWeight: "500",
                     }}
                   >
-                    QR Scanner
+                    QR tab
                   </Text>
                 </TouchableHighlight>
-              </Text>
+                <Text> to Scan.</Text>
+              </View>
             </View>
           )}
         </View>
@@ -118,4 +160,14 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: COLORS.Forth,
   },
+  infoText: { fontWeight: "500", marginBottom: 2 },
+  eventCard: {
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 7,
+    marginVertical: 5,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  eventText: { fontWeight: "500", fontSize: 13 },
 });

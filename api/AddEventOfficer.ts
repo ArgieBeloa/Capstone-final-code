@@ -1,6 +1,7 @@
 // src/api/eventApi.ts
 import axios from "axios";
 
+import { EventAgenda, EventAttendance, EventEvaluationDetail, EventOrganizer, EventPerformanceDetail, EventStats, EventStudentEvaluation } from "@/app/Oop/Types";
 import { BASE_URL } from "./spring";
 export interface Agenda {
   agendaTime: string;
@@ -14,38 +15,52 @@ export interface EvaluationQuestion {
 }
 
 export interface EventPayload {
+  id?: string;
+
+  // Basic Info
   eventTitle: string;
   eventShortDescription: string;
   eventBody: string;
+
+  // Schedule
   eventDate: string;
-  eventTime: string;
+  eventTime: string | null;
+  eventTimeLength: string | null;
   eventLocation: string;
-  eventCategory: string;
-  eventTimeLength: string;
+  eventCategory: string | null;
+
+  // Attendance & Evaluation
   allStudentAttending: number;
-  eventAgendas: Agenda[];
-  eventStats: {
-    attending: number;
-    interested: number;
-  };
-  eventOrganizer: {
-    organizerName: string;
-    organizerEmail: string;
-  };
-  evaluationQuestions: EvaluationQuestion[];
-  eventEvaluationDetails: any[];
-  eventPerformanceDetails: any[];
-  eventStudentEvaluations: any[];
+  attendanceRate: number | null;
+  evaluationAvg: number | null;
+
+  // Event Data
+  eventAgendas: EventAgenda[] | null;
+  eventStats: EventStats | null;
+  eventOrganizer: EventOrganizer | null;
+  evaluationQuestions: EvaluationQuestion[] | null;
+  eventEvaluationDetails: EventEvaluationDetail[] | null;
+  eventPerformanceDetails: EventPerformanceDetail[] | null;
+  eventAttendances: EventAttendance[] | null;
+  eventStudentEvaluations: EventStudentEvaluation[] | null;
   eventAveragePerformance: number;
 }
 
-export const addEvent = async (tokenPass: string, eventData: EventPayload) => {
-  const token = tokenPass.trim()
-  const response = await axios.post(`${BASE_URL}/events/add`, eventData,{
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  )
- return response.data
+
+export const addEvent = async (token: string, eventData: EventPayload) => {
+  const response = await axios.post(`${BASE_URL}/events/add`, eventData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  // if (response.status === 401) {
+  //   const text = response.toString();
+  //   if (text.includes("Token expired")) {
+  //     // ✅ Handle expiration
+  //     alert("Session expired, please log in again");
+  //   }
+  // }
+
+  return response.data;
 };
