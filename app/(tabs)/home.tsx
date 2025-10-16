@@ -70,6 +70,7 @@ const Home = () => {
         if (!studentNumber || !studentToken) return;
 
         const data = await studentDataFunction(studentNumber, studentToken);
+        // console.log(data)
         setStudentUpcomingEvents(data.studentUpcomingEvents);
         setHasEventRegister(true);
         setStudentData(data);
@@ -80,6 +81,7 @@ const Home = () => {
     };
 
     getStudentData();
+     
 
    
   }, []);

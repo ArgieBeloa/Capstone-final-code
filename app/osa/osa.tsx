@@ -1,14 +1,23 @@
-// 483729
+import { registerStudent } from "@/api/spring";
+import {
+  getAllStudents,
+  getStudentById,
+  sendExpoNotification,
+} from "@/api/StudentService";
 import LinearbackGround from "@/components/LinearBackGround";
+import Loading from "@/components/Loading";
+import Mymodal from "@/components/Mymodal";
+import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
-  Button,
   FlatList,
   Modal,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -16,19 +25,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { registerStudent } from "@/api/spring";
-
-// 👇 Replace with your actual data fetch functions
-import { getAllStudents, getStudentById } from "@/api/StudentService";
-import Loading from "@/components/Loading";
-import Mymodal from "@/components/Mymodal";
-import { COLORS } from "@/constants/ColorCpc";
 import { Student } from "../Oop/Types";
 
 interface StudentSuggestionData {
   id: string;
   studentName: string;
+  studentNumber: string;
 }
 
 const OsaScreen: React.FC = () => {
@@ -39,85 +41,51 @@ const OsaScreen: React.FC = () => {
   const [studentSuggestionData, setStudentSuggestionData] = useState<
     StudentSuggestionData[]
   >([]);
-
   const [searchText, setSearchText] = useState("");
   const [searchStudentId, setSearchStudentId] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<
     StudentSuggestionData[]
   >([]);
   const [showResults, setShowResults] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false);
 
   const [searchStudentData, setSearchStudentData] = useState<Student>();
-  const [currentOfficer, setCurrentOfficer] = useState<Student[]>();
-  const [studentNumber, setStudentNumber] = useState();
+  const [currentOfficer, setCurrentOfficer] = useState<Student[]>([]);
+  const [studentNumber, setStudentNumber] = useState("");
 
-  // 📢 Announcement modal states
-  const [allTokens, setAllTokens] = useState();
+  const [allTokens, setAllTokens] = useState<string[]>([]);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
 
-  //   press function then modal promote then copy array the modify the expo token the category to officer
-
-  //   loading announcement
   const [loading, setLoading] = useState(false);
-
-  // loading search student
+  const [loadingSendNotification, setLoadingSendNotification] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [promotionStatus, setPromotionStatus] = useState(false);
-
-  //   modal showPromoteArea
   const [showPromoteArea, setShowPromoteArea] = useState(false);
   const [isPromoted, setIsPromoted] = useState(false);
-
-  const handlePromote = async () => {
-    setShowPromoteArea(false);
-    setPromotionStatus(true);
-
-    // copy array then change category to officer and expo token to ""
-    try {
-      // Example: copy and modify fields
-
-      if (searchStudentData) {
-        const updatedStudent: Student = {
-          ...searchStudentData,
-          category: "officer",
-          studentPassword: "officer" + studentNumber,
-        };
-
-        setSearchStudentData(updatedStudent);
-
-        // 2️⃣ then call your register API
-        await registerStudent(updatedStudent);
-
-        setIsPromoted(true);
-      }
-
-      setPromotionStatus(false);
-    } catch (error) {
-    } finally {
-      setPromotionStatus(false);
-    }
-  };
 
   // 🧠 Load all students on mount
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const students = await getAllStudents(studentToken);
-        setStudentSuggestionData(students);
 
         const onlyOfficers = students.filter(
           (item: Student) => item.category?.toLowerCase() === "officer"
         );
-        setCurrentOfficer(onlyOfficers)
+        setCurrentOfficer(onlyOfficers);
+
+        const studentNameAndId = students.map((s: Student) => ({
+          id: s.id,
+          studentName: s.studentName,
+          studentNumber: s.studentNumber,
+        }));
+        setStudentSuggestionData(studentNameAndId);
 
         const tokens = students
-          .map((s: { tokenId?: string }) => s.tokenId)
-          .filter(Boolean);
+          .map((s: Student) => s.tokenId)
+          .filter((t: any): t is string => !!t);
         setAllTokens(tokens);
-        // console.log(tokens);
       } catch (error) {
         console.error("Error fetching students:", error);
       }
@@ -126,49 +94,103 @@ const OsaScreen: React.FC = () => {
     fetchStudents();
   }, []);
 
-  // 🔍 Filter students
+  // 🔍 Filter students when typing
   useEffect(() => {
-    if (isSelecting) {
-      setIsSelecting(false);
+    if (searchText.trim() === "") {
+      setShowResults(false);
       return;
     }
 
-    if (searchText.trim() === "") {
-      setFilteredStudents(studentSuggestionData);
-      setShowResults(false);
-    } else {
-      const lower = searchText.toLowerCase();
-      const filtered = studentSuggestionData.filter((item) =>
-        item.studentName.toLowerCase().includes(lower)
-      );
-      setFilteredStudents(filtered);
-      setShowResults(true);
-    }
+    const lower = searchText.toLowerCase();
+    const filtered = studentSuggestionData.filter((item) =>
+      item.studentName.toLowerCase().includes(lower)
+    );
+    setFilteredStudents(filtered);
+    setShowResults(true);
   }, [searchText, studentSuggestionData]);
 
-  const handleSearch = async () => {
-    setSearchLoading(true);
+  // ✅ Select student
+const handleSelectStudent = (item: StudentSuggestionData) => {
+  setSearchStudentId(item.id);
+  setSearchText(item.studentName);
+  setStudentNumber(item.studentNumber);
 
+  // 🧠 Delay closing dropdown slightly so touch event completes first
+  setTimeout(() => {
+    setShowResults(false);
+  }, 20);
+};
+
+  // ✅ Search student manually
+  const handleSearchIcon = async () => {
+    if (!studentNumber) {
+      Alert.alert("⚠️", "Please select a student first before searching.");
+      return;
+    }
+
+    setSearchLoading(true);
     try {
       const student = await getStudentById(studentToken, searchStudentId);
-
       setSearchStudentData(student);
-      setStudentNumber(student.studentNumber);
-      setSearchLoading(false);
+      console.log("Searched student:", student);
     } catch (error) {
-      setSearchLoading(false);
+      console.error("Error fetching student:", error);
+      Alert.alert("❌ Error", "Unable to fetch student details.");
     } finally {
       setSearchLoading(false);
     }
   };
 
-  const handleSelectStudent = (item: StudentSuggestionData) => {
-    setIsSelecting(true);
-    setSearchStudentId(item.id);
-    setSearchText(item.studentName);
-    setShowResults(false);
+  // 🔼 Promote selected student
+  const handlePromote = async () => {
+    setShowPromoteArea(false);
+    setPromotionStatus(true);
+
+    try {
+      if (searchStudentData) {
+        const updatedStudent: Student = {
+          ...searchStudentData,
+          category: "officer",
+          studentPassword: "officer" + studentNumber,
+        };
+        await registerStudent(updatedStudent);
+        setIsPromoted(true);
+      }
+    } catch (error) {
+      console.error("Error promoting student:", error);
+    } finally {
+      setPromotionStatus(false);
+    }
   };
 
+  // 📢 Send announcement to all
+  const handleSendAnnouncement = async (title: string, message: string) => {
+    if (!title.trim() || !message.trim()) {
+      Alert.alert("Missing fields", "Please fill out both title and message!");
+      return;
+    }
+
+    try {
+      setLoadingSendNotification(true);
+      await sendExpoNotification({
+        tokens: allTokens ?? [],
+        title,
+        message,
+      });
+
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+
+      Alert.alert("✅ Success", "Announcement sent successfully!");
+    } catch (error: any) {
+      console.error("❌ Error sending announcement:", error);
+      Alert.alert("Error", "Failed to send announcement!");
+    } finally {
+      setLoadingSendNotification(false);
+    }
+  };
+
+  // ✨ Highlight match text in dropdown
   const renderHighlightedText = (name: string) => {
     if (!searchText) return <Text style={styles.resultText}>{name}</Text>;
 
@@ -192,21 +214,11 @@ const OsaScreen: React.FC = () => {
     );
   };
 
-  //   handle all announcement
-  function onSendAnnouncementPress(): void {}
-
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
-        <View
-          style={{
-            backgroundColor: COLORS.Forth,
-            width: "95%",
-            marginHorizontal: "auto",
-            marginVertical: 10,
-            borderRadius: 10,
-          }}
-        >
+        <View style={styles.mainContainer}>
+          {/* Header */}
           <View style={styles.headerContainer}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{firstLetterName}</Text>
@@ -219,17 +231,14 @@ const OsaScreen: React.FC = () => {
                 placeholder="Search student..."
                 placeholderTextColor="#777"
                 value={searchText}
-                onChangeText={(text) => {
-                  setSearchText(text);
-                  setShowResults(text.trim() !== "");
-                }}
+                onChangeText={(text) => setSearchText(text)}
               />
-              <TouchableOpacity onPress={handleSearch}>
+              <TouchableOpacity onPress={handleSearchIcon}>
                 <Ionicons name="search" size={20} color="#555" />
               </TouchableOpacity>
             </View>
 
-            {/* 📣 Announcement Button */}
+            {/* Announcement Button */}
             <TouchableOpacity
               style={{ marginHorizontal: 10 }}
               onPress={() => setShowAnnouncementModal(true)}
@@ -238,78 +247,51 @@ const OsaScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* 🔍 Dropdown Search Results */}
+          {/* Search Results Dropdown */}
           {showResults && filteredStudents.length > 0 && (
-            <View style={styles.resultsContainer}>
-              <FlatList
-                data={filteredStudents}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.resultItem}
-                    onPress={() => handleSelectStudent(item)}
-                  >
-                    {renderHighlightedText(item.studentName)}
-                  </TouchableOpacity>
-                )}
+            <View style={StyleSheet.absoluteFillObject}>
+              {/* Transparent overlay to close suggestions */}
+              <Pressable
+                style={styles.overlay}
+                onPress={() => setShowResults(false)}
               />
+
+              {/* Suggestions dropdown */}
+              <View style={styles.resultsContainer}>
+                <FlatList
+                  keyboardShouldPersistTaps="handled"
+                  data={filteredStudents}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.resultItem}
+                      onPress={() => handleSelectStudent(item)}
+                    >
+                      {renderHighlightedText(item.studentName)}
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
             </View>
           )}
 
-          {/* Student Search Container */}
-          <View
-            style={{
-              margin: 10,
-              backgroundColor: COLORS.Third,
-              borderRadius: 10,
-              padding: 8,
-            }}
-          >
+          {/* Selected Student Card */}
+          <View style={styles.selectedStudentContainer}>
             {searchStudentData && (
               <TouchableOpacity
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: COLORS.textColorWhite,
-                  borderRadius: 10,
-                  padding: 10,
-                  elevation: 2,
-                }}
-                onPress={() => {
-                  setShowPromoteArea(true);
-                }}
+                style={styles.selectedStudentCard}
+                onPress={() => setShowPromoteArea(true)}
               >
-                {/* Avatar */}
-                <View
-                  style={{
-                    width: 45,
-                    height: 45,
-                    borderRadius: 25,
-                    backgroundColor: COLORS.Primary,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginRight: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "#fff",
-                      fontSize: 20,
-                      fontWeight: "bold",
-                    }}
-                  >
+                <View style={styles.studentAvatar}>
+                  <Text style={styles.studentAvatarText}>
                     {searchStudentData.studentName?.charAt(0).toUpperCase()}
                   </Text>
                 </View>
-
-                {/* Student Info */}
                 <View style={{ flex: 1 }}>
-                  <Text
-                    style={{ fontSize: 16, fontWeight: "600", color: "black" }}
-                  >
+                  <Text style={styles.studentName}>
                     {searchStudentData.studentName}
                   </Text>
-                  <Text style={{ fontSize: 14, color: "gray" }}>
+                  <Text style={styles.studentNumber}>
                     {searchStudentData.studentNumber}
                   </Text>
                 </View>
@@ -317,10 +299,33 @@ const OsaScreen: React.FC = () => {
             )}
           </View>
 
-          {/*current officer container */}
+          {/* 🆙 Promote Area */}
+          {showPromoteArea && (
+            <View style={styles.promoteContainer}>
+              <Text style={styles.promoteTitle}>
+                Promote this student to Officer?
+              </Text>
+              <View style={styles.promoteButtons}>
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: COLORS.Primary }]}
+                  onPress={handlePromote}
+                >
+                  <Text style={styles.buttonText}>Yes, Promote</Text>
+                </TouchableOpacity>
 
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: COLORS.Secondary }]}
+                  onPress={() => setShowPromoteArea(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Officer List */}
           <Animated.FlatList
-            data={currentOfficer} // replace with your state or array of Student objects
+            data={currentOfficer}
             keyExtractor={(item) =>
               item.id?.toString() || Math.random().toString()
             }
@@ -328,106 +333,46 @@ const OsaScreen: React.FC = () => {
               const firstLetter =
                 item.studentName?.charAt(0).toUpperCase() || "?";
               const isOfficer = item.category?.toLowerCase() === "officer";
-
               return (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: "#fff",
-                    paddingVertical: 12,
-                    paddingHorizontal: 12,
-                    borderRadius: 12,
-                    marginBottom: 10,
-                    shadowColor: "#000",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 6,
-                    shadowOffset: { width: 0, height: 2 },
-                    elevation: 2,
-                  }}
-                >
-                  {/* Avatar */}
-                  <View
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 26,
-                      backgroundColor: "#2D9CDB",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 12,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#fff",
-                        fontSize: 20,
-                        fontWeight: "700",
-                      }}
-                    >
-                      {firstLetter}
-                    </Text>
+                <TouchableOpacity style={styles.officerItem}>
+                  <View style={styles.officerAvatar}>
+                    <Text style={styles.officerAvatarText}>{firstLetter}</Text>
                   </View>
-
-                  {/* Info */}
-                  <View style={{ flex: 1, justifyContent: "center" }}>
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        color: "#222",
-                        fontSize: 16,
-                        fontWeight: "600",
-                      }}
-                    >
-                      {item.studentName}
-                    </Text>
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        color: "#7B8A9A",
-                        fontSize: 13,
-                        marginTop: 2,
-                      }}
-                    >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.officerName}>{item.studentName}</Text>
+                    <Text style={styles.officerDetails}>
                       {item.studentNumber ?? ""}{" "}
                       {item.course ? `• ${item.course}` : ""}
                     </Text>
                   </View>
-
-                  {/* Right icons */}
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginLeft: 8,
-                    }}
-                  >
-                    {isOfficer ? (
-                      <FontAwesome5
-                        name="user-shield"
-                        size={18}
-                        color="#2D9CDB"
-                      />
-                    ) : (
-                      <Ionicons
-                        name="person-circle-outline"
-                        size={22}
-                        color="#7B8A9A"
-                      />
-                    )}
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color="#7B8A9A"
-                      style={{ marginLeft: 10 }}
+                  {isOfficer ? (
+                    <FontAwesome5
+                      name="user-shield"
+                      size={18}
+                      color="#2D9CDB"
                     />
-                  </View>
+                  ) : (
+                    <Ionicons
+                      name="person-circle-outline"
+                      size={22}
+                      color="#7B8A9A"
+                    />
+                  )}
                 </TouchableOpacity>
               );
             }}
           />
 
+          {/* Modals */}
+          <Loading visible={promotionStatus || loading || searchLoading} />
+          <Mymodal
+            redirectPath="osa/osa"
+            visible={isPromoted}
+            message="Student Promoted"
+            onClose={() => setIsPromoted(false)}
+          />
+
+          {/* announcement modal */}
           {/* 📢 Announcement Modal */}
           <Modal
             visible={showAnnouncementModal}
@@ -435,181 +380,124 @@ const OsaScreen: React.FC = () => {
             animationType="slide"
             onRequestClose={() => setShowAnnouncementModal(false)}
           >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContainer}>
-                <Text style={styles.modalHeader}>📢 Send Announcement</Text>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <View
+                style={{
+                  width: "85%",
+                  backgroundColor: "#fff",
+                  borderRadius: 10,
+                  padding: 20,
+                  elevation: 5,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    marginBottom: 15,
+                    color: COLORS.Primary,
+                  }}
+                >
+                  📢 Send Announcement
+                </Text>
 
                 <TextInput
-                  style={styles.modalInput}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    padding: 10,
+                    marginBottom: 10,
+                  }}
                   placeholder="Title"
                   value={announcementTitle}
                   onChangeText={setAnnouncementTitle}
                 />
 
                 <TextInput
-                  style={[
-                    styles.modalInput,
-                    { height: 100, textAlignVertical: "top" },
-                  ]}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 8,
+                    padding: 10,
+                    height: 100,
+                    textAlignVertical: "top",
+                    marginBottom: 10,
+                  }}
                   placeholder="Message"
                   multiline
                   value={announcementMessage}
                   onChangeText={setAnnouncementMessage}
                 />
 
-                <View style={styles.modalButtons}>
-                  <Button
-                    title="Cancel"
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginTop: 10,
+                  }}
+                >
+                  <TouchableOpacity
                     onPress={() => setShowAnnouncementModal(false)}
-                  />
-                  <Button title="Send" onPress={onSendAnnouncementPress} />
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#ddd",
+                      paddingVertical: 10,
+                      borderRadius: 8,
+                      marginRight: 5,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ color: "#333", fontWeight: "600" }}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    disabled={loadingSendNotification}
+                    onPress={() =>
+                      handleSendAnnouncement(
+                        announcementTitle,
+                        announcementMessage
+                      )
+                    }
+                    style={{
+                      flex: 1,
+                      backgroundColor: COLORS.Primary,
+                      paddingVertical: 10,
+                      borderRadius: 8,
+                      marginLeft: 5,
+                      alignItems: "center",
+                    }}
+                  >
+                    {loadingSendNotification ? (
+                      <>
+                        <ActivityIndicator
+                          size="small"
+                          color="#fff"
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text style={{ color: "#fff", fontWeight: "600" }}>
+                          Sending...
+                        </Text>
+                      </>
+                    ) : (
+                      <Text style={{ color: "#fff", fontWeight: "600" }}>
+                        Send
+                      </Text>
+                    )}
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
           </Modal>
-
-          {/* 🔄 Loading Modal */}
-          <Modal visible={loading} transparent animationType="fade">
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.6)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "rgba(0,0,0,0.8)",
-                  padding: 20,
-                  borderRadius: 10,
-                  alignItems: "center",
-                }}
-              >
-                <ActivityIndicator size="large" color="#fff" />
-                <Text
-                  style={{
-                    color: "#fff",
-                    marginTop: 10,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  Sending Announcement...
-                </Text>
-              </View>
-            </View>
-          </Modal>
-
-          {/*  search Loading Modal */}
-          <Modal visible={searchLoading} transparent animationType="fade">
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.6)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "rgba(0,0,0,0.8)",
-                  padding: 20,
-                  borderRadius: 10,
-                  alignItems: "center",
-                }}
-              >
-                <ActivityIndicator size="large" color="#fff" />
-                <Text
-                  style={{
-                    color: "#fff",
-                    marginTop: 10,
-                    fontSize: 16,
-                    fontWeight: "600",
-                  }}
-                >
-                  Searching...
-                </Text>
-              </View>
-            </View>
-          </Modal>
-
-          {/* show modal search the promote  */}
-          <Modal visible={showPromoteArea} transparent animationType="fade">
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "black",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: COLORS.Forth,
-                  padding: 20,
-                  borderRadius: 10,
-                  alignItems: "center",
-                  marginHorizontal: 10,
-                }}
-              >
-                <Text style={{ textAlign: "center", fontSize: 19 }}>
-                  {`Are you sure to promote this student?name: ${searchStudentData?.studentName}`}{" "}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowPromoteArea(false);
-                    handlePromote();
-                  }}
-                  style={{
-                    backgroundColor: "green",
-                    marginVertical: 10,
-                    borderRadius: 6,
-                  }}
-                >
-                  <Text
-                    style={{
-                      paddingHorizontal: 15,
-                      paddingVertical: 10,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "white",
-                    }}
-                  >
-                    Promote
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setShowPromoteArea(false)}
-                  style={{ borderRadius: 6, backgroundColor: "red" }}
-                >
-                  <Text
-                    style={{
-                      paddingHorizontal: 10,
-                      paddingVertical: 5,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "white",
-                    }}
-                  >
-                    cancel
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
-          <Loading visible={promotionStatus} />
-          <Mymodal
-            visible={isPromoted}
-            message="Student Promoted"
-            onClose={() => {
-              setIsPromoted(false);
-            }}
-          />
-
-          {/* end of class */}
         </View>
       </SafeAreaView>
     </LinearbackGround>
@@ -618,7 +506,16 @@ const OsaScreen: React.FC = () => {
 
 export default OsaScreen;
 
+// 🎨 Styles
 const styles = StyleSheet.create({
+  mainContainer: {
+    backgroundColor: COLORS.Forth,
+    width: "95%",
+    marginHorizontal: "auto",
+    marginVertical: 10,
+    borderRadius: 10,
+    paddingBottom: 10,
+  },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -634,11 +531,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: {
-    fontWeight: "600",
-    color: "white",
-    fontSize: 18,
-  },
+  avatarText: { fontWeight: "600", color: "white", fontSize: 18 },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -648,66 +541,115 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
   },
-  input: {
-    flex: 1,
-    height: 40,
-    color: "#000",
+  input: { flex: 1, height: 40, color: "#000" },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "transparent",
+    zIndex: 999,
   },
   resultsContainer: {
     position: "absolute",
-    top: 70,
-    left: 70,
-    right: 0,
-    width: 200,
+    top: 75,
+    left: 10,
+    right: 10,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ccc",
-    zIndex: 9999,
+    zIndex: 1000,
     elevation: 10,
     maxHeight: 200,
     borderRadius: 8,
   },
   resultItem: {
     paddingVertical: 8,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderColor: "#eee",
   },
-  resultText: {
-    fontSize: 16,
-    color: "#333",
+  resultText: { fontSize: 16, color: "#333" },
+  highlight: { color: "#007bff", fontWeight: "700" },
+  selectedStudentContainer: {
+    margin: 10,
+    backgroundColor: COLORS.Third,
+    borderRadius: 10,
+    padding: 8,
   },
-  highlight: {
-    color: "#007bff",
-    fontWeight: "700",
+  selectedStudentCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.textColorWhite,
+    borderRadius: 10,
+    padding: 10,
+    elevation: 2,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+  studentAvatar: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    backgroundColor: COLORS.Primary,
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 10,
   },
-  modalContainer: {
+  studentAvatarText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
+  studentName: { fontSize: 16, fontWeight: "600", color: "black" },
+  studentNumber: { fontSize: 14, color: "gray" },
+
+  promoteContainer: {
     backgroundColor: "#fff",
+    padding: 15,
+    marginHorizontal: 10,
     borderRadius: 10,
-    padding: 20,
-    width: "80%",
-    elevation: 5,
-  },
-  modalHeader: {
-    fontSize: 18,
-    fontWeight: "bold",
+    elevation: 3,
     marginBottom: 10,
   },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
+  promoteTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#222",
     marginBottom: 10,
-    width: "100%",
   },
-  modalButtons: {
+  promoteButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  button: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginHorizontal: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+
+  officerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  officerAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#2D9CDB",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  officerAvatarText: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  officerName: { color: "#222", fontSize: 16, fontWeight: "600" },
+  officerDetails: { color: "#7B8A9A", fontSize: 13, marginTop: 2 },
 });

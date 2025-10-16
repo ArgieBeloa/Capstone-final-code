@@ -70,9 +70,11 @@ const EventDetails = () => {
         return;
       }
 
-      await addStudentUpcomingEvent(studentId, studentToken, [
+      const eventAttended = await addStudentUpcomingEvent(studentId, studentToken, [
         studentUpcomingData,
       ]);
+
+      console.log(eventAttended)
 
       const currentEventAttending = (event.allStudentAttending ?? 0) + 1;
       await updateAllStudentAttending(

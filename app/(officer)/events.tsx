@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event } from "../Oop/Types";
+import { Event, Student } from "../Oop/Types";
 
 interface QrGeneratorProps {
   eventId: string;
@@ -72,11 +72,12 @@ const Events = () => {
 
     const getStudents = async () => {
       try {
-        const students = await getAllStudents(studentToken);
-        const tokens = students
-          .map((s: { tokenId?: string }) => s.tokenId)
-          .filter(Boolean);
-        setAllTokens(tokens);
+       const students = await getAllStudents(studentToken)
+      
+              const tokens = students
+                .map((s: Student) => s.tokenId)
+                .filter((t: any): t is string => !!t);
+              setAllTokens(tokens);
       } catch (error) {
         console.error("❌ Failed to fetch students:", error);
       }
@@ -334,11 +335,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     minHeight: 150,
+    
+
   },
   imageBgFlatlist: {
     flex: 1,
+    // width: "100%",
+    // minHeight:300,
     justifyContent: "flex-end",
     padding: 10,
+    zIndex: -1,
   },
   eventTitleFlatlist: {
     fontSize: 18,

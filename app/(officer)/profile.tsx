@@ -2,15 +2,26 @@ import { getAllEvents } from "@/api/EventService";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import { Event, Student } from "../Oop/Types";
 
 const Profile = () => {
   const { studentData, eventData, studentToken } = useUser();
+  const router = useRouter();
+
   const student: Student = studentData;
   const [events, setEvents] = useState(eventData);
   const [doneEvents, setDoneEvents] = useState<Event[]>([]);
@@ -156,6 +167,82 @@ const Profile = () => {
                   </Text>
                 </View>
               </View>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  marginTop: 15,
+                  position: "absolute",
+                  right: 2,
+                  bottom: 2,
+                }}
+              >
+                {Platform.OS === "web" ? (
+                  // 🖨️ Web: Show Print Button
+                  <>
+                   <Text
+                      style={{
+                        color: "#000000ff",
+                        marginLeft: 8,
+                        fontWeight: "600",
+                        marginTop:5
+                        
+                      }}
+                    >Attendance</Text>
+            
+                  <TouchableOpacity
+                    onPress={() => handlePrintAttendance(item.id)}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: "#007bff",
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      borderRadius: 8,
+                      marginLeft:5
+                    }}
+                  >
+                    <FontAwesome5 name="print" size={15} color="#fff" />
+                    {/* <Text
+                      style={{
+                        color: "#fff",
+                        marginLeft: 8,
+                        fontWeight: "600",
+                      }}
+                    >
+                    
+                    </Text> */}
+                  </TouchableOpacity>
+                  
+                        </>
+                ) : (
+                  // 💾 Mobile (Android/iOS): Show Save Button
+                  <>
+                    <TouchableOpacity
+                      onPress={() => handlePrintAttendance(item.id)}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: "#28a745",
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Ionicons name="save-outline" size={15} color="#fff" />
+                    </TouchableOpacity>
+
+                    <Text
+                      style={{
+                        color: "#030000ff",
+                        marginLeft: 8,
+                        fontWeight: "600",
+                      }}
+                    >Save</Text>
+                  </>
+                )}
+              </View>
             </View>
           </View>
         ))
@@ -180,6 +267,7 @@ const Profile = () => {
         shadowRadius: 3,
         shadowOffset: { width: 0, height: 2 },
         marginHorizontal: 10,
+        position: "relative",
       }}
     >
       <Text
@@ -194,7 +282,6 @@ const Profile = () => {
       <View style={{ marginRight: 10, width: 40, alignItems: "center" }}>
         <Ionicons name="time-outline" size={28} color="#4e9af1" />
       </View>
-
       <View style={{ flex: 1 }}>
         <Text
           style={{
@@ -243,6 +330,10 @@ const Profile = () => {
       </View>
     </View>
   );
+
+  const handlePrintAttendance = (id: string) => {
+    router.push(`../PrintAttendances/${id}`);
+  };
 
   return (
     <LinearbackGround>

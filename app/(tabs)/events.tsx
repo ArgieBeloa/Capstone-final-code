@@ -314,7 +314,7 @@ const Events = () => {
                   <View style={styles.eventFlatListContainer}>
                     <ImageBackground
                       source={require("@/assets/images/auditorium.jpg")}
-                      style={[styles.imageBgFlatlist, { flex: 1 }]}
+                      style={[styles.imageBgFlatlist]}
                       imageStyle={{ resizeMode: "cover" }}
                     >
                       <View style={{ marginTop: "auto", paddingLeft: 10 }}>
@@ -440,9 +440,10 @@ const styles = StyleSheet.create({
     elevation: 10,
     overflow: "hidden",
     width: "100%",
-    height: 200,
+    minHeight: 200,
+    justifyContent: "flex-end"
   },
-  imageBgFlatlist: { width: "100%", height: 200 },
+  imageBgFlatlist: { width: "100%", height: "100%" },
   eventTitleFlatlist: {
     color: COLORS.textColorWhite,
     fontSize: 18,

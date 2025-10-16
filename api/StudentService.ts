@@ -1,7 +1,7 @@
 import {
   StudentEventAttendedAndEvaluationDetails,
   StudentNotification,
-  StudentRecentEvaluation
+  StudentRecentEvaluation,
 } from "@/app/Oop/Types";
 import axios from "axios";
 import { BASE_URL } from "./spring";
@@ -23,41 +23,169 @@ export const searchEventbyTitle = async (token: string, eventTitle: string) => {
   }
 };
 
-// GET ALL STUDENTS
-export const getAllStudents = async (token: string) => {
-  try {
-    const api = `${BASE_URL}/students/allStudentData`;
+// GET ALL STUDENTS 
+// export const getAllStudents = async (token: string) => {
+//   try {
+//     const api = `${BASE_URL}/students/allStudentData`;
 
+//     const allStudents = await axios.get(api, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     });
+
+//     return allStudents.data;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+// admin access token
+export const generateTokenAdminAccess = async (adminKey: string) => {
+  const api = `${BASE_URL}/admin/login`;
+
+  try {
+    const loginRes = await axios.post(
+      api,
+      {},
+      {
+        headers: {
+          "X-ADMIN-KEY": adminKey,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const adminToken = loginRes.data.token;
+    return adminToken;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// get all students by admin access
+export const getAllStudentsUsingAdmin = async (adminToken: string) => {
+  const api = `${BASE_URL}/admin/getAllStudents`;
+
+  try {
     const allStudents = await axios.get(api, {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+      },
+      
+    });
+
+    return allStudents.data
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getStudentByAdmin = async ( adminToken: string, adminKey: string, studentNumber: string) => {
+
+  const api = `${BASE_URL}/admin/getStudent?studentNumber=${studentNumber}`
+
+   try {
+    const student = await axios.get(api, {
+      headers: {
+        "X-ADMIN-KEY": adminKey,
+        Authorization: `Bearer ${adminToken}`,
+      },
+      
+    });
+
+    return student.data
+  } catch (error) {
+    console.log(error);
+  }
+  
+}
+
+// check
+// checkStudent.ts
+export const checkStudent = async (
+  studentNumber: string,
+  adminKey: string,
+) => {
+  try {
+    const response = await fetch(
+      `https://thesisbackendcodestudent-1.onrender.com/api/admin/check-student?studentNumber=${studentNumber}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "X-ADMIN-KEY": adminKey,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to check student (${response.status}): ${errorText}`
+      );
+    }
+
+    const data = await response.json();
+    return data; // typically { exists: true, student: {...} } or similar
+  } catch (error) {
+    console.error("❌ Error in checkStudent:", error);
+    throw error;
+  }
+};
+
+// ✅ Fetch all students — only accessible to ADMIN via valid JWT
+// export const getAllStudents = async (adminToken: string) => {
+//   try {
+//     const api = `${BASE_URL}/api/students/allStudentData`;
+
+//     const response = await axios.get(api, {
+//       headers: {
+//         Authorization: `Bearer ${adminToken}`,
+//       },
+//     });
+
+//     return response.data;
+//   } catch (error: any) {
+//     console.error(
+//       "❌ Failed to fetch all students:",
+//       error.response?.data || error.message
+//     );
+//     throw new Error(
+//       error.response?.data?.message ||
+//         "Unable to fetch student data (Admin only)"
+//     );
+//   }
+// };
+
+// http://localhost:8080/api/students/id/68e8b3b76858c4b04e4f4418
+export const getStudentById = async (token: string, id: string) => {
+  const api = `${BASE_URL}/students/id/${id}`;
+  try {
+    const student = await axios.get(api, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    return allStudents.data;
+    return student.data;
   } catch (error) {
     console.log(error);
   }
 };
-// http://localhost:8080/api/students/id/68e8b3b76858c4b04e4f4418
-export const getStudentById = async (token: string, id: string) => {
-   
-  const api =`${BASE_URL}/students/id/${id}`
+export const getAllStudents = async (token: string) => {
+  const api = `${BASE_URL}/students/allStudentData`;
   try {
-    const student = await axios.get(api,{
-      headers:{
-        Authorization: `Bearer ${token}`
-      }
-    })
+    const student = await axios.get(api, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    return student.data
-    
+    return student.data;
   } catch (error) {
-    console.log(error)
-    
+    console.log(error);
   }
-  
-}
+};
 
 // POST
 export const addStudentNotificationApi = async (token: string, id: any) => {
@@ -151,25 +279,24 @@ export const sendExpoNotification = async (payload: {
 
 // add student notification data
 // http://localhost:8080/api/students/68cd299fb59b796fbcca90b8/addNotification
-export const addStudentNotification = async (token:string, studentId: string, studentNotification: StudentNotification[]) => {
-  
+export const addStudentNotification = async (
+  token: string,
+  studentId: string,
+  studentNotification: StudentNotification[]
+) => {
   try {
-    const api = `${BASE_URL}/students/${studentId}/addNotification`
+    const api = `${BASE_URL}/students/${studentId}/addNotification`;
 
     const notification = await axios.post(api, studentNotification, {
-      headers:{
-        Authorization: `Bearer ${token}`
-      }
-    })
-    return notification.data
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return notification.data;
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-}
-
-
-
-
+};
 
 // PUT
 export const updateProfileData = async (

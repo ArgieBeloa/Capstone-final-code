@@ -1,3 +1,5 @@
+// eas build --platform android --profile production
+//  eas build --platform android --profile development
 import {
   authStudent,
   eventsDataFunction,
@@ -52,8 +54,6 @@ export default function Index() {
     // console.log("password :", password)
     try {
       const token = await authStudent(username, password);
-      setStudentToken(token);
-      setStudentNumber(username);
 
       // Reset attempts after successful login
       setAttempts(0);
@@ -64,16 +64,26 @@ export default function Index() {
       const events = await eventsDataFunction(token);
       setEventData(events);
       setStudentData(studentData);
+      setStudentToken(token);
+      setStudentNumber(username);
 
       setLoading(false);
       const category = studentData.category;
       if (category === "officer") {
         // show modal log in as officer or student
         // router.push("/(officer)/home");
-        setShowModalOfficer(true)
+
+        setShowModalOfficer(true);
       } else if (category === "osa") {
+        // const adminTokenAccess = await generateTokenAdminAccess(
+        //   "beloaGroup2025"
+        // );
+        // setStudentToken(adminTokenAccess);
         router.push("/osa/osa");
       } else {
+        // setStudentNumber(username);
+        // setStudentToken(token);
+
         router.push("/(tabs)/home");
       }
     } catch (error) {

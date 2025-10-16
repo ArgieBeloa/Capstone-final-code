@@ -1,6 +1,9 @@
 import { getAllEvents } from "@/api/EventService";
 import { eventsDataFunction } from "@/api/spring";
-import { getAllStudents, sendExpoNotification } from "@/api/StudentService";
+import {
+  getAllStudents,
+  sendExpoNotification
+} from "@/api/StudentService";
 import FloatingButton from "@/components/FloatingButton";
 import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -22,7 +25,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event } from "../Oop/Types";
+
+import { Event, Student } from "../Oop/Types";
 
 const Home = () => {
   const router = useRouter();
@@ -51,9 +55,10 @@ const Home = () => {
 
         // 🎯 Fetch all students (for notification tokens)
         const students = await getAllStudents(studentToken);
+
         const tokens = students
-          .map((s: { tokenId?: string }) => s.tokenId)
-          .filter(Boolean);
+          .map((s: Student) => s.tokenId)
+          .filter((t: any): t is string => !!t);
         setAllTokens(tokens);
         // console.log("🎯 Loaded tokens:", tokens.length);
 
@@ -62,8 +67,9 @@ const Home = () => {
         setEventState(events);
 
         // 🎯 Get latest event
-        const allEventsData = await getAllEvents(studentToken);
-        if (allEventsData?.length) {
+        const allEventsData = await  getAllEvents(studentToken)
+
+        if(allEventsData?.length) {
           const lastItem = allEventsData.at(-1);
           setLatestEventState(lastItem);
         } else {
@@ -139,9 +145,7 @@ const Home = () => {
                     title={"Attended"}
                   />
                   <LinearProgressBar
-                    value={
-                      latestEventState.eventEvaluationDetails?.length || 0
-                    }
+                    value={latestEventState.eventEvaluationDetails?.length || 0}
                     max={latestEventState.eventAttendances?.length || 0}
                     title={"Evaluated"}
                   />

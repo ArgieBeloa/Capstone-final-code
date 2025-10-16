@@ -4,13 +4,10 @@ import axios from "axios";
 // interface
 import { EventAttendance, Student, StudentUpcomingEvents } from "@/app/Oop/Types";
 import { StudentAttended } from "./ApiType";
-// const BASE_URL = "https://capstonestudentloginapi-1.onrender.com/api"; // Use your local IP and port
-// export const BASE_URL = "http://192.168.254.151:8080/api"; // Use your local IP and port
-  // export const BASE_URL = "http://172.200.1.15:8080/api"; // Use your local IP and port
-  export const BASE_URL = "https://thesisbackendcodestudent.onrender.com/api"; // Use your local IP and port
-//  export const BASE_URL = "http://10.146.37.25:8080/api"; // Use your local IP and port
-//  const BASE_URL = "http://172.200.10.85:8080/api"; // Use your local IP and port
-// 172.200.10.85
+
+  // export const BASE_URL = "http://10.43.54.25:8080/api"; // Use your local IP and port
+  export const BASE_URL = "https://thesisbackendcodestudent-1.onrender.com/api"; // Use your local IP and port
+
 // auth student
 export const authStudent = async (
   studentNumber: string,
