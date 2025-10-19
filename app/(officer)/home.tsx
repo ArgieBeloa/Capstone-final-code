@@ -1,9 +1,3 @@
-import { getAllEvents } from "@/api/EventService";
-import { eventsDataFunction } from "@/api/spring";
-import {
-  getAllStudents,
-  sendExpoNotification
-} from "@/api/StudentService";
 import FloatingButton from "@/components/FloatingButton";
 import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -26,54 +20,62 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Event, Student } from "../Oop/Types";
+import { getAllStudents } from "@/api/admin/controller";
+import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
 
 const Home = () => {
   const router = useRouter();
   const { eventData, studentToken, studentData } = useUser();
 
-  const [suggestionTitleState, setSuggestedTitleState] = useState([]);
-  const [latestEventState, setLatestEventState] = useState<Event | undefined>();
-  const [eventState, setEventState] = useState<Event[]>([]);
-  const [allTokens, setAllTokens] = useState<string[]>([]);
+  const [suggestedTitleState, setSuggestedTitleState] = useState<
+    { eventId: string; eventTitle: string }[]
+  >([]);
+
+  const [latestEventState, setLatestEventState] = useState<
+    EventModel | undefined
+  >();
+  const [eventState, setEventState] = useState<EventModel[]>([]);
+  const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   // 🧠 Fetch all data
   useEffect(() => {
     const loadData = async () => {
       try {
-        // 🎯 Suggested event titles
         if (eventData?.length) {
-          const eventIdAndTitles = eventData.map(
+          const students = await getAllStudents(studentToken);
+          
+          // get their expo token
+          const notificationIds = students
+            .filter((s) => !!s.notificationId)
+            .map((student) => ({
+              notificationId: student.notificationId,
+            }));
+
+          setAllTokens(notificationIds);
+
+          // 🎯 Fetch all events
+          const events = await getAllEvents(studentToken);
+          setEventState(events);
+
+          const eventIdAndTitles = events.map(
             (event: { id: any; eventTitle: any }) => ({
               eventId: event.id,
               eventTitle: event.eventTitle,
             })
           );
           setSuggestedTitleState(eventIdAndTitles);
-        }
 
-        // 🎯 Fetch all students (for notification tokens)
-        const students = await getAllStudents(studentToken);
+          // 🎯 Get latest event
+          const allEventsData = await getAllEvents(studentToken);
 
-        const tokens = students
-          .map((s: Student) => s.tokenId)
-          .filter((t: any): t is string => !!t);
-        setAllTokens(tokens);
-        // console.log("🎯 Loaded tokens:", tokens.length);
-
-        // 🎯 Fetch all events
-        const events = await eventsDataFunction(studentToken);
-        setEventState(events);
-
-        // 🎯 Get latest event
-        const allEventsData = await  getAllEvents(studentToken)
-
-        if(allEventsData?.length) {
-          const lastItem = allEventsData.at(-1);
-          setLatestEventState(lastItem);
-        } else {
-          setLatestEventState(undefined);
+          if (allEventsData?.length) {
+            const lastItem = allEventsData.at(-1);
+            setLatestEventState(lastItem);
+          } else {
+            setLatestEventState(undefined);
+          }
         }
       } catch (error) {
         console.error("❌ Error loading data:", error);
@@ -92,7 +94,7 @@ const Home = () => {
 
     try {
       setLoading(true);
-      await sendExpoNotification({ tokens: allTokens, title, message });
+      // await sendExpoNotification({ tokens: allTokens, title, message });
       Alert.alert("✅ Success", "Announcement sent successfully!");
     } catch (error: any) {
       console.error("❌ Error sending announcement:", error);
@@ -109,7 +111,7 @@ const Home = () => {
           {/* Header */}
           <HeaderOfficer
             officerName={studentData?.studentName ?? "Officer"}
-            eventSuggestionData={suggestionTitleState}
+            eventSuggestionData={suggestedTitleState}
             handleSendAnnouncement={handleSendAnnouncement}
           />
 

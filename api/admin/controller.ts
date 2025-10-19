@@ -46,6 +46,19 @@ export async function getAllStudentNotificationIds(token: string): Promise<{
 }
 
 /* ===========================================================
+   ✅ GET All Students And sort notificationID (ADMIN or OFFICER)
+   GET /api/auth/admin/allStudents
+=========================================================== */
+export async function getAllStudents(
+  token: string
+): Promise<StudentModel []> {
+  const res = await axios.get(`${BASE_URL}/admin/allStudents`,{
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}
+
+/* ===========================================================
    ✅ 4. Add notification to all students (ADMIN or OFFICER)
    POST /api/auth/admin/addStudentNotification
 =========================================================== */
