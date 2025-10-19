@@ -2,6 +2,13 @@
 // 📦 Event Utilities Interfaces
 // ===============================
 
+// for notification 
+export interface ExpoNotificationPayload {
+  tokens: string[]; // List of Expo push tokens
+  title: string;    // Notification title
+  body: string;     // Notification body message
+}
+
 // 🔹 StudentEvaluationInfo.java
 export interface StudentEvaluationInfo {
   question: string;
@@ -43,4 +50,10 @@ export interface EventAgenda {
   agendaTime: string;  // e.g. "09:00 AM" or ISO time string
   agendaTitle: string; // e.g. "Opening Remarks"
   agendaHost: string;  // e.g. "Dr. John Smith"
+}
+
+export interface QrGeneratorProps {
+  eventId: string;
+  eventTitle: string;
+  officerToken: string;
 }

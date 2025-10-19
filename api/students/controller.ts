@@ -8,8 +8,8 @@ import {
   StudentUpcomingEvents,
 } from "./utils";
 
-const BASE_URL = "http://localhost:8080/api/student";
-
+const BASE_URL = "http://10.12.173.25:8080/api/student";
+const apiForAttendance = "http://10.12.173.25:8080";
 // ✅ Helper for auth headers
 
 // ===================================
@@ -35,10 +35,12 @@ export async function addRecentEvaluation(
 ): Promise<StudentModel> {
   const res = await axios.post(
     `${BASE_URL}/${studentId}/addRecentEvaluation`,
-    evaluation, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-    
+    evaluation,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
   return res.data;
 }
 
@@ -57,7 +59,6 @@ export async function addEventAttendanceAndEvaluation(
   );
   return res.data;
 }
-
 // ✅ POST Add Attended Event
 export async function addEventAttendance(
   token: string,
@@ -65,13 +66,16 @@ export async function addEventAttendance(
   event: StudentEventAttended
 ): Promise<StudentModel> {
   const res = await axios.post(
-    `${BASE_URL}/${studentId}/addEventAttendance`,
-    event, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  
+    `${apiForAttendance}/api/auth/admin/addAttendance/${studentId}`,
+    event,
+    {
+      headers: { Authorization: `Bearer ${token}` }, // re-add Bearer here
+    }
+  );
+
   return res.data;
 }
+
 
 // ✅ POST Add Upcoming Event
 export async function addUpcomingEvent(
@@ -98,9 +102,11 @@ export async function addEventEvaluation(
 ): Promise<any> {
   const res = await axios.post(
     `${BASE_URL}/${eventId}/addEvaluation`,
-    evaluation, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    evaluation,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.data;
 }
 
@@ -112,34 +118,46 @@ export async function markEventAsEvaluated(
 ): Promise<any> {
   const res = await axios.patch(
     `${BASE_URL}/${studentId}/events/${eventId}/markEvaluated`,
-    {}, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    {},
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.data;
 }
 
 // PUT
 // ✅ Mark student as attended
-export async function markStudentAttended(token: string,studentId: string, eventId: string): Promise<any> {
+export async function markStudentAttended(
+  token: string,
+  studentId: string,
+  eventId: string
+): Promise<any> {
   const res = await axios.put(
     `${BASE_URL}/mark-attended/${studentId}/${eventId}`,
-    {}, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    {},
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.data;
 }
 
 // ✅ Mark student as evaluated
-export async function markStudentEvaluated(token: string,studentId: string, eventId: string): Promise<any> {
+export async function markStudentEvaluated(
+  token: string,
+  studentId: string,
+  eventId: string
+): Promise<any> {
   const res = await axios.put(
     `${BASE_URL}/mark-evaluated/${studentId}/${eventId}`,
-    {}
-    , {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    {},
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.data;
 }
-
 
 // ✅ DELETE Notification
 export async function deleteStudentNotification(
@@ -148,9 +166,10 @@ export async function deleteStudentNotification(
   notificationId: string
 ): Promise<any> {
   const res = await axios.delete(
-    `${BASE_URL}/${studentId}/notifications/${notificationId}`
-    , {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    `${BASE_URL}/${studentId}/notifications/${notificationId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.data;
 }

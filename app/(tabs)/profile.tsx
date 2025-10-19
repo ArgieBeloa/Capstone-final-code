@@ -1,3 +1,4 @@
+import { getStudentById } from "@/api/students/controller";
 import { StudentEventAttendedAndEvaluationDetails, StudentNotification } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
@@ -49,21 +50,15 @@ const Profile = () => {
   const progress = (attendedCount / (totalCount || 1)) * circumference;
 
   useFocusEffect(
-    useCallback(() => {
-      // const getStudentData = async () => {
-      //   const student = await studentDataFunction(studentNumber, studentToken);
-      //   setStudentData(student);
-      //   setStudentAttendedData(
-      //     student.studentEventAttendedAndEvaluationDetails
-      //   );
-      
-      // };
-      // getStudentData();
-
-   
-    }, [studentNumber, studentToken])
-  );
-
+     useCallback(() => {
+       const getStudentData = async () => {
+         const student = await getStudentById(studentToken, userId);
+         setStudentData(student);
+         setStudentAttendedData(student.studentEventAttendedAndEvaluationDetails)
+       };
+       getStudentData();
+     }, [])
+   );
   const handleNotificationClick = () => {
     router.push(`../Notification/studentNotication`);
   };

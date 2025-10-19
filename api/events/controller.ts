@@ -3,31 +3,32 @@ import { EventModel } from "./model";
 import { EventAttendance } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
-const BASE_URL = "http://localhost:8080/api/events";
-
+const BASE_URL = "http://10.12.173.25:8080/api/events";
 
 // ✅ 1. Get all events (public)
 export async function getAllEvents(token: string): Promise<EventModel[]> {
-  
-  const res = await axios.get(`${BASE_URL}`,{
-     headers: { Authorization: `Bearer ${token}` },
-  }
-    
-  );
-  return res.data;
-}
-
-// ✅ 2. Get event by ID (public)
-export async function getEventById(token: string, id: string): Promise<EventModel> {
-  const res = await axios.get(`${BASE_URL}/${id}`,{
-     headers: { Authorization: `Bearer ${token}` },
+  const res = await axios.get(`${BASE_URL}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 }
 
+// ✅ 2. Get event by ID (public)
+export async function getEventById(
+  token: string,
+  id: string
+): Promise<EventModel> {
+  const res = await axios.get(`${BASE_URL}/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}
 
 // ✅ 3. Create event (only ADMIN or OFFICER)
-export async function createEvent(event: EventModel, token: string): Promise<EventModel> {
+export async function createEvent(
+  event: EventModel,
+  token: string
+): Promise<EventModel> {
   const res = await axios.post(`${BASE_URL}/create`, event, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -35,14 +36,18 @@ export async function createEvent(event: EventModel, token: string): Promise<Eve
 }
 
 // ✅ 4. Add Attendance (only authorized)
-export async function addEventAttendance(
+export async function addEventAttendanceRecords(
+  token: string,
   eventId: string,
-  attendance: EventAttendance,
-  token: string
+  attendance: EventAttendance
 ): Promise<EventModel> {
-  const res = await axios.post(`${BASE_URL}/${eventId}/addAttendance`, attendance, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await axios.post(
+    `${BASE_URL}/${eventId}/addAttendance`,
+    attendance,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return res.data;
 }
 
@@ -59,7 +64,10 @@ export async function updateEvent(
 }
 
 // ✅ 6. Delete Event (only ADMIN)
-export async function deleteEvent(eventId: string, token: string): Promise<string> {
+export async function deleteEvent(
+  eventId: string,
+  token: string
+): Promise<string> {
   const res = await axios.delete(`${BASE_URL}/${eventId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });

@@ -65,13 +65,14 @@ const Events = () => {
   };
   useEffect(() => {
     const getEvent = async () => {
-      
-      
       if (selectedIndex === 0) {
         setEventState(eventData);
       } else {
         // const event =  selectedTitle);
-        const event = eventData.filter((event)=> event.eventCategory.toLowerCase() === selectedTitle.toLowerCase())
+        const event = eventData.filter(
+          (event) =>
+            event.eventCategory.toLowerCase() === selectedTitle.toLowerCase()
+        );
         setEventState(event);
       }
     };
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     width: "100%",
     minHeight: 200,
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
   },
   imageBgFlatlist: { width: "100%", height: "100%" },
   eventTitleFlatlist: {

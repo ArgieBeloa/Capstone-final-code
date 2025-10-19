@@ -1,4 +1,7 @@
-import { getAllStudents, sendExpoNotification } from "@/api/StudentService";
+import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
+import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+import { QrGeneratorProps } from "@/api/events/utils";
 import FloatingButton from "@/components/FloatingButton";
 import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -21,29 +24,24 @@ import {
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event, Student } from "../Oop/Types";
 
-interface QrGeneratorProps {
-  eventId: string;
-  eventTitle: string;
-  studentDateAttended: string;
-}
+
 
 const Events = () => {
   const { eventData, studentData, studentToken } = useUser();
   const router = useRouter();
 
   const [suggestionTitleState, setSuggestedTitleState] = useState([]);
-  const [allTokens, setAllTokens] = useState<string[]>([]);
+  const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [eventState, setEventState] = useState<Event[]>(eventData);
+  const [eventState, setEventState] = useState<EventModel[]>(eventData);
   const [modalIsVisible, setModalIsVisible] = useState<boolean>(false);
   const [eventDataQR, setEventDataQR] = useState<QrGeneratorProps>();
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [selectedTitle, setSelectedTitle] = useState("All");
 
   const navigationTitle = ["All", "Technology", "Academic", "Health", "Others"];
-  const dateString = new Date(Date.now()).toString();
+  // const dateString = new Date(Date.now()).toString();
 
   const handleViewDetails = (id: string) => {
     router.push(`../officerEventDetails/${id}`);
@@ -52,52 +50,49 @@ const Events = () => {
   const handleQrGenerator = (
     eventId: string,
     eventTitle: string,
-    studentDateAttended: string
+    officerToken: string
   ) => {
-    const data: QrGeneratorProps = { eventId, eventTitle, studentDateAttended };
+    const data: QrGeneratorProps = { eventId, eventTitle, officerToken };
     setEventDataQR(data);
+    console.log(data)
   };
 
-  // Fetch all students for Expo tokens
+  // 🧠 Fetch all data
   useEffect(() => {
-    if (eventData?.length) {
-      const eventIdAndTitles = eventData.map(
-        (event: { id: any; eventTitle: any }) => ({
-          eventId: event.id,
-          eventTitle: event.eventTitle,
-        })
-      );
-      setSuggestedTitleState(eventIdAndTitles);
-    }
-
-    const getStudents = async () => {
+    const loadData = async () => {
       try {
-       const students = await getAllStudents(studentToken)
-      
-              const tokens = students
-                .map((s: Student) => s.tokenId)
-                .filter((t: any): t is string => !!t);
-              setAllTokens(tokens);
+        if (eventData?.length) {
+          const students = await getAllStudents(studentToken);
+
+          // get students expo token
+          const notificationIds = students
+            .filter((s: { notificationId: any }) => !!s.notificationId)
+            .map((student: { notificationId: any }) => ({
+              notificationId: student.notificationId,
+            }));
+
+          setAllTokens(notificationIds);
+
+          // 🎯 Fetch all events
+          const events = await getAllEvents(studentToken);
+          setEventState(events);
+
+          const eventIdAndTitles = events.map(
+            (event: { id: any; eventTitle: any }) => ({
+              eventId: event.id,
+              eventTitle: event.eventTitle,
+            })
+          );
+        }
       } catch (error) {
-        console.error("❌ Failed to fetch students:", error);
+        console.error("❌ Error loading data:", error);
       }
     };
-    getStudents();
+
+    loadData();
   }, []);
 
-  // Filter events by category
-  useEffect(() => {
-    if (selectedTitle === "All") {
-      setEventState(eventData);
-    } else {
-      const filtered = eventData.filter(
-        (e: { eventCategory: string }) => e.eventCategory === selectedTitle
-      );
-      setEventState(filtered);
-    }
-  }, [selectedTitle, eventData]);
-
-  // Send Announcement
+  // 📢 Send announcement
   const handleSendAnnouncement = async (title: string, message: string) => {
     if (!title.trim() || !message.trim()) {
       Alert.alert("Missing fields", "Please fill out both title and message!");
@@ -106,19 +101,42 @@ const Events = () => {
 
     try {
       setLoading(true);
-      await sendExpoNotification({ tokens: allTokens, title, message });
+
+      const extactAllTokens: string[] = allTokens.map(
+        (item) => item.notificationId
+      );
+
+      console.log(extactAllTokens);
+      await sendExpoNotification(studentToken, {
+        tokens: extactAllTokens,
+        title,
+        body: message,
+      });
+      console.log(title);
+
       Alert.alert("✅ Success", "Announcement sent successfully!");
     } catch (error: any) {
-      console.error(
-        "❌ Error sending announcement:",
-        error.response?.data || error.message
-      );
+      console.error("❌ Error sending announcement:", error);
       Alert.alert("Error", "Failed to send announcement!");
     } finally {
       setLoading(false);
     }
   };
-
+  useEffect(() => {
+    const getEvent = async () => {
+      if (selectedIndex === 0) {
+        setEventState(eventData);
+      } else {
+        // const event =  selectedTitle);
+        const event = eventData.filter(
+          (event) =>
+            event.eventCategory.toLowerCase() === selectedTitle.toLowerCase()
+        );
+        setEventState(event);
+      }
+    };
+    getEvent();
+  }, [selectedTitle]);
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
@@ -162,7 +180,7 @@ const Events = () => {
             <FlatList
               data={eventState}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }: { item: Event }) => (
+              renderItem={({ item }: { item: EventModel }) => (
                 <TouchableHighlight
                   onPress={() => handleViewDetails(item.id)}
                   underlayColor="transparent"
@@ -181,7 +199,7 @@ const Events = () => {
                           handleQrGenerator(
                             item.id,
                             item.eventTitle,
-                            dateString
+                            studentToken
                           );
                         }}
                       >
@@ -232,13 +250,13 @@ const Events = () => {
               )}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Text style={{ color: "white" }}>No events available!</Text>
+                  <Text style={{ color: "Black" }}>No events available!</Text>
                 </View>
               }
             />
           ) : (
             <View style={styles.emptyContainer}>
-              <Text style={{ color: "white" }}>No events available!</Text>
+              <Text style={{ color: "Black" }}>No events available!</Text>
             </View>
           )}
         </View>
@@ -335,8 +353,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     minHeight: 150,
-    
-
   },
   imageBgFlatlist: {
     flex: 1,

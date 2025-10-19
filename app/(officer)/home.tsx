@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getAllStudents } from "@/api/admin/controller";
+import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 
@@ -45,8 +45,8 @@ const Home = () => {
       try {
         if (eventData?.length) {
           const students = await getAllStudents(studentToken);
-          
-          // get their expo token
+
+          // get students expo token
           const notificationIds = students
             .filter((s) => !!s.notificationId)
             .map((student) => ({
@@ -83,7 +83,7 @@ const Home = () => {
     };
 
     loadData();
-  }, [studentToken]);
+  }, []);
 
   // 📢 Send announcement
   const handleSendAnnouncement = async (title: string, message: string) => {
@@ -94,7 +94,20 @@ const Home = () => {
 
     try {
       setLoading(true);
-      // await sendExpoNotification({ tokens: allTokens, title, message });
+
+      const extactAllTokens: string[] = allTokens.map(
+        (item) => item.notificationId
+      );
+     
+      console.log(extactAllTokens)
+      await sendExpoNotification(studentToken, {
+        tokens: extactAllTokens, 
+        title,
+        body: message
+        
+      });
+      console.log(title);
+
       Alert.alert("✅ Success", "Announcement sent successfully!");
     } catch (error: any) {
       console.error("❌ Error sending announcement:", error);

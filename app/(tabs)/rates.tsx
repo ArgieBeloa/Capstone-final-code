@@ -1,4 +1,5 @@
-import { studentDataFunction } from "@/api/spring";
+import { getStudentById } from "@/api/students/controller";
+import { StudentEventAttended } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -10,22 +11,12 @@ import { StyleSheet, Text, TouchableHighlight, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-interface Attendance {
-  eventId: string;
-
-  eventTitle: string;
-
-  studentDateAttended: string;
-  evaluated: boolean;
-}
-
 const Rates = () => {
   // student attended data
-  const { studentData, setStudentData, studentToken, studentNumber } =
-    useUser();
+  const { studentData, setStudentData, studentToken, userId } = useUser();
 
   const [studentAttendentState, setStudentAttendedState] = useState<
-    Attendance[]
+    StudentEventAttended[]
   >(studentData.studentEventAttended);
 
   const router = useRouter();
@@ -38,12 +29,12 @@ const Rates = () => {
   useFocusEffect(
     useCallback(() => {
       const getStudentData = async () => {
-        const student = await studentDataFunction(studentNumber, studentToken);
+        const student = await getStudentById(studentToken, userId);
         setStudentData(student);
         setStudentAttendedState(student.studentEventAttended);
       };
       getStudentData();
-    }, [studentNumber, studentToken])
+    }, [])
   );
 
   return (
