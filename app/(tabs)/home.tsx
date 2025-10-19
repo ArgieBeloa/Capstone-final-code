@@ -1,5 +1,9 @@
-import { getAllEvents } from "@/api/EventService";
-import { studentDataFunction } from "@/api/spring";
+
+import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+import { getStudentById } from "@/api/students/controller";
+import { StudentModel } from "@/api/students/model";
+import { StudentNotification, StudentUpcomingEvents } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -24,29 +28,29 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event, Student, StudentUpcomingEvents } from "../Oop/Types";
 
 const { width } = Dimensions.get("window");
 
 const Home = () => {
   const {
     studentToken,
-    studentNumber,
+    userId,
     studentData,
     setStudentData,
     eventData,
   } = useUser();
-  const student: Student = studentData;
+  const student: StudentModel= studentData;
   const firstLetter = student.studentName.charAt(0);
 
-  const [studentNotification, setStudentNotification] = useState(Number);
+  const [studentNotification, setStudentNotification] = useState<StudentNotification[]>([]);
   const [hasEventRegister, setHasEventRegister] = useState<boolean>(false);
-  const [studentUpcomingEvents, setStudentUpcomingEvents] = useState([]);
-  const [searchSuggestion, setSearchSuggestion] = useState<Event[]>([]);
+  const [studentUpcomingEvents, setStudentUpcomingEvents] = useState<StudentUpcomingEvents[]>([]);
+  const [searchSuggestion, setSearchSuggestion] = useState<EventModel[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchId, setSearchId] = useState("no id");
   const scrollX = useRef(new Animated.Value(0)).current;
+  const[events, setEvent] = useState<EventModel[]>([])
 
   const haddleRegisterClick = (id: string) => {
     router.push(`../EventDetails/${id}`);
@@ -67,14 +71,16 @@ const Home = () => {
   useEffect(() => {
     const getStudentData = async () => {
       try {
-        if (!studentNumber || !studentToken) return;
+        if (!studentToken || !studentData) return;
 
-        const data = await studentDataFunction(studentNumber, studentToken);
-        // console.log(data)
-        setStudentUpcomingEvents(data.studentUpcomingEvents);
+        const refreshStudentData= await getStudentById(studentToken, userId);
+        console.log(refreshStudentData)
+        setStudentUpcomingEvents(refreshStudentData.studentUpcomingEvents);
         setHasEventRegister(true);
-        setStudentData(data);
-        setStudentNotification(data.studentNotifications.length || 0);
+        setStudentData(refreshStudentData);
+        setStudentNotification(refreshStudentData.studentNotifications);
+
+        setEvent(eventData)
       } catch (error) {
         console.log("Failed to fetch student data:", error);
       }
@@ -98,10 +104,10 @@ const Home = () => {
       const query = searchText.toLowerCase();
 
       const filtered = allEvents
-        .filter((event: Event) =>
+        .filter((event: EventModel) =>
           event.eventTitle.toLowerCase().includes(query)
         )
-        .sort((a: Event, b: Event) => {
+        .sort((a: EventModel, b: EventModel) => {
           const aTitle = a.eventTitle.toLowerCase();
           const bTitle = b.eventTitle.toLowerCase();
 
@@ -187,7 +193,7 @@ const Home = () => {
 
                 try {
                   const allEvents = await getAllEvents(studentToken);
-                  const filtered = allEvents.filter((event: Event) =>
+                  const filtered = allEvents.filter((event: EventModel) =>
                     event.eventTitle.toLowerCase().includes(query.toLowerCase())
                   );
                   setSearchSuggestion(filtered);
@@ -271,10 +277,10 @@ const Home = () => {
           {/* 🔔 Notification */}
           <TouchableHighlight onPress={() => haddleNotificationClick()}>
             <View>
-              {studentNotification !== 0 && (
+              {studentNotification.length !== 0 && (
                 <View style={styles.notificationBadge}>
                   <Text style={styles.notificationText}>
-                    {studentNotification}
+                    {studentNotification.length}
                   </Text>
                 </View>
               )}
@@ -302,7 +308,7 @@ const Home = () => {
                   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
                   { useNativeDriver: false }
                 )}
-                renderItem={({ item }: { item: StudentUpcomingEvents }) => (
+                renderItem={({ item }: { item: StudentUpcomingEvents}) => (
                   <TouchableHighlight
                     onPress={() => haddleRegisterClick(item.eventId)}
                   >
@@ -403,11 +409,10 @@ const Home = () => {
 
         {/* Upcoming Events */}
         <Text style={styles.eventTextTitle}>Upcoming events</Text>
-        {eventData.length !== 0 ? (
           <Animated.FlatList
-            data={eventData}
+            data={events}
             contentContainerStyle={{ marginHorizontal: 10 }}
-            renderItem={({ item }: { item: Event }) => (
+            renderItem={({ item }: { item: EventModel }) => (
               <TouchableHighlight onPress={() => haddleRegisterClick(item.id)}>
                 <View style={styles.upcomingEventView}>
                   <View style={{ flexDirection: "row" }}>
@@ -439,16 +444,19 @@ const Home = () => {
                 </View>
               </TouchableHighlight>
             )}
-          />
-        ) : (
-          <View style={{ flex: 1 }}>
+            ListEmptyComponent={
+               <View style={{ flex: 1 }}>
             <Text
               style={{ textAlign: "center", fontWeight: "500", margin: "auto" }}
             >
               No Event for Now
             </Text>
           </View>
-        )}
+            }
+          />
+        
+         
+        
       </SafeAreaView>
     </LinearbackGround>
   );

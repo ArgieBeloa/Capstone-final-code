@@ -1,4 +1,5 @@
-import { registerStudent } from "@/api/spring";
+
+import { registerStudent } from "@/api/admin/controller";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import ViewPanel from "@/components/ViewPanel";
@@ -20,7 +21,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { registerForPushNotificationsAsync } from "../src/pushToken";
-import { Student } from "./Oop/Types";
+// import { Student } from "./Oop/Types";
+import { StudentModel } from "@/api/students/model";
 
 const Register = () => {
   const [fullname, setFullname] = useState("");
@@ -47,22 +49,16 @@ const Register = () => {
 
   const router = useRouter();
 
-  const newStudent: Student = {
+  const newStudent: StudentModel = {
     studentName: fullname,
     studentNumber: username,
     studentPassword: password,
     course: course,
     department: "no set",
-    notificationId: "not set",
-    macAddress: "not set",
-    studentAverageAttendance: 0.0,
-    studentAverageRatings: 0.0,
-    tokenId: expoPushToken || "no token",
-    category: "Student",
+    notificationId: expoPushToken || "no token",
     studentUpcomingEvents: [],
     studentEventAttended: [],
     studentRecentEvaluations: [],
-    numberOfNotification: 0,
     studentNotifications: [],
     studentEventAttendedAndEvaluationDetails: [],
   };
@@ -285,7 +281,7 @@ const Register = () => {
                     </Text>
                   ) : (
                     <Text style={styles.failText}>
-                      ⚠️ Registration Failed. Please try again.
+                     { `⚠️ Registration failed. The student number ${username} has already been used.` }
                     </Text>
                   )}
                   <Pressable

@@ -1,11 +1,11 @@
-import { studentDataFunction } from "@/api/spring";
+import { StudentEventAttendedAndEvaluationDetails, StudentNotification } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Dimensions,
   StyleSheet,
@@ -16,10 +16,7 @@ import {
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
-import {
-  StudentEventAttendedAndEvaluationDetails,
-  StudentNotification,
-} from "../Oop/Types";
+
 
 const Profile = () => {
   const screenWidth = Dimensions.get("window").width;
@@ -31,6 +28,7 @@ const Profile = () => {
     studentNumber,
     studentToken,
     eventData,
+    userId
   } = useUser();
   const [studentAttendedData, setStudentAttendedData] = useState<
     StudentEventAttendedAndEvaluationDetails[]
@@ -52,15 +50,15 @@ const Profile = () => {
 
   useFocusEffect(
     useCallback(() => {
-      const getStudentData = async () => {
-        const student = await studentDataFunction(studentNumber, studentToken);
-        setStudentData(student);
-        setStudentAttendedData(
-          student.studentEventAttendedAndEvaluationDetails
-        );
+      // const getStudentData = async () => {
+      //   const student = await studentDataFunction(studentNumber, studentToken);
+      //   setStudentData(student);
+      //   setStudentAttendedData(
+      //     student.studentEventAttendedAndEvaluationDetails
+      //   );
       
-      };
-      getStudentData();
+      // };
+      // getStudentData();
 
    
     }, [studentNumber, studentToken])
@@ -69,6 +67,16 @@ const Profile = () => {
   const handleNotificationClick = () => {
     router.push(`../Notification/studentNotication`);
   };
+
+  useEffect(()=>{
+    
+    // const test= async () => {
+    //  const res = await markStudentEvaluated(studentToken,userId, "670f92bb4b2d991a231a3345")
+    //   console.log(res)
+    // }
+    // test()
+    // console.log(studentData.studentEventAttendedAndEvaluationDetails)
+  },[])
 
   return (
     <LinearbackGround>
@@ -183,8 +191,9 @@ const Profile = () => {
                   renderItem={({
                     item,
                   }: {
-                    item: StudentEventAttendedAndEvaluationDetails;
+                    item: StudentEventAttendedAndEvaluationDetails,
                   }) => {
+
                     return (
                       <Animated.View
                         entering={FadeInUp.duration(500)}

@@ -1,4 +1,6 @@
-import { getAllEvents, getEventByTitle } from "@/api/EventService";
+import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -17,7 +19,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event, Student } from "../Oop/Types";
 
 const Events = () => {
   const { studentToken, studentData, eventData } = useUser();
@@ -31,17 +32,17 @@ const Events = () => {
   ];
   const [selectedTitle, setSelectedTitle] = useState("All");
 
-  const [eventState, setEventState] = useState<Event[]>(eventData);
+  const [eventState, setEventState] = useState<EventModel[]>(eventData);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const router = useRouter();
-  const student: Student = studentData;
+  const student: StudentModel = studentData;
   const firstLetter = student.studentName.charAt(0);
 
   const [studentNotification, setStudentNotification] = useState<number>(
     studentData.studentNotifications.length || 0
   );
   const [searchText, setSearchText] = useState("");
-  const [searchSuggestion, setSearchSuggestion] = useState<Event[]>([]);
+  const [searchSuggestion, setSearchSuggestion] = useState<EventModel[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchId, setSearchId] = useState("no id");
 
@@ -64,11 +65,13 @@ const Events = () => {
   };
   useEffect(() => {
     const getEvent = async () => {
+      
+      
       if (selectedIndex === 0) {
-        const allEvent = await getAllEvents(studentToken);
-        setEventState(allEvent);
+        setEventState(eventData);
       } else {
-        const event = await getEventByTitle(studentToken, selectedTitle);
+        // const event =  selectedTitle);
+        const event = eventData.filter((event)=> event.eventCategory.toLowerCase() === selectedTitle.toLowerCase())
         setEventState(event);
       }
     };
@@ -87,10 +90,10 @@ const Events = () => {
       const query = searchText.toLowerCase();
 
       const filtered = allEvents
-        .filter((event: Event) =>
+        .filter((event: EventModel) =>
           event.eventTitle.toLowerCase().includes(query)
         )
-        .sort((a: Event, b: Event) => {
+        .sort((a: EventModel, b: EventModel) => {
           const aTitle = a.eventTitle.toLowerCase();
           const bTitle = b.eventTitle.toLowerCase();
 
@@ -174,7 +177,7 @@ const Events = () => {
 
                 try {
                   const allEvents = await getAllEvents(studentToken);
-                  const filtered = allEvents.filter((event: Event) =>
+                  const filtered = allEvents.filter((event: EventModel) =>
                     event.eventTitle.toLowerCase().includes(query.toLowerCase())
                   );
                   setSearchSuggestion(filtered);
@@ -309,7 +312,7 @@ const Events = () => {
                 marginHorizontal: 10,
                 paddingVertical: 5,
               }}
-              renderItem={({ item }: { item: Event }) => (
+              renderItem={({ item }: { item: EventModel }) => (
                 <TouchableHighlight onPress={() => haddleViewDetails(item.id)}>
                   <View style={styles.eventFlatListContainer}>
                     <ImageBackground

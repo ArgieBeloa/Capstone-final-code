@@ -1,6 +1,7 @@
-import { updateAllStudentAttending } from "@/api/EventService";
-import { addStudentUpcomingEvent, getEventById } from "@/api/spring";
-import { addStudentProfileData, deleteSpecificStudentNotifications } from "@/api/StudentService";
+// import { updateAllStudentAttending } from "@/api/EventService";
+// import { addStudentUpcomingEvent, getEventById } from "@/api/spring";
+import { getEventById } from "@/api/events/controller";
+import { addEventAttendanceAndEvaluation, addUpcomingEvent } from "@/api/students/controller";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
@@ -20,22 +21,21 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Event,
-  EventAgenda,
-  StudentEventAttendedAndEvaluationDetails,
-  StudentUpcomingEvents,
-} from "../Oop/Types";
+
+import { EventModel } from "@/api/events/model";
+import { EventAgenda } from "@/api/events/utils";
+import { StudentEventAttendedAndEvaluationDetails, StudentUpcomingEvents } from "@/api/students/utils";
+
 
 const EventDetails = () => {
   const { id } = useLocalSearchParams();
-  const { studentToken, studentData } = useUser();
+  const { studentToken, studentData, userId } = useUser();
 
   const studentId = studentData.id;
   const [studentUpcomingEvents, setStudentUpcomingEvents] = useState<
     StudentUpcomingEvents[]
   >([]);
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<EventModel | null>(null);
   const [eventAgendas, setEventAgendas] = useState<EventAgenda[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -51,13 +51,12 @@ const EventDetails = () => {
     setLoading(true);
 
     try {
-      const studentUpcomingData: StudentUpcomingEvents = {
+      const studentUpcomingData: StudentUpcomingEvents  = {
         eventId: id.toString(),
         eventTitle: event.eventTitle,
         eventDate: event.eventDate,
         eventTime: event.eventTime,
         eventLocation: event.eventLocation,
-        numberOfStudentAttending: (event.allStudentAttending ?? 0) + 1,
       };
 
       const alreadyExists = studentUpcomingEvents.some(
@@ -69,39 +68,20 @@ const EventDetails = () => {
         setAlreadyModalVisible(true);
         return;
       }
+       
+      
+      const upcomingEvent = await addUpcomingEvent(studentToken,userId, studentUpcomingData)
+    //  console.log(upcomingEvent)  
 
-      const eventAttended = await addStudentUpcomingEvent(studentId, studentToken, [
-        studentUpcomingData,
-      ]);
-
-      console.log(eventAttended)
-
-      const currentEventAttending = (event.allStudentAttending ?? 0) + 1;
-      await updateAllStudentAttending(
-        studentToken,
-        id as string,
-        currentEventAttending
-      );
-
-      const eventDateTime = `${event.eventDate ?? ""} ${
-        event.eventTime ?? ""
-      }`.trim();
-
-      // profile data
-      const sampleData: StudentEventAttendedAndEvaluationDetails[] = [
-        {
-          eventId: id as string,
-          eventTitle: event?.eventTitle || "no title",
-          eventDateAndTime: eventDateTime,
-          attended: false,
-          evaluated: false,
-        },
-      ];
-
-      await addStudentProfileData(studentToken, studentId, sampleData);
-
-      // delete student notification
-      await deleteSpecificStudentNotifications(studentToken, studentId, id as string)
+    const addProfileData: StudentEventAttendedAndEvaluationDetails ={
+      eventId: id as string,
+      eventTitle: event.eventTitle,
+      eventDateAndTime: event.eventDate,
+      attended: false,
+      evaluated: false
+    }
+    const profileData = await addEventAttendanceAndEvaluation(studentToken, userId, addProfileData)
+     
 
       setLoading(false);
       setSuccessModalVisible(true);
@@ -117,7 +97,7 @@ const EventDetails = () => {
       setStudentUpcomingEvents(studentData.studentUpcomingEvents);
 
       try {
-        const fetchedEvent = await getEventById(studentToken, id);
+        const fetchedEvent = await getEventById(studentToken, id as string);
         const eventData = Array.isArray(fetchedEvent)
           ? fetchedEvent[0]
           : fetchedEvent;

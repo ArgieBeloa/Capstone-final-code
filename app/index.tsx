@@ -1,17 +1,12 @@
 // eas build --platform android --profile production
 //  eas build --platform android --profile development
-import {
-  authStudent,
-  eventsDataFunction,
-  studentDataFunction,
-} from "@/api/spring";
 import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   BackHandler,
@@ -29,6 +24,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { loginStudent, } from "@/api/admin/controller";
+import { getAllEvents } from "@/api/events/controller";
+import { getStudentById } from "@/api/students/controller";
+
 export default function Index() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -41,7 +40,7 @@ export default function Index() {
   const [showModalOfficer, setShowModalOfficer] = useState(false);
 
   const router = useRouter();
-  const { setStudentData, setEventData, setStudentToken, setStudentNumber } =
+  const { setStudentData, setStudentToken, setUserId, setEventData } =
     useUser();
 
   const haddleRegister = () => {
@@ -53,39 +52,31 @@ export default function Index() {
     // console.log("username :", username)
     // console.log("password :", password)
     try {
-      const token = await authStudent(username, password);
-
       // Reset attempts after successful login
       setAttempts(0);
       setCountdown(null);
       setButtonDisable(false);
 
-      const studentData = await studentDataFunction(username, token);
-      const events = await eventsDataFunction(token);
+      const response = await loginStudent(username, password);
+      // setStudentToken(response.token)
+      setUserId(response._id);
+      setStudentToken(response.token.trim())
+
+      const events = await getAllEvents(response.token);
       setEventData(events);
-      setStudentData(studentData);
-      setStudentToken(token);
-      setStudentNumber(username);
+
+      const userData = await getStudentById(response.token, response._id);
+      setStudentData(userData);
+
+      if (response.role === "ADMIN") {
+        
+      } else if (response.role === "OFFICER") {
+         setShowModalOfficer(true)
+      } else {
+        router.push("/(tabs)/home")
+      }
 
       setLoading(false);
-      const category = studentData.category;
-      if (category === "officer") {
-        // show modal log in as officer or student
-        // router.push("/(officer)/home");
-
-        setShowModalOfficer(true);
-      } else if (category === "osa") {
-        // const adminTokenAccess = await generateTokenAdminAccess(
-        //   "beloaGroup2025"
-        // );
-        // setStudentToken(adminTokenAccess);
-        router.push("/osa/osa");
-      } else {
-        // setStudentNumber(username);
-        // setStudentToken(token);
-
-        router.push("/(tabs)/home");
-      }
     } catch (error) {
       console.log("Login failed", error);
       setLoading(false);
@@ -125,6 +116,11 @@ export default function Index() {
   };
 
   const remainingAttempts = 3 - attempts;
+
+  useEffect(() => {
+    const fetchEvents = async () => {};
+    fetchEvents();
+  }, []);
 
   return (
     <LinearGradient

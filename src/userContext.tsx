@@ -1,17 +1,22 @@
-import { Event, Student } from "@/app/Oop/Types";
+import { EventModel } from "@/api/events/model";
+import { StudentModel } from "@/api/students/model";
 import React, { createContext, useContext, useState } from "react";
 // Types
 type UserContextType = {
+  //userId
+  userId: string;
+  setUserId: (userId: string)  => void;
+
   // studentNumber
   studentNumber: string;
   setStudentNumber: (studentNumber: string) => void;
   // student data
-  studentData: Student | any;
-  setStudentData: (studentData: Student) => void;
+  studentData: StudentModel;
+  setStudentData: (studentData: StudentModel) => void;
 
   // events data
-  eventData: Event | any;
-  setEventData: (eventData: Event) => void;
+  eventData: EventModel[];
+  setEventData: (eventData: EventModel[]) => void;
 
   studentToken: string;
   setStudentToken: (token: string) => void;
@@ -23,14 +28,17 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 // Provider
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [studentNumber, setStudentNumber] = useState("");
-  const [studentData, setStudentData] = useState<any>(null);
-  const [eventData, setEventData] = useState<Event>();
+  const [userId, setUserId] = useState("");
+  const [studentData, setStudentData] = useState<StudentModel | any>();
+  const [eventData, setEventData] = useState<EventModel[]| any>();
 
   const [studentToken, setStudentToken] = useState<string>("no token");
 
   return (
     <UserContext.Provider
       value={{
+        userId,
+        setUserId,
         studentNumber,
         setStudentNumber,
         studentData,
