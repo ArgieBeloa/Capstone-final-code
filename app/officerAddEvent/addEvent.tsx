@@ -318,7 +318,7 @@ const AddEventScreen = () => {
             <Picker.Item label="Select Location" value="" />
             <Picker.Item label="Auditorium" value="Auditorium" />
             <Picker.Item label="Slec" value="Slec" />
-            <Picker.Item label="CPC MAin" value="CPC main" />
+            <Picker.Item label="CPC Main" value="CPC main" />
             <Picker.Item label="CPC Boulevard" value="CPC Boulevard" />
             <Picker.Item label="SM" value="SM" />
             <Picker.Item label="none" value="none" />

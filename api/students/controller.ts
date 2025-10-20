@@ -11,8 +11,8 @@ import {
 // =======================================
 // 🌐 BASE ENDPOINTS
 // =======================================
-const BASE_URL = "http://10.12.173.25:8080/api/student";
-const apiForAttendance = "http://10.12.173.25:8080";
+const BASE_URL = "https://securebackend-ox2e.onrender.com/api/student";
+const apiForAttendance = "https://securebackend-ox2e.onrender.com";
 
 // =======================================
 // 🧑‍🎓 STUDENT CONTROLLER API SERVICE

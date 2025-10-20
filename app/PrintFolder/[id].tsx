@@ -1,4 +1,4 @@
-import { getEventById } from "@/api/EventService";
+
 import { useUser } from "@/src/userContext";
 import * as FileSystem from "expo-file-system";
 import * as Print from "expo-print";
@@ -12,7 +12,9 @@ import {
   TouchableHighlight,
   View
 } from "react-native";
-import { EventEvaluationDetail } from "../Oop/Types";
+
+import { getEventById } from "@/api/events/controller";
+import { EventEvaluationDetails } from "@/api/events/utils";
 
 const PrintScreen = () => {
   const { studentToken } = useUser();
@@ -20,7 +22,7 @@ const PrintScreen = () => {
 
   const [eventTitle, setEventTitle] = useState("");
   const [eventEvaluationDetails, setEventEvaluationDetails] = useState<
-    EventEvaluationDetail[]
+    EventEvaluationDetails[]
   >([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,8 +32,8 @@ const PrintScreen = () => {
       const data = await getEventById(studentToken, id as string);
       console.log("Fetched event:", data);
 
-      setEventTitle(data[0].eventTitle);
-      setEventEvaluationDetails(data[0].eventEvaluationDetails ?? []);
+      setEventTitle(data.eventTitle);
+      setEventEvaluationDetails(data.eventEvaluationDetails);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {

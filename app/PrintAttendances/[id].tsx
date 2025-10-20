@@ -1,4 +1,7 @@
-import { getEventById } from "@/api/EventService";
+
+import { getEventById } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+
 import { useUser } from "@/src/userContext";
 import * as FileSystem from "expo-file-system";
 import * as Print from "expo-print";
@@ -6,19 +9,18 @@ import { useLocalSearchParams } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Event } from "../Oop/Types";
 
 const PrintScreen = () => {
   const { studentToken } = useUser();
   const { id } = useLocalSearchParams();
-  const [eventAttendances, setEventAttendances] = useState<Event | null>(null);
+  const [eventAttendances, setEventAttendances] = useState<EventModel | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const getEvent = async () => {
       try {
         const event = await getEventById(studentToken, id as string);
-        setEventAttendances(event[0]);
+        setEventAttendances(event);
       } catch (error) {
         console.error("Error loading event:", error);
       }
@@ -41,7 +43,8 @@ const PrintScreen = () => {
         <tr>
           <td>${i + index + 1}</td>
           <td>${s.studentName}</td>
-          <td>${s.timeAttended || ""}</td>
+          <td>${s.dateScanned || ""}</td>
+          <td>${s.role || ""}</td>
         </tr>`
         )
         .join("");
@@ -54,7 +57,7 @@ const PrintScreen = () => {
 
           <table>
             <thead>
-              <tr><th>#</th><th>Name</th><th>Date</th></tr>
+              <tr><th>#</th><th>Name</th><th>Date</th<th>Role</th>></tr>
             </thead>
             <tbody>${tableRows}</tbody>
           </table>

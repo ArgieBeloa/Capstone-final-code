@@ -3,7 +3,7 @@ import { EventModel } from "./model";
 import { EventAttendance, EventEvaluationDetails } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
-const BASE_URL = "http://10.12.173.25:8080/api/events";
+const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
 
 /**
  * ✅ 1. Get all events (public)

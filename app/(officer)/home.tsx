@@ -39,14 +39,23 @@ const Home = () => {
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const refeshEvents = async () => {
+  //       const events = await getAllEvents(studentToken);
+  //       setEventState(events);
+  //     };
+  //     refeshEvents();
+  //   }, [])
+  // );
+
   // 🧠 Fetch all data
   useEffect(() => {
     const loadData = async () => {
       try {
         if (eventData?.length) {
-          
-             const students = await getAllStudents(studentToken);
-             
+          const students = await getAllStudents(studentToken);
+
           // get students expo token
           const notificationIds = students
             .filter((s) => !!s.notificationId)
@@ -99,13 +108,12 @@ const Home = () => {
       const extactAllTokens: string[] = allTokens.map(
         (item) => item.notificationId
       );
-     
-      console.log(extactAllTokens)
+
+      console.log(extactAllTokens);
       await sendExpoNotification(studentToken, {
-        tokens: extactAllTokens, 
+        tokens: extactAllTokens,
         title,
-        body: message
-        
+        body: message,
       });
       console.log(title);
 
@@ -141,7 +149,9 @@ const Home = () => {
                 style={styles.card}
               >
                 <Image
-                  source={getEventImageByLocation(latestEventState.eventLocation)}
+                  source={getEventImageByLocation(
+                    latestEventState.eventLocation
+                  )}
                   resizeMode="cover"
                   style={styles.eventImage}
                 />
@@ -186,7 +196,7 @@ const Home = () => {
                   style={styles.card}
                 >
                   <Image
-                    source={require("@/assets/images/eventPic1.jpg")}
+                    source={getEventImageByLocation(item.eventLocation)}
                     resizeMode="cover"
                     style={styles.eventImage}
                   />
