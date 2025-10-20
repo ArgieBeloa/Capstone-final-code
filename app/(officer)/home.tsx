@@ -44,7 +44,8 @@ const Home = () => {
     const loadData = async () => {
       try {
         if (eventData?.length) {
-          const students = await getAllStudents(studentToken);
+             const students = await getAllStudents(studentToken);
+         
 
           // get students expo token
           const notificationIds = students

@@ -1,501 +1,298 @@
-import { addEvent, EventPayload } from "@/api/AddEventOfficer";
-import {
-  addStudentNotification,
-  getAllStudents,
-  sendExpoNotification,
-} from "@/api/StudentService";
-import ErrorModal from "@/components/ErrorModal";
-import LinearbackGround from "@/components/LinearBackGround";
-import Loading from "@/components/Loading";
-import Mymodal from "@/components/Mymodal";
+import { createEvent } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { Entypo } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { ArrowLeft, Calendar, Clock, ImageIcon } from "lucide-react-native";
+import React, { useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
+  ActivityIndicator,
+  Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
+  TouchableOpacity
 } from "react-native";
-
-type EventData = {
-  id?: string;
-  eventTitle: string;
-  eventShortDescription: string;
-  eventBody: string;
-  eventDate: string;
-  eventTime: string;
-  eventLocation: string;
-  eventCategory: string;
-  eventTimeLength: string;
-  allStudentAttending: number;
-  eventAgendas: { agendaTime: string; agendaTitle: string; agendaHost: string }[];
-  eventStats: { attending: number; interested: number };
-  eventOrganizer: { organizerName: string; organizerEmail: string };
-  evaluationQuestions: { questionId: string; questionText: string }[];
-  eventEvaluationDetails: any[];
-  eventPerformanceDetails: any[];
-  eventStudentEvaluations: any[];
-  eventAveragePerformance: number;
-  attendanceRate: number | null;
-  evaluationAvg: number | null;
-  eventAttendances: any[] | null;
-};
 
 const AddEventScreen = () => {
   const { studentToken } = useUser();
   const router = useRouter();
-
-  const [allStudentId, setAllStudentId] = useState<string[]>([]);
-  const [allToken, setAllToken] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [errorModal, setErrorModal] = useState(false);
-  const [formSubmitted, setFormSubmitted] = useState(false);
 
-  // Event fields
+  // --- FORM STATES ---
   const [eventTitle, setEventTitle] = useState("");
   const [eventShortDescription, setEventShortDescription] = useState("");
   const [eventBody, setEventBody] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [eventTime, setEventTime] = useState("");
+  const [eventDate, setEventDate] = useState<Date | null>(null);
+  const [eventStartTime, setEventStartTime] = useState<Date | null>(null);
+  const [eventEndTime, setEventEndTime] = useState<Date | null>(null);
   const [eventLocation, setEventLocation] = useState("");
   const [eventCategory, setEventCategory] = useState("");
-  const [eventTimeStart, setEventTimeStart] = useState("");
-  const [eventTimeEnd, setEventTimeEnd] = useState("");
   const [organizerName, setOrganizerName] = useState("");
   const [organizerEmail, setOrganizerEmail] = useState("");
-
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showEventTimePicker, setShowEventTimePicker] = useState(false);
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [eventImage, setEventImage] = useState<string | null>(null);
 
   const [eventAgendas, setEventAgendas] = useState<
-    { agendaTime: string; agendaTitle: string; agendaHost: string }[]
+    { agendaTitle: string; agendaTime: string; agendaHost: string }[]
   >([]);
   const [evaluationQuestions, setEvaluationQuestions] = useState<
     { questionId: string; questionText: string }[]
   >([]);
 
-  const [newEvent, setNewEvent] = useState<EventData | null>(null);
+  const [agendaTitle, setAgendaTitle] = useState("");
+  const [agendaTime, setAgendaTime] = useState("");
+  const [agendaHost, setAgendaHost] = useState("");
+  const [questionText, setQuestionText] = useState("");
 
-  const requiredFields = [
-    eventTitle,
-    eventShortDescription,
-    eventBody,
-    eventDate,
-    eventTime,
-    eventLocation,
-    eventCategory,
-    organizerName,
-    organizerEmail,
-  ];
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   const isFormValid =
-    requiredFields.every((f) => f.trim() !== "") &&
-    eventAgendas.length > 0 &&
-    evaluationQuestions.length > 0;
+    eventTitle &&
+    eventShortDescription &&
+    eventBody &&
+    eventDate &&
+    eventStartTime &&
+    eventEndTime &&
+    eventLocation &&
+    eventCategory &&
+    organizerName &&
+    organizerEmail;
 
-  const addAgenda = () =>
-    setEventAgendas([
-      ...eventAgendas,
-      { agendaTime: "", agendaTitle: "", agendaHost: "" },
-    ]);
+  // --- IMAGE PICKER ---
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Permission required", "Please allow access to your gallery.");
+      return;
+    }
 
-  const updateAgenda = (index: number, field: string, value: string) => {
-    const updated = [...eventAgendas];
-    updated[index] = { ...updated[index], [field]: value };
-    setEventAgendas(updated);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      setEventImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
   };
 
-  const addQuestion = () =>
+  // --- PICKERS ---
+  const handleDateChange = (_: any, selected?: Date) => {
+    setShowDatePicker(false);
+    if (selected) setEventDate(selected);
+  };
+  const handleStartTimeChange = (_: any, selected?: Date) => {
+    setShowStartTimePicker(false);
+    if (selected) setEventStartTime(selected);
+  };
+  const handleEndTimeChange = (_: any, selected?: Date) => {
+    setShowEndTimePicker(false);
+    if (selected) setEventEndTime(selected);
+  };
+
+  // --- AGENDA & QUESTION ---
+  const addAgenda = () => {
+    if (!agendaTitle || !agendaTime || !agendaHost)
+      return Alert.alert("Error", "Please fill all agenda fields.");
+    setEventAgendas([...eventAgendas, { agendaTitle, agendaTime, agendaHost }]);
+    setAgendaTitle("");
+    setAgendaTime("");
+    setAgendaHost("");
+  };
+
+  const addQuestion = () => {
+    if (!questionText)
+      return Alert.alert("Error", "Please enter a question.");
     setEvaluationQuestions([
       ...evaluationQuestions,
-      {
-        questionId: (evaluationQuestions.length + 1).toString(),
-        questionText: "",
-      },
+      { questionId: Date.now().toString(), questionText },
     ]);
-
-  const updateQuestion = (index: number, value: string) => {
-    const updated = [...evaluationQuestions];
-    updated[index].questionText = value;
-    setEvaluationQuestions(updated);
+    setQuestionText("");
   };
 
+  // --- SUBMIT ---
   const submitEvent = async () => {
-    setFormSubmitted(true);
-    if (!isFormValid) return;
-
+    if (!isFormValid) return Alert.alert("Error", "Please fill all fields.");
     setLoading(true);
     try {
-      const eventTimeLengthNew = `${eventTimeStart} - ${eventTimeEnd}`;
-      const payload: EventPayload = {
+      const formattedDate = eventDate?.toISOString().split("T")[0] || "";
+      const formattedStart = eventStartTime?.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const formattedEnd = eventEndTime?.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      const newEvent: EventModel = {
         eventTitle,
         eventShortDescription,
         eventBody,
-        eventDate,
-        eventTime,
+        allStudentAttending: 0,
+        eventDate: formattedDate,
+        eventTime: `${formattedStart} - ${formattedEnd}`,
         eventLocation,
         eventCategory,
-        eventTimeLength: eventTimeLengthNew,
-        allStudentAttending: 0,
-        eventAgendas,
-        eventStats: { attending: 0, interested: 0 },
+        eventTimeLength: "",
+        eventImage: eventImage || "",
         eventOrganizer: { organizerName, organizerEmail },
+        eventAttendances: [],
+        eventAgendas,
         evaluationQuestions,
         eventEvaluationDetails: [],
-        eventPerformanceDetails: [],
-        eventStudentEvaluations: [],
-        eventAveragePerformance: 0.0,
-        attendanceRate: null,
-        evaluationAvg: null,
-        eventAttendances: null,
       };
 
-      const result = await addEvent(studentToken, payload);
-      setNewEvent(result);
-
-      await sendExpoNotification({
-        tokens: allToken,
-        title: eventTitle,
-        message: eventShortDescription,
-      });
-
-      for (const id of allStudentId) {
-        await addStudentNotification(studentToken, id, [
-          { eventId: result?.id, eventTitle, eventShortDescription },
-        ]);
-      }
-
-      setSuccessModalVisible(true);
-    } catch (error) {
-      console.error("❌ Error while adding event:", error);
-      setErrorModal(true);
+      await createEvent(newEvent, studentToken);
+      Alert.alert("✅ Success", "Event created successfully!");
+      router.back();
+    } catch (e) {
+      console.error(e);
+      Alert.alert("❌ Error", "Failed to create event.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      const students = await getAllStudents(studentToken);
-      setAllToken(students.map((s: { tokenId: string }) => s.tokenId));
-      setAllStudentId(students.map((s: { id: string }) => s.id));
-    };
-    fetchStudents();
-  }, []);
-
   return (
-    <LinearbackGround>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+      {/* 🔙 Back Button */}
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <ArrowLeft color={COLORS.Primary} size={24} />
+        <Text style={styles.backText}>Back</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.header}>🗓️ Add New Event</Text>
+
+      {/* --- Event Info --- */}
+      <TextInput placeholder="Event Title" style={styles.input} value={eventTitle} onChangeText={setEventTitle} />
+      <TextInput placeholder="Short Description" style={styles.input} value={eventShortDescription} onChangeText={setEventShortDescription} />
+      <TextInput placeholder="Event Details" style={[styles.input, styles.textArea]} multiline value={eventBody} onChangeText={setEventBody} />
+
+      {/* Date Picker */}
+      <TouchableOpacity style={styles.rowInput} onPress={() => setShowDatePicker(true)}>
+        <Calendar color={COLORS.Primary} />
+        <Text style={styles.rowText}>{eventDate ? eventDate.toISOString().split("T")[0] : "Pick Event Date"}</Text>
+      </TouchableOpacity>
+      {showDatePicker && <DateTimePicker mode="date" value={eventDate || new Date()} onChange={handleDateChange} />}
+
+      {/* Start Time */}
+      <TouchableOpacity style={styles.rowInput} onPress={() => setShowStartTimePicker(true)}>
+        <Clock color={COLORS.Primary} />
+        <Text style={styles.rowText}>
+          {eventStartTime
+            ? `Start: ${eventStartTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+            : "Pick Start Time"}
+        </Text>
+      </TouchableOpacity>
+      {showStartTimePicker && <DateTimePicker mode="time" value={eventStartTime || new Date()} onChange={handleStartTimeChange} />}
+
+      {/* End Time */}
+      <TouchableOpacity style={styles.rowInput} onPress={() => setShowEndTimePicker(true)}>
+        <Clock color={COLORS.Primary} />
+        <Text style={styles.rowText}>
+          {eventEndTime
+            ? `End: ${eventEndTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+            : "Pick End Time"}
+        </Text>
+      </TouchableOpacity>
+      {showEndTimePicker && <DateTimePicker mode="time" value={eventEndTime || new Date()} onChange={handleEndTimeChange} />}
+
+      {/* Other Inputs */}
+      <TextInput placeholder="Event Location" style={styles.input} value={eventLocation} onChangeText={setEventLocation} />
+      <TextInput placeholder="Event Category (e.g. Health)" style={styles.input} value={eventCategory} onChangeText={setEventCategory} />
+      <TextInput placeholder="Organizer Name" style={styles.input} value={organizerName} onChangeText={setOrganizerName} />
+      <TextInput placeholder="Organizer Email" style={styles.input} value={organizerEmail} onChangeText={setOrganizerEmail} />
+
+      {/* --- Image Picker --- */}
+      <TouchableOpacity style={styles.imageBtn} onPress={pickImage}>
+        <ImageIcon color="#fff" />
+        <Text style={styles.imageBtnText}>
+          {eventImage ? "✅ Image Selected" : "Pick Event Image"}
+        </Text>
+      </TouchableOpacity>
+      {eventImage && <Image source={{ uri: eventImage }} style={styles.imagePreview} />}
+
+      {/* --- Agendas --- */}
+      <Text style={styles.sectionHeader}>📋 Event Agendas</Text>
+      <TextInput placeholder="Agenda Title" style={styles.input} value={agendaTitle} onChangeText={setAgendaTitle} />
+      <TextInput placeholder="Agenda Time" style={styles.input} value={agendaTime} onChangeText={setAgendaTime} />
+      <TextInput placeholder="Agenda Host" style={styles.input} value={agendaHost} onChangeText={setAgendaHost} />
+      <TouchableOpacity style={styles.addBtn} onPress={addAgenda}>
+        <Text style={styles.addBtnText}>+ Add Agenda</Text>
+      </TouchableOpacity>
+
+      {eventAgendas.map((a, i) => (
+        <Text key={i} style={styles.listItem}>
+          • {a.agendaTime} - {a.agendaTitle} ({a.agendaHost})
+        </Text>
+      ))}
+
+      {/* --- Evaluation Questions --- */}
+      <Text style={styles.sectionHeader}>📝 Evaluation Questions</Text>
+      <TextInput placeholder="Enter question" style={styles.input} value={questionText} onChangeText={setQuestionText} />
+      <TouchableOpacity style={styles.addBtn} onPress={addQuestion}>
+        <Text style={styles.addBtnText}>+ Add Question</Text>
+      </TouchableOpacity>
+      {evaluationQuestions.map((q, i) => (
+        <Text key={i} style={styles.listItem}>• {q.questionText}</Text>
+      ))}
+
+      {/* --- Submit --- */}
+      <TouchableOpacity
+        style={[styles.submitBtn, { opacity: isFormValid ? 1 : 0.6 }]}
+        disabled={!isFormValid || loading}
+        onPress={submitEvent}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={styles.header}>Add Event</Text>
-
-          <Pressable
-            onPress={() => router.push("/(officer)/home")}
-            style={{ position: "absolute", top: 30, left: 10 }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Entypo name="back" size={30} color="black" />
-              <Text style={styles.backText}>Back</Text>
-            </View>
-          </Pressable>
-
-          {/* Inputs */}
-          <TextInput
-            style={styles.input}
-            placeholder="Event Title"
-            value={eventTitle}
-            onChangeText={setEventTitle}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Short Description"
-            value={eventShortDescription}
-            onChangeText={setEventShortDescription}
-          />
-          <TextInput
-            style={[styles.input, { height: 100, textAlignVertical: "top" }]}
-            placeholder="Event Body"
-            value={eventBody}
-            onChangeText={setEventBody}
-            multiline
-          />
-
-          {/* DATE PICKER */}
-          <Text style={styles.subHeader}>Event Date</Text>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={styles.datePickerText}>
-              {eventDate || "Select Date"}
-            </Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="date"
-              onChange={(event, selectedDate) => {
-                if (selectedDate)
-                  setEventDate(selectedDate.toISOString().split("T")[0]);
-                setShowDatePicker(false);
-              }}
-            />
-          )}
-
-          {/* TIME PICKERS */}
-          <Text style={styles.subHeader}>Main Event Time</Text>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => setShowEventTimePicker(true)}
-          >
-            <Text style={styles.datePickerText}>
-              {eventTime || "Select Time"}
-            </Text>
-          </TouchableOpacity>
-          {showEventTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              onChange={(event, selectedTime) => {
-                if (selectedTime) {
-                  const time = selectedTime.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-                  setEventTime(time);
-                }
-                setShowEventTimePicker(false);
-              }}
-            />
-          )}
-
-          <Text style={styles.subHeader}>Start Time</Text>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => setShowStartTimePicker(true)}
-          >
-            <Text style={styles.datePickerText}>
-              {eventTimeStart || "Select Start Time"}
-            </Text>
-          </TouchableOpacity>
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              onChange={(event, selectedTime) => {
-                if (selectedTime) {
-                  const time = selectedTime.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-                  setEventTimeStart(time);
-                }
-                setShowStartTimePicker(false);
-              }}
-            />
-          )}
-
-          <Text style={styles.subHeader}>End Time</Text>
-          <TouchableOpacity
-            style={styles.datePickerButton}
-            onPress={() => setShowEndTimePicker(true)}
-          >
-            <Text style={styles.datePickerText}>
-              {eventTimeEnd || "Select End Time"}
-            </Text>
-          </TouchableOpacity>
-          {showEndTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              onChange={(event, selectedTime) => {
-                if (selectedTime) {
-                  const time = selectedTime.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-                  setEventTimeEnd(time);
-                }
-                setShowEndTimePicker(false);
-              }}
-            />
-          )}
-
-          {/* LOCATION PICKER */}
-          <Text style={styles.subHeader}>Location</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={eventLocation}
-              onValueChange={(v) => setEventLocation(v)}
-            >
-              <Picker.Item label="Select Location..." value="" />
-              <Picker.Item label="Auditorium" value="Auditorium" />
-              <Picker.Item label="SLEC" value="Slec" />
-              <Picker.Item label="CPC Main" value="CPC Main" />
-              <Picker.Item label="CPC Engineering" value="CPC Engineering" />
-              <Picker.Item label="Announce later" value="Announce later" />
-            </Picker>
-          </View>
-
-          {/* CATEGORY PICKER */}
-          <Text style={styles.subHeader}>Category</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={eventCategory}
-              onValueChange={(v) => setEventCategory(v)}
-            >
-              <Picker.Item label="Select Category..." value="Others" />
-              <Picker.Item label="Technology" value="Technology" />
-              <Picker.Item label="Health" value="Health" />
-              <Picker.Item label="Academic" value="Academic" />
-              <Picker.Item label="Others" value="Others" />
-            </Picker>
-          </View>
-
-          {/* ORGANIZER */}
-          <Text style={styles.subHeader}>Organizer</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Organizer Name"
-            value={organizerName}
-            onChangeText={setOrganizerName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Organizer Email"
-            value={organizerEmail}
-            onChangeText={setOrganizerEmail}
-          />
-
-          {/* AGENDAS */}
-          <Text style={styles.subHeader}>Agendas</Text>
-          {eventAgendas.map((agenda, index) => (
-            <View key={index} style={styles.card}>
-              <TextInput
-                style={styles.input}
-                placeholder="Agenda Time"
-                value={agenda.agendaTime}
-                onChangeText={(t) => updateAgenda(index, "agendaTime", t)}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Agenda Title"
-                value={agenda.agendaTitle}
-                onChangeText={(t) => updateAgenda(index, "agendaTitle", t)}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Agenda Host"
-                value={agenda.agendaHost}
-                onChangeText={(t) => updateAgenda(index, "agendaHost", t)}
-              />
-            </View>
-          ))}
-          <TouchableOpacity style={styles.addBtn} onPress={addAgenda}>
-            <Text style={styles.addBtnText}>+ Add Agenda</Text>
-          </TouchableOpacity>
-
-          {/* QUESTIONS */}
-          <Text style={styles.subHeader}>Evaluation Questions</Text>
-          {evaluationQuestions.map((q, i) => (
-            <TextInput
-              key={i}
-              style={styles.input}
-              placeholder={`Question ${i + 1}`}
-              value={q.questionText}
-              onChangeText={(t) => updateQuestion(i, t)}
-            />
-          ))}
-          <TouchableOpacity style={styles.addBtn} onPress={addQuestion}>
-            <Text style={styles.addBtnText}>+ Add Question</Text>
-          </TouchableOpacity>
-
-          {/* SUBMIT */}
-          <TouchableOpacity
-            style={[
-              styles.submitBtn,
-              (!isFormValid || loading) && { backgroundColor: "#ccc" },
-            ]}
-            disabled={!isFormValid || loading}
-            onPress={submitEvent}
-          >
-            <Text style={styles.submitText}>
-              {loading ? "Submitting..." : "Submit Event"}
-            </Text>
-          </TouchableOpacity>
-
-          <Mymodal
-            visible={successModalVisible}
-            onClose={() => setSuccessModalVisible(false)}
-            message="Event created successfully!"
-            redirectPath="/(officer)/home"
-            buttonLabel="Home"
-          />
-          <ErrorModal visible={errorModal} onClose={() => setErrorModal(false)} />
-        </ScrollView>
-        <Loading text="Please wait..." color="#4F46E5" visible={loading} />
-      </KeyboardAvoidingView>
-    </LinearbackGround>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit Event</Text>}
+      </TouchableOpacity>
+    </ScrollView>
   );
 };
 
 export default AddEventScreen;
 
 const styles = StyleSheet.create({
-  scrollContainer: { padding: 20, paddingBottom: 200 },
-  header: { fontSize: 22, fontWeight: "bold", marginBottom: 20, textAlign: "center" },
-  subHeader: { fontSize: 18, fontWeight: "600", marginTop: 20, marginBottom: 10 },
-  input: {
+  container: { flex: 1, backgroundColor: "#fff", padding: 16 },
+  header: { fontSize: 22, fontWeight: "700", marginBottom: 16, textAlign: "center", color: COLORS.Primary },
+  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 10, padding: 12, fontSize: 16, marginVertical: 6 },
+  textArea: { height: 100, textAlignVertical: "top" },
+  rowInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     borderWidth: 1,
     borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-  },
-  datePickerButton: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    borderRadius: 10,
     padding: 12,
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    marginBottom: 10,
-    alignItems: "center",
+    marginVertical: 6,
   },
-  datePickerText: { fontSize: 16, color: "#333" },
-  card: { backgroundColor: "#fff", padding: 10, borderRadius: 8, marginBottom: 10 },
-  addBtn: { backgroundColor: "#fff", padding: 10, alignItems: "center", borderRadius: 8 },
-  addBtnText: { color: "#333", fontWeight: "600" },
-  submitBtn: {
+  rowText: { fontSize: 16 },
+  imageBtn: {
     backgroundColor: COLORS.Primary,
-    padding: 15,
-    borderRadius: 8,
+    borderRadius: 10,
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 10,
   },
-  submitText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  backText: { marginLeft: 10, fontSize: 18, fontWeight: "600" },
+  imageBtnText: { color: "#fff", fontWeight: "600", textAlign: "center" },
+  imagePreview: { width: "100%", height: 200, borderRadius: 10, marginTop: 10 },
+  sectionHeader: { fontSize: 18, fontWeight: "600", marginTop: 20, color: COLORS.Primary },
+  addBtn: { backgroundColor: "#28a745", borderRadius: 10, paddingVertical: 10, marginTop: 6 },
+  addBtnText: { color: "#fff", textAlign: "center", fontWeight: "600" },
+  listItem: { marginLeft: 10, marginTop: 4, color: "#333" },
+  submitBtn: { backgroundColor: COLORS.Primary, borderRadius: 10, paddingVertical: 14, marginTop: 20 },
+  submitText: { color: "#fff", textAlign: "center", fontSize: 16, fontWeight: "700" },
+  backBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  backText: { color: COLORS.Primary, fontWeight: "600", fontSize: 16 },
 });
