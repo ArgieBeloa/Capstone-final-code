@@ -39,9 +39,8 @@ import {
 import {
   addRecentEvaluation,
   deleteStudentNotification,
-  deleteUpcomingEvent,
   markEventAsEvaluated,
-  markStudentEvaluated,
+  markStudentEvaluated
 } from "@/api/students/controller";
 import { StudentRecentEvaluation } from "../Oop/Types";
 
@@ -175,11 +174,11 @@ export default function RatingsScreen() {
       );
 
       // delete the event evaluated to student upcoming events
-      const deletedUpcomingEvents = await deleteUpcomingEvent(
-        studentToken,
-        userId,
-        id as string
-      );
+      // const deletedUpcomingEvents = await deleteUpcomingEvent(
+      //   studentToken,
+      //   userId,
+      //   id as string
+      // );
 
       // delete the event evaluated to student notification
       const deletedNotification = await deleteStudentNotification(

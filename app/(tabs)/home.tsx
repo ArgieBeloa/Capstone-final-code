@@ -1,9 +1,11 @@
-
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
-import { StudentNotification, StudentUpcomingEvents } from "@/api/students/utils";
+import {
+  StudentNotification,
+  StudentUpcomingEvents
+} from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -32,25 +34,25 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 const Home = () => {
-  const {
-    studentToken,
-    userId,
-    studentData,
-    setStudentData,
-    eventData,
-  } = useUser();
-  const student: StudentModel= studentData;
+  const { studentToken, userId, studentData, setStudentData, eventData } =
+    useUser();
+  const student: StudentModel = studentData;
   const firstLetter = student.studentName.charAt(0);
 
-  const [studentNotification, setStudentNotification] = useState<StudentNotification[]>([]);
+  const [studentNotification, setStudentNotification] = useState<
+    StudentNotification[]
+  >([]);
   const [hasEventRegister, setHasEventRegister] = useState<boolean>(false);
-  const [studentUpcomingEvents, setStudentUpcomingEvents] = useState<StudentUpcomingEvents[]>([]);
+  const [studentUpcomingEvents, setStudentUpcomingEvents] = useState<
+    StudentUpcomingEvents[]
+  >([]);
+  // const [studenRecentEvaluation, setStudenRecentEvaluation] = useState<StudentRecentEvaluation[]>([]);
   const [searchSuggestion, setSearchSuggestion] = useState<EventModel[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [searchId, setSearchId] = useState("no id");
   const scrollX = useRef(new Animated.Value(0)).current;
-  const[events, setEvent] = useState<EventModel[]>([])
+  const [events, setEvent] = useState<EventModel[]>([]);
 
   const haddleRegisterClick = (id: string) => {
     router.push(`../EventDetails/${id}`);
@@ -68,19 +70,28 @@ const Home = () => {
   };
 
   // Fetch student data on mount
- useFocusEffect(
-     useCallback(() => {
-       const getStudentData = async () => {
-         const student = await getStudentById(studentToken, userId);
-         setStudentData(student);
-         setStudentUpcomingEvents(student.studentUpcomingEvents)
+  useFocusEffect(
+    useCallback(() => {
+      const getStudentData = async () => {
+        const student = await getStudentById(studentToken, userId);
+        setStudentData(student);
+        const upcomingEvents = student.studentUpcomingEvents;
+        const recentEvaluation = student.studentRecentEvaluations;
+        const updatedUpcomingEvents = upcomingEvents.filter(
+          (upEvent) =>
+            !recentEvaluation.some(
+              (evalEvent) => evalEvent.eventId === upEvent.eventId
+            )
+        );
 
-         const events = await getAllEvents(studentToken)
-         setEvent(events)
-       };
-       getStudentData();
-     }, [])
-   );
+        setStudentUpcomingEvents(updatedUpcomingEvents);
+
+        const events = await getAllEvents(studentToken);
+        setEvent(events);
+      };
+      getStudentData();
+    }, [])
+  );
 
   // 🔍 Smart search with sorting and live update
   useEffect(() => {
@@ -298,7 +309,7 @@ const Home = () => {
                   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
                   { useNativeDriver: false }
                 )}
-                renderItem={({ item }: { item: StudentUpcomingEvents}) => (
+                renderItem={({ item }: { item: StudentUpcomingEvents }) => (
                   <TouchableHighlight
                     onPress={() => haddleRegisterClick(item.eventId)}
                   >
@@ -399,54 +410,55 @@ const Home = () => {
 
         {/* Upcoming Events */}
         <Text style={styles.eventTextTitle}>Upcoming events</Text>
-          <Animated.FlatList
-            data={events}
-            contentContainerStyle={{ marginHorizontal: 10 }}
-            renderItem={({ item }: { item: EventModel }) => (
-              <TouchableHighlight onPress={() => haddleRegisterClick(item.id)}>
-                <View style={styles.upcomingEventView}>
-                  <View style={{ flexDirection: "row" }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontWeight: "600", fontSize: 19 }}>
-                        {item.eventTitle}
-                      </Text>
-                      <Text>{item.eventLocation}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.dividerLine} />
-                  <View style={{ flexDirection: "row" }}>
-                    <MaterialCommunityIcons
-                      name="calendar-outline"
-                      size={24}
-                      color="black"
-                    />
-                    <View
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        marginLeft: 5,
-                      }}
-                    >
-                      <Text>{item.eventTimeLength}</Text>
-                      <Text>{item.eventDate}</Text>
-                    </View>
+        <Animated.FlatList
+          data={events}
+          contentContainerStyle={{ marginHorizontal: 10 }}
+          renderItem={({ item }: { item: EventModel }) => (
+            <TouchableHighlight onPress={() => haddleRegisterClick(item.id)}>
+              <View style={styles.upcomingEventView}>
+                <View style={{ flexDirection: "row" }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: "600", fontSize: 19 }}>
+                      {item.eventTitle}
+                    </Text>
+                    <Text>{item.eventLocation}</Text>
                   </View>
                 </View>
-              </TouchableHighlight>
-            )}
-            ListEmptyComponent={
-               <View style={{ flex: 1 }}>
-            <Text
-              style={{ textAlign: "center", fontWeight: "500", margin: "auto" }}
-            >
-              No Event for Now
-            </Text>
-          </View>
-            }
-          />
-        
-         
-        
+                <View style={styles.dividerLine} />
+                <View style={{ flexDirection: "row" }}>
+                  <MaterialCommunityIcons
+                    name="calendar-outline"
+                    size={24}
+                    color="black"
+                  />
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: "column",
+                      marginLeft: 5,
+                    }}
+                  >
+                    <Text>{item.eventTimeLength}</Text>
+                    <Text>{item.eventDate}</Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableHighlight>
+          )}
+          ListEmptyComponent={
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontWeight: "500",
+                  margin: "auto",
+                }}
+              >
+                No Event for Now
+              </Text>
+            </View>
+          }
+        />
       </SafeAreaView>
     </LinearbackGround>
   );
@@ -488,7 +500,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  notificationText: { color: "white", fontSize: 9},
+  notificationText: { color: "white", fontSize: 9 },
   eventTextTitle: { fontSize: 20, fontWeight: "500", margin: 10 },
   page: {
     width: width - 20,
