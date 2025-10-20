@@ -1,4 +1,4 @@
-import { getAllEvents } from "@/api/events/controller";
+import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
@@ -85,6 +85,7 @@ const Home = () => {
         );
 
         setStudentUpcomingEvents(updatedUpcomingEvents);
+        setStudentNotification(student.studentNotifications)
 
         const events = await getAllEvents(studentToken);
         setEvent(events);
@@ -314,9 +315,9 @@ const Home = () => {
                     onPress={() => haddleRegisterClick(item.eventId)}
                   >
                     <ImageBackground
-                      source={require("@/assets/images/auditorium.jpg")}
+                      source={getEventImageByLocation(item.eventLocation)}
                       style={[styles.page, { flex: 1 }]}
-                      imageStyle={{ resizeMode: "cover" }}
+                      resizeMode="cover"
                     >
                       <View style={styles.page}>
                         <Text style={styles.pageTitle}>{item.eventTitle}</Text>

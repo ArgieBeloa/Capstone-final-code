@@ -16,7 +16,10 @@ export async function getAllEvents(token: string): Promise<EventModel[]> {
     console.log("✅ Fetched all events:", response.data.length);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error fetching all events:", error.response?.data || error.message);
+    console.error(
+      "❌ Error fetching all events:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -24,7 +27,10 @@ export async function getAllEvents(token: string): Promise<EventModel[]> {
 /**
  * ✅ 2. Get event by ID (public)
  */
-export async function getEventById(token: string, id: string): Promise<EventModel> {
+export async function getEventById(
+  token: string,
+  id: string
+): Promise<EventModel> {
   try {
     const response = await axios.get(`${BASE_URL}/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -32,7 +38,10 @@ export async function getEventById(token: string, id: string): Promise<EventMode
     console.log("✅ Event fetched successfully:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error fetching event by ID:", error.response?.data || error.message);
+    console.error(
+      "❌ Error fetching event by ID:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -40,7 +49,10 @@ export async function getEventById(token: string, id: string): Promise<EventMode
 /**
  * ✅ 3. Create event (only ADMIN or OFFICER)
  */
-export async function createEvent(event: EventModel, token: string): Promise<EventModel> {
+export async function createEvent(
+  event: EventModel,
+  token: string
+): Promise<EventModel> {
   try {
     const response = await axios.post(`${BASE_URL}/create`, event, {
       headers: { Authorization: `Bearer ${token}` },
@@ -48,7 +60,10 @@ export async function createEvent(event: EventModel, token: string): Promise<Eve
     console.log("✅ Event created successfully:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error creating event:", error.response?.data || error.message);
+    console.error(
+      "❌ Error creating event:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -62,13 +77,20 @@ export async function addEventAttendanceRecords(
   attendance: EventAttendance
 ): Promise<EventModel> {
   try {
-    const response = await axios.post(`${BASE_URL}/${eventId}/addAttendance`, attendance, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.post(
+      `${BASE_URL}/${eventId}/addAttendance`,
+      attendance,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
     console.log("✅ Attendance added successfully:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error adding attendance:", error.response?.data || error.message);
+    console.error(
+      "❌ Error adding attendance:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -82,13 +104,20 @@ export async function addEventEvaluationRecords(
   evaluation: EventEvaluationDetails
 ): Promise<any> {
   try {
-    const response = await axios.post(`${BASE_URL}/${eventId}/addEvaluation`, evaluation, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.post(
+      `${BASE_URL}/${eventId}/addEvaluation`,
+      evaluation,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
     console.log("✅ Evaluation added successfully:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error adding evaluation:", error.response?.data || error.message);
+    console.error(
+      "❌ Error adding evaluation:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -108,7 +137,10 @@ export async function updateEvent(
     console.log("✅ Event updated successfully:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error updating event:", error.response?.data || error.message);
+    console.error(
+      "❌ Error updating event:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -153,7 +185,10 @@ export async function updateAllStudentAttending(
 /**
  * ✅ 8. Delete Event (only ADMIN)
  */
-export async function deleteEvent(eventId: string, token: string): Promise<string> {
+export async function deleteEvent(
+  eventId: string,
+  token: string
+): Promise<string> {
   try {
     const response = await axios.delete(`${BASE_URL}/${eventId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -161,7 +196,10 @@ export async function deleteEvent(eventId: string, token: string): Promise<strin
     console.log("✅ Event deleted successfully:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("❌ Error deleting event:", error.response?.data || error.message);
+    console.error(
+      "❌ Error deleting event:",
+      error.response?.data || error.message
+    );
     throw error.response?.data || error;
   }
 }
@@ -188,3 +226,30 @@ export function getPhilippineDateTime(): string {
   const timeString = `${hours}:${minutes} ${ampm}`;
   return `${year}-${month}-${day}T${timeString}`;
 }
+
+// utils/getEventImageByLocation.ts
+
+export const getEventImageByLocation = (location: string) => {
+  switch (location) {
+    case "Auditorium":
+      return require("@/assets/images/auditorium.jpg");
+
+    case "Slec":
+      return require("@/assets/images/slec.jpg");
+
+    case "CPC main":
+      return require("@/assets/images/cpc_main.jpg");
+
+    case "CPC Boulevard":
+      return require("@/assets/images/cpcLogo2.png");
+
+    case "SM":
+      return require("@/assets/images/sm.jpg");
+
+    case "none":
+      return require("@/assets/images/cpcLogo2.png");
+    case "":
+    default:
+      return require("@/assets/images/cpcLogo2.png"); // fallback
+  }
+};

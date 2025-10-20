@@ -1,4 +1,7 @@
-import { getAllEvents } from "@/api/EventService";
+
+import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -16,16 +19,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
-import { Event, Student } from "../Oop/Types";
 
 const Profile = () => {
   const { studentData, eventData, studentToken } = useUser();
   const router = useRouter();
 
-  const student: Student = studentData;
+  const student: StudentModel = studentData;
   const [events, setEvents] = useState(eventData);
-  const [doneEvents, setDoneEvents] = useState<Event[]>([]);
-  const [soonEvents, setSoonEvents] = useState<Event[]>([]);
+  const [doneEvents, setDoneEvents] = useState<EventModel[]>([]);
+  const [soonEvents, setSoonEvents] = useState<EventModel[]>([]);
 
   // circle data
   const screenWidth = Dimensions.get("window").width;

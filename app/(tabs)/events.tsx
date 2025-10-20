@@ -1,4 +1,4 @@
-import { getAllEvents } from "@/api/events/controller";
+import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -70,8 +70,7 @@ const Events = () => {
       } else {
         // const event =  selectedTitle);
         const event = eventData.filter(
-          (event) =>
-            event.eventCategory.toLowerCase() === selectedTitle.toLowerCase()
+          (event) => event.eventCategory === selectedTitle
         );
         setEventState(event);
       }
@@ -317,9 +316,9 @@ const Events = () => {
                 <TouchableHighlight onPress={() => haddleViewDetails(item.id)}>
                   <View style={styles.eventFlatListContainer}>
                     <ImageBackground
-                      source={require("@/assets/images/auditorium.jpg")}
+                      source={getEventImageByLocation(item.eventLocation)}
                       style={[styles.imageBgFlatlist]}
-                      imageStyle={{ resizeMode: "cover" }}
+                      resizeMode="cover"
                     >
                       <View style={{ marginTop: "auto", paddingLeft: 10 }}>
                         <Text style={styles.eventTitleFlatlist}>
@@ -332,6 +331,7 @@ const Events = () => {
                           gap: 5,
                           paddingLeft: 5,
                           marginBottom: 5,
+                          flexWrap: "wrap",
                         }}
                       >
                         <AntDesign

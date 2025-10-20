@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
-import { getAllEvents } from "@/api/events/controller";
+import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 
 const Home = () => {
@@ -44,9 +44,9 @@ const Home = () => {
     const loadData = async () => {
       try {
         if (eventData?.length) {
+          
              const students = await getAllStudents(studentToken);
-         
-
+             
           // get students expo token
           const notificationIds = students
             .filter((s) => !!s.notificationId)
@@ -141,7 +141,7 @@ const Home = () => {
                 style={styles.card}
               >
                 <Image
-                  source={require("@/assets/images/eventPic1.jpg")}
+                  source={getEventImageByLocation(latestEventState.eventLocation)}
                   resizeMode="cover"
                   style={styles.eventImage}
                 />

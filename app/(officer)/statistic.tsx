@@ -1,5 +1,6 @@
-import { getAllEvents } from "@/api/EventService";
-import { getAllStudents, sendExpoNotification } from "@/api/StudentService";
+import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
+import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
 import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
@@ -20,48 +21,44 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Event } from "../Oop/Types";
 
 const Statistic = () => {
   const { studentToken, studentData, eventData } = useUser();
   const router = useRouter();
-  const [statisticEvent, setStatisticEvent] = useState<Event[]>([]);
-  const [allTokens, setAllTokens] = useState<string[]>([]);
-  const [suggestionTitleState, setSuggestedTitleState] = useState([]);
+
+  const [statisticEvent, setStatisticEvent] = useState<EventModel[]>([]);
+  const [suggestedTitleState, setSuggestedTitleState] = useState<
+    { eventId: string; eventTitle: string }[]
+  >([]);
+  const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   // 🪄 Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
-  // 📢 Send announcement
-  const handleSendAnnouncement = async (title: string, message: string) => {
-    if (!title.trim() || !message.trim()) {
-      Alert.alert("Missing fields", "Please fill out both title and message!");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await sendExpoNotification({ tokens: allTokens, title, message });
-      Alert.alert("✅ Success", "Announcement sent successfully!");
-    } catch (error: any) {
-      console.error("❌ Error sending announcement:", error);
-      Alert.alert("Error", "Failed to send announcement!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // 🧠 Fetch events and students once, and whenever a new event is added
   useEffect(() => {
-    const loadEvents = async () => {
+    const loadData = async () => {
       try {
+        setLoading(true);
+
+        // ✅ Fetch all students
+        const students = await getAllStudents(studentToken);
+        const notificationIds = students
+          .filter((s) => !!s.notificationId)
+          .map((student) => ({
+            notificationId: student.notificationId,
+          }));
+        setAllTokens(notificationIds);
+
+        // ✅ Fetch all events
         const allEvents = await getAllEvents(studentToken);
         console.log("📊 All events:", allEvents);
 
-        // 🧮 Calculate performance and rank
+        // 🧮 Compute attendance & evaluation stats
         const rankedEvents = allEvents
-          .map((event: Event) => {
+          .map((event: EventModel) => {
             const attendanceCount = event.eventAttendances?.length || 0;
             const evaluationScores =
               event.eventEvaluationDetails?.map(
@@ -75,7 +72,7 @@ const Statistic = () => {
             const attendanceRate =
               (attendanceCount / (event.allStudentAttending || 1)) * 100;
             const performanceScore =
-              attendanceRate * 0.6 + (evaluationAvg / 5) * 40; // weighted formula
+              attendanceRate * 0.6 + (evaluationAvg / 5) * 40; // weighted score
 
             return {
               ...event,
@@ -84,16 +81,18 @@ const Statistic = () => {
               performanceScore,
             };
           })
-          .sort(
-            (
-              a: { performanceScore: number },
-              b: { performanceScore: number }
-            ) => b.performanceScore - a.performanceScore
-          );
+          .sort((a, b) => b.performanceScore - a.performanceScore);
 
         setStatisticEvent(rankedEvents);
 
-        // Trigger animation
+        // 🧩 Prepare event suggestions for HeaderOfficer
+        const eventIdAndTitles = allEvents.map((event) => ({
+          eventId: event.id ?? "",
+          eventTitle: event.eventTitle,
+        }));
+        setSuggestedTitleState(eventIdAndTitles);
+
+        // 🎬 Trigger entry animation
         Animated.parallel([
           Animated.timing(fadeAnim, {
             toValue: 1,
@@ -108,37 +107,17 @@ const Statistic = () => {
           }),
         ]).start();
       } catch (error) {
-        console.error("❌ Error loading events:", error);
+        console.error("❌ Error loading data:", error);
+        Alert.alert("Error", "Failed to load event statistics.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    const loadData = async () => {
-      try {
-        // 🎯 Suggested event titles
-        if (eventData?.length) {
-          const eventIdAndTitles = eventData.map(
-            (event: { id: any; eventTitle: any }) => ({
-              eventId: event.id,
-              eventTitle: event.eventTitle,
-            })
-          );
-          setSuggestedTitleState(eventIdAndTitles);
-        }
-
-        // 🎯 Fetch all students (for notification tokens)
-        const students = await getAllStudents(studentToken);
-        const tokens = students
-          .map((s: { tokenId?: string }) => s.tokenId)
-          .filter(Boolean);
-        setAllTokens(tokens);
-      } catch (e) {
-        console.log(e);
-      }
-    };
     loadData();
-    loadEvents();
-  }, [studentToken]);
+  }, [eventData]); // ✅ Re-run when new event is added
 
+  // 🏆 Rank icons
   const getRankIcon = (index: number) => {
     if (index === 0)
       return <Ionicons name="trophy" size={30} color="#FFD700" />; // gold
@@ -149,21 +128,51 @@ const Statistic = () => {
     return <Ionicons name="medal-outline" size={24} color="#999" />;
   };
 
+  // 📢 Send announcement to all students
+  const handleSendAnnouncement = async (title: string, message: string) => {
+    if (!title.trim() || !message.trim()) {
+      Alert.alert("Missing fields", "Please fill out both title and message!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const extractAllTokens = allTokens.map(
+        (item) => item.notificationId
+      ) as string[];
+
+      await sendExpoNotification(studentToken, {
+        tokens: extractAllTokens,
+        title,
+        body: message,
+      });
+
+      Alert.alert("✅ Success", "Announcement sent successfully!");
+    } catch (error: any) {
+      console.error("❌ Error sending announcement:", error);
+      Alert.alert("Error", "Failed to send announcement!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
-        {/* Header */}
+        {/* 🧭 Header */}
         <HeaderOfficer
           officerName={studentData?.studentName ?? "Officer"}
-          eventSuggestionData={suggestionTitleState}
+          eventSuggestionData={suggestedTitleState}
           handleSendAnnouncement={handleSendAnnouncement}
         />
+
         <View style={{ flex: 1, padding: 15, zIndex: -1 }}>
           <Text style={styles.header}>🏆 Event Performance Ranking</Text>
 
           <Animated.FlatList
             data={statisticEvent}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id ?? Math.random().toString()}
             style={{
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }],
@@ -179,19 +188,13 @@ const Statistic = () => {
                     <Text style={styles.title}>{item.eventTitle}</Text>
                     <LinearProgressBar
                       value={item.eventAttendances?.length || 0}
-                      max={item.allStudentAttending}
-                    // title={`Attendance (${(item?.attendanceRate ?? 0).toFixed(1)}%)`}
-                    title="Attendance"
-
+                      max={item.allStudentAttending || 1}
+                      title="Attendance"
                     />
                     <LinearProgressBar
                       value={item.eventEvaluationDetails?.length || 0}
                       max={item.eventAttendances?.length || 1}
-                      // title={`Evaluations (${(item?.attendanceRate ?? 0).toFixed(
-                      //   1
-                      // )}★ avg)`}
-                    title="Evaluated"
-
+                      title="Evaluated"
                     />
                   </View>
                 </Animated.View>
@@ -203,11 +206,12 @@ const Statistic = () => {
               </Text>
             }
           />
-          {/* Loading Modal */}
+
+          {/* 🔄 Loading Modal */}
           <Modal visible={loading} transparent animationType="fade">
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="large" color="#fff" />
-              <Text style={styles.loadingText}>Sending Announcement...</Text>
+              <Text style={styles.loadingText}>Processing...</Text>
             </View>
           </Modal>
         </View>
@@ -267,5 +271,5 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     fontWeight: "600",
-  }, 
+  },
 });

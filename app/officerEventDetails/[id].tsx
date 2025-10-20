@@ -1,4 +1,7 @@
-import { getEventById } from "@/api/spring";
+
+import { getEventById } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+import { EventAttendance, EventEvaluationDetails } from "@/api/events/utils";
 import LinearBackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
 import { COLORS } from "@/constants/ColorCpc";
@@ -17,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
-import { Event, EventAttendance, EventEvaluationDetail } from "../Oop/Types";
+
 
 const EventViewMore = () => {
   const router = useRouter();
@@ -35,8 +38,8 @@ const EventViewMore = () => {
   const labelFontSize = Math.min(screenWidth * 0.045, 14);
 
   // 📊 States
-  const [eventFeedback, setEventFeedback] = useState<EventEvaluationDetail[]>([]);
-  const [event, setEvent] = useState<Event>();
+  const [eventFeedback, setEventFeedback] = useState<EventEvaluationDetails []>([]);
+  const [event, setEvent] = useState<EventModel>();
   const [eventAttended, setEventAttended] = useState<EventAttendance[]>([]);
   const [numberOfEvaluated, setNumberOfEvaluated] = useState<number>(0);
   const [overallPerformance, setOverallPerformance] = useState<number>(0);
@@ -47,23 +50,23 @@ const EventViewMore = () => {
     const getEvent = async () => {
       try {
         const res = await getEventById(studentToken, id as string);
-        const fetchedEvent = res?.[0];
 
-        if (!fetchedEvent) return;
 
-        const feedback = fetchedEvent?.eventEvaluationDetails ?? [];
-        const attendances = fetchedEvent?.eventAttendances ?? [];
+        if (!res) return;
+
+        const feedback =   res.eventEvaluationDetails
+        const attendances = res.eventAttendances
 
         setEventFeedback(feedback);
         setEventAttended(attendances);
         setNumberOfEvaluated(feedback.length);
         setNumberOfStudentAttended(attendances.length);
-        setEvent(fetchedEvent);
+        setEvent(res);
 
         const performance =
           feedback.length > 0
             ? feedback.reduce(
-                (sum: number, item: EventEvaluationDetail) =>
+                (sum: number, item: EventEvaluationDetails) =>
                   sum + (item.studentAverageRate ?? 0),
                 0
               ) / feedback.length
@@ -191,7 +194,6 @@ const EventViewMore = () => {
                 data={eventFeedback}
                 style={{ flex: 1 }}
                 contentContainerStyle={styles.flatlistContainer}
-                keyExtractor={(item) => item.studentId}
                 showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => {
                   let iconName: keyof typeof Ionicons.glyphMap;

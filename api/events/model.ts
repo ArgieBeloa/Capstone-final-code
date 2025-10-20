@@ -13,7 +13,7 @@ import {
 // 📦 Event Model Interface (TS version of EventModel.java)
 // ===============================
 export interface EventModel {
-  id?: string;
+  id: string;
 
   // Info
   eventTitle: string;
@@ -25,7 +25,6 @@ export interface EventModel {
   eventLocation: string;
   eventCategory: string;
   eventTimeLength: string; // e.g., "2 hours"
-  eventImage: string
 
   // Organizer
   eventOrganizer: EventOrganizer;

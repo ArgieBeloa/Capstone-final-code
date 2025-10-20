@@ -1,5 +1,5 @@
 import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
-import { getAllEvents } from "@/api/events/controller";
+import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { QrGeneratorProps } from "@/api/events/utils";
 import FloatingButton from "@/components/FloatingButton";
@@ -29,7 +29,9 @@ const Events = () => {
   const { eventData, studentData, studentToken } = useUser();
   const router = useRouter();
 
-  const [suggestionTitleState, setSuggestedTitleState] = useState([]);
+  const [suggestedTitleState, setSuggestedTitleState] = useState<
+    { eventId: string; eventTitle: string }[]
+  >([]);
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [eventState, setEventState] = useState<EventModel[]>(eventData);
@@ -70,8 +72,8 @@ const Events = () => {
 
           // get students expo token
           const notificationIds = students
-            .filter((s: { notificationId: any }) => !!s.notificationId)
-            .map((student: { notificationId: any }) => ({
+            .filter((s) => !!s.notificationId)
+            .map((student) => ({
               notificationId: student.notificationId,
             }));
 
@@ -87,6 +89,7 @@ const Events = () => {
               eventTitle: event.eventTitle,
             })
           );
+          setSuggestedTitleState(eventIdAndTitles);
         }
       } catch (error) {
         console.error("❌ Error loading data:", error);
@@ -127,27 +130,24 @@ const Events = () => {
     }
   };
   useEffect(() => {
-    const getEvent = async () => {
-      if (selectedIndex === 0) {
-        setEventState(eventData);
-      } else {
-        // const event =  selectedTitle);
-        const event = eventData.filter(
-          (event) =>
-            event.eventCategory.toLowerCase() === selectedTitle.toLowerCase()
-        );
-        setEventState(event);
-      }
-    };
-    getEvent();
-  }, [selectedTitle]);
+    if (selectedIndex === 0) {
+      setEventState(eventData);
+      console.log(eventData);
+    } else {
+      const filtered = eventData.filter(
+        (event) => event.eventCategory === selectedTitle
+      );
+      setEventState(filtered);
+    }
+  }, [selectedTitle, eventData, selectedIndex]);
+
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
         {/* HEADER */}
         <HeaderOfficer
           officerName={studentData.studentName}
-          eventSuggestionData={suggestionTitleState}
+          eventSuggestionData={suggestedTitleState}
           handleSendAnnouncement={handleSendAnnouncement}
         />
 
@@ -191,9 +191,9 @@ const Events = () => {
                 >
                   <View style={styles.eventFlatListContainer}>
                     <ImageBackground
-                      source={require("@/assets/images/auditorium.jpg")}
+                    source={getEventImageByLocation(item.eventLocation)}
                       style={styles.imageBgFlatlist}
-                      imageStyle={{ resizeMode: "cover" }}
+                       resizeMode="cover"
                     >
                       {/* QR Button */}
                       <Pressable
