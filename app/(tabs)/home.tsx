@@ -13,8 +13,8 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -68,29 +68,19 @@ const Home = () => {
   };
 
   // Fetch student data on mount
-  useEffect(() => {
-    const getStudentData = async () => {
-      try {
-        if (!studentToken || !studentData) return;
+ useFocusEffect(
+     useCallback(() => {
+       const getStudentData = async () => {
+         const student = await getStudentById(studentToken, userId);
+         setStudentData(student);
+         setStudentUpcomingEvents(student.studentUpcomingEvents)
 
-        const refreshStudentData= await getStudentById(studentToken, userId);
-        console.log(refreshStudentData)
-        setStudentUpcomingEvents(refreshStudentData.studentUpcomingEvents);
-        setHasEventRegister(true);
-        setStudentData(refreshStudentData);
-        setStudentNotification(refreshStudentData.studentNotifications);
-
-        setEvent(eventData)
-      } catch (error) {
-        console.log("Failed to fetch student data:", error);
-      }
-    };
-
-    getStudentData();
-     
-
-   
-  }, []);
+         const events = await getAllEvents(studentToken)
+         setEvent(events)
+       };
+       getStudentData();
+     }, [])
+   );
 
   // 🔍 Smart search with sorting and live update
   useEffect(() => {

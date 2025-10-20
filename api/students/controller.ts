@@ -8,15 +8,19 @@ import {
   StudentUpcomingEvents,
 } from "./utils";
 
+// =======================================
+// 🌐 BASE ENDPOINTS
+// =======================================
 const BASE_URL = "http://10.12.173.25:8080/api/student";
 const apiForAttendance = "http://10.12.173.25:8080";
-// ✅ Helper for auth headers
 
-// ===================================
+// =======================================
 // 🧑‍🎓 STUDENT CONTROLLER API SERVICE
-// ===================================
+// =======================================
 
-// ✅ GET Student by ID
+/**
+ * 🔍 Get student details by ID
+ */
 export async function getStudentById(
   token: string,
   studentId: string
@@ -27,7 +31,9 @@ export async function getStudentById(
   return res.data;
 }
 
-// ✅ POST Add Recent Evaluation
+/**
+ * 📝 Add a recent evaluation record for a student
+ */
 export async function addRecentEvaluation(
   token: string,
   studentId: string,
@@ -40,11 +46,12 @@ export async function addRecentEvaluation(
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-
   return res.data;
 }
 
-// ✅ POST Add Attendance + Evaluation (Student or Officer/Admin)
+/**
+ * 🧾 Add attendance + evaluation (for Student or Officer/Admin)
+ */
 export async function addEventAttendanceAndEvaluation(
   token: string,
   studentId: string,
@@ -59,7 +66,10 @@ export async function addEventAttendanceAndEvaluation(
   );
   return res.data;
 }
-// ✅ POST Add Attended Event
+
+/**
+ * 🕒 Add an attended event for a student
+ */
 export async function addEventAttendance(
   token: string,
   studentId: string,
@@ -69,15 +79,15 @@ export async function addEventAttendance(
     `${apiForAttendance}/api/auth/admin/addAttendance/${studentId}`,
     event,
     {
-      headers: { Authorization: `Bearer ${token}` }, // re-add Bearer here
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
-
   return res.data;
 }
 
-
-// ✅ POST Add Upcoming Event
+/**
+ * 📅 Add an upcoming event to student's record
+ */
 export async function addUpcomingEvent(
   token: string,
   studentId: string,
@@ -90,11 +100,12 @@ export async function addUpcomingEvent(
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-
   return res.data;
 }
 
-// ✅ POST Add Event Evaluation (STUDENT / OFFICER / ADMIN)
+/**
+ * 🧠 Add an event evaluation (Student / Officer / Admin)
+ */
 export async function addEventEvaluation(
   token: string,
   eventId: string,
@@ -110,24 +121,46 @@ export async function addEventEvaluation(
   return res.data;
 }
 
-// ✅ PATCH Mark Event as Evaluated
+/**
+ * ✅ POST: Mark event as evaluated for a specific student
+ *  - Requires valid JWT token
+ *  - No request body needed
+ */
 export async function markEventAsEvaluated(
   token: string,
   studentId: string,
   eventId: string
 ): Promise<any> {
-  const res = await axios.patch(
-    `${BASE_URL}/${studentId}/events/${eventId}/markEvaluated`,
-    {},
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  return res.data;
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/${studentId}/events/${eventId}/markEvaluated`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Event successfully marked as evaluated:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error marking event as evaluated:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
 }
 
-// PUT
-// ✅ Mark student as attended
+// =======================================
+// 🟢 PUT REQUESTS
+// =======================================
+
+/**
+ * 🕒 Mark student as attended for a specific event
+ */
 export async function markStudentAttended(
   token: string,
   studentId: string,
@@ -143,7 +176,9 @@ export async function markStudentAttended(
   return res.data;
 }
 
-// ✅ Mark student as evaluated
+/**
+ * 🧾 Mark student as evaluated for a specific event
+ */
 export async function markStudentEvaluated(
   token: string,
   studentId: string,
@@ -159,7 +194,13 @@ export async function markStudentEvaluated(
   return res.data;
 }
 
-// ✅ DELETE Notification
+// =======================================
+// 🗑️ DELETE REQUESTS
+// =======================================
+
+/**
+ * 🧹 Delete a specific notification for a student
+ */
 export async function deleteStudentNotification(
   token: string,
   studentId: string,
@@ -173,3 +214,43 @@ export async function deleteStudentNotification(
   );
   return res.data;
 }
+
+/**
+ * 🗑️ DELETE: Remove a student's upcoming event
+ * 
+ * @param token - JWT token (include the 'Bearer' prefix automatically)
+ * @param studentId - The student's MongoDB ID
+ * @param eventId - The upcoming event ID to delete
+ * 
+ * @returns Updated StudentModel after deletion
+ * 
+ * ✅ Example:
+ * deleteUpcomingEvent(token, "68f4d09348d6e16db6b260f3", "68f08f2fea9158bed4ff2eb2");
+ */
+export async function deleteUpcomingEvent(
+  token: string,
+  studentId: string,
+  eventId: string
+): Promise<any> {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/${studentId}/upcomingEvents/${eventId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("✅ Upcoming event deleted successfully:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error deleting upcoming event:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+}
+

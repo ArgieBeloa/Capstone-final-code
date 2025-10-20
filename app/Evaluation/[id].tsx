@@ -19,13 +19,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 // API
-import { addEventEvaluation, getEventById } from "@/api/EventService";
-import {
-  addStudentRecentEvaluation,
-  updateProfileData,
-  updateStudentEventEvaluated,
-} from "@/api/StudentService";
-import { eventsDataFunction, studentDataFunction } from "@/api/spring";
 
 // Icons & Components
 import Loading from "@/components/Loading";
@@ -33,28 +26,34 @@ import { FontAwesome } from "@expo/vector-icons";
 
 // Types
 import {
+  addEventEvaluationRecords,
+  getEventById,
+  getPhilippineDateTime,
+} from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
+import {
   EvaluationQuestion,
-  Event,
-  EventEvaluationDetail,
+  EventEvaluationDetails,
   StudentEvaluationInfo,
-  StudentRecentEvaluation,
-} from "../Oop/Types";
+} from "@/api/events/utils";
+import {
+  addRecentEvaluation,
+  deleteStudentNotification,
+  deleteUpcomingEvent,
+  markEventAsEvaluated,
+  markStudentEvaluated,
+} from "@/api/students/controller";
+import { StudentRecentEvaluation } from "../Oop/Types";
 
 export default function RatingsScreen() {
   const { id } = useLocalSearchParams();
-  const {
-    studentNumber,
-    studentToken,
-    studentData,
-    setStudentData,
-    setEventData,
-  } = useUser();
+  const { studentToken, studentData, userId } = useUser();
   const router = useRouter();
 
   const [evaluationData, setEvaluationData] = useState<EvaluationQuestion[]>(
     []
   );
-  const [event, setEvent] = useState<Event>();
+  const [event, setEvent] = useState<EventModel>();
   const [alreadyEvaluated, setAlreadyEvaluated] = useState(
     studentData?.studentRecentEvaluations || []
   );
@@ -132,64 +131,62 @@ export default function RatingsScreen() {
           : 0;
 
       // Build evaluation payload
-      const evaluation: EventEvaluationDetail = {
-        studentId: studentData.id ?? "unknown",
+      const payloadEventRecordsEvaluation: EventEvaluationDetails = {
         studentName: studentData.studentName ?? "Anonymous",
         studentAverageRate: avgRate,
         studentSuggestion: suggestion ?? "no suggestion",
         studentEvaluationInfos,
       };
 
-      // 🔥 Submit
-      await addEventEvaluation(studentToken, id as string, evaluation);
-
-      // Update profile data
-      await updateProfileData(
+      // 🔥 Submit to event records
+      // await addEventEvaluation(studentToken, id as string, evaluation);
+      const eventRecords = await addEventEvaluationRecords(
         studentToken,
-        studentData.id,
         id as string,
-        true,
-        true
+        payloadEventRecordsEvaluation
       );
-      await updateStudentEventEvaluated(
+
+      // Update profile data mark evaluated true
+      const profileDataEvaluated = await markStudentEvaluated(
         studentToken,
-        studentData.id,
-        id as string,
-        true
+        userId,
+        id as string
       );
 
-      // Add to recent evaluations
-      const evaluatedEvent: StudentRecentEvaluation[] = [
-        {
-          eventId: id as string,
-          eventTitle: event?.eventTitle || "No Title",
-          studentRatingsGive: avgRate,
-          studentDateRated: new Date().toLocaleString(),
-        },
-      ];
-
-      await addStudentRecentEvaluation(
+      // update student attendance to evaluated true
+      const studentAttendanceIsEvaluation = await markEventAsEvaluated(
         studentToken,
-        studentData.id,
-        evaluatedEvent
+        userId,
+        id as string
       );
 
-      // then delete the event in student upcoming event
-      // await deleteSpecificStudentUpcomingEvents(
-      //   studentToken,
-      //   studentData.id,
-      //   id as string
-      // );
+      const payloadEvaluatedEvent: StudentRecentEvaluation = {
+        eventId: id as string,
+        eventTitle: event?.eventTitle || "no title",
+        studentRatingsGive: avgRate,
+        studentDateRated: getPhilippineDateTime(),
+      };
 
-      // refresh student data
-      const refreshStudentData = await studentDataFunction(
-        studentNumber,
-        studentToken
+      // Add to recent evaluations for student records
+      const studentRecentEvaluation = await addRecentEvaluation(
+        studentToken,
+        userId,
+        payloadEvaluatedEvent
       );
-      setStudentData(refreshStudentData);
 
-      const events = await eventsDataFunction(studentToken);
-      setEventData(events);
+      // delete the event evaluated to student upcoming events
+      const deletedUpcomingEvents = await deleteUpcomingEvent(
+        studentToken,
+        userId,
+        id as string
+      );
+
+      // delete the event evaluated to student notification
+      const deletedNotification = await deleteStudentNotification(
+        studentToken,
+        userId,
+        id as string
+      );
 
       setSuccessModalVisible(true);
     } catch (error) {
@@ -203,12 +200,12 @@ export default function RatingsScreen() {
   // 📌 Fetch evaluation questions
   useEffect(() => {
     const getEvent = async () => {
-      const event = await getEventById(studentToken, id);
-      if (event && event[0]?.evaluationQuestions) {
-        setEvaluationData(event[0].evaluationQuestions);
-        setEvent(event[0]);
-      }
+      const event = await getEventById(studentToken, id as string);
+
+      setEvaluationData(event.evaluationQuestions);
+      setEvent(event);
     };
+
     getEvent();
   }, []);
 

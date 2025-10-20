@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     overflow: "hidden",
     width: "100%",
-    minHeight: 200,
+    height: 200,
     justifyContent: "flex-end",
   },
   imageBgFlatlist: { width: "100%", height: "100%" },

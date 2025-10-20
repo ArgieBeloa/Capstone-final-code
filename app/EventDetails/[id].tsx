@@ -1,6 +1,6 @@
 // import { updateAllStudentAttending } from "@/api/EventService";
 // import { addStudentUpcomingEvent, getEventById } from "@/api/spring";
-import { getEventById } from "@/api/events/controller";
+import { getEventById, updateAllStudentAttending } from "@/api/events/controller";
 import { addEventAttendanceAndEvaluation, addUpcomingEvent } from "@/api/students/controller";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
@@ -81,7 +81,9 @@ const EventDetails = () => {
       evaluated: false
     }
     const profileData = await addEventAttendanceAndEvaluation(studentToken, userId, addProfileData)
-     
+    
+    const newCount = event.allStudentAttending + 1
+    const increaseAllStudentAttending = await updateAllStudentAttending(studentToken, id as string, newCount)
 
       setLoading(false);
       setSuccessModalVisible(true);

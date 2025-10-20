@@ -25,8 +25,6 @@ import {
 import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-
-
 const Events = () => {
   const { eventData, studentData, studentToken } = useUser();
   const router = useRouter();
@@ -52,9 +50,15 @@ const Events = () => {
     eventTitle: string,
     officerToken: string
   ) => {
-    const data: QrGeneratorProps = { eventId, eventTitle, officerToken };
+    // ✅ Clean token before putting it in the QR
+    const cleanToken = officerToken.replace(/^Bearer\s*/i, "").trim();
+    const data: QrGeneratorProps = {
+      eventId,
+      eventTitle,
+      officerToken: cleanToken,
+    };
     setEventDataQR(data);
-    console.log(data)
+    console.log("✅ QR data created:", data);
   };
 
   // 🧠 Fetch all data
