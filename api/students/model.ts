@@ -10,7 +10,7 @@ export interface StudentModel {
   studentPassword: string;
 
   // 🧭 Access control
-  role?: "STUDENT" | "OFFICER" | "ADMIN";
+  role: "STUDENT" | "OFFICER" | "ADMIN";
 
   // 🧑‍🎓 Student info
   studentName: string;

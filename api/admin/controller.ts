@@ -118,3 +118,36 @@ export async function sendExpoNotification(
    ✅ 7. only admin or officer can add student attendance (ADMIN or OFFICER)
    POST /api/auth/admin/addAttendance/{studentId}
 =========================================================== */
+/**
+ * Promotes a user by their ID (requires JWT token).
+ * @param userId - The MongoDB ObjectId of the user to promote.
+ * @param token - The JWT token of the admin or authorized user.
+ * @returns The API response data or throws an error if the request fails.
+ */
+export async function promoteStudent( token: string,userId: string,): Promise<any> {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/promote/${userId}`,
+      {}, // no body needed
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      throw new Error(
+        `Error ${error.response.status}: ${error.response.data.message || error.response.data}`
+      );
+    } else if (error.request) {
+      throw new Error("No response from server. Please check your connection.");
+    } else {
+      throw new Error(`Request error: ${error.message}`);
+    }
+  }
+}
+

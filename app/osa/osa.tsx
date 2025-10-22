@@ -1,9 +1,10 @@
-import { registerStudent } from "@/api/spring";
 import {
   getAllStudents,
-  getStudentById,
+  promoteStudent,
   sendExpoNotification,
-} from "@/api/StudentService";
+} from "@/api/admin/controller";
+
+import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import Mymodal from "@/components/Mymodal";
@@ -25,7 +26,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Student } from "../Oop/Types";
 
 interface StudentSuggestionData {
   id: string;
@@ -48,11 +48,13 @@ const OsaScreen: React.FC = () => {
   >([]);
   const [showResults, setShowResults] = useState(false);
 
-  const [searchStudentData, setSearchStudentData] = useState<Student>();
-  const [currentOfficer, setCurrentOfficer] = useState<Student[]>([]);
+  const [searchStudentData, setSearchStudentData] = useState<
+    StudentModel | undefined
+  >();
+  const [currentOfficer, setCurrentOfficer] = useState<StudentModel[]>([]);
   const [studentNumber, setStudentNumber] = useState("");
 
-  const [allTokens, setAllTokens] = useState<string[]>([]);
+  const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
@@ -71,21 +73,24 @@ const OsaScreen: React.FC = () => {
         const students = await getAllStudents(studentToken);
 
         const onlyOfficers = students.filter(
-          (item: Student) => item.category?.toLowerCase() === "officer"
+          (item: StudentModel) => item.role?.toLowerCase() === "officer"
         );
         setCurrentOfficer(onlyOfficers);
 
-        const studentNameAndId = students.map((s: Student) => ({
+        const studentNameAndId: any = students.map((s: StudentModel) => ({
           id: s.id,
           studentName: s.studentName,
           studentNumber: s.studentNumber,
         }));
         setStudentSuggestionData(studentNameAndId);
 
-        const tokens = students
-          .map((s: Student) => s.tokenId)
-          .filter((t: any): t is string => !!t);
-        setAllTokens(tokens);
+        const notificationIds = students
+          .filter((s) => !!s.notificationId)
+          .map((student) => ({
+            notificationId: student.notificationId,
+          }));
+
+        setAllTokens(notificationIds);
       } catch (error) {
         console.error("Error fetching students:", error);
       }
@@ -110,16 +115,17 @@ const OsaScreen: React.FC = () => {
   }, [searchText, studentSuggestionData]);
 
   // ✅ Select student
-const handleSelectStudent = (item: StudentSuggestionData) => {
-  setSearchStudentId(item.id);
-  setSearchText(item.studentName);
-  setStudentNumber(item.studentNumber);
+  const handleSelectStudent = (item: StudentSuggestionData) => {
+    setSearchStudentId(item.id);
+    setSearchText(item.studentName);
+    setStudentNumber(item.studentNumber);
+    console.log(item.id);
 
-  // 🧠 Delay closing dropdown slightly so touch event completes first
-  setTimeout(() => {
-    setShowResults(false);
-  }, 20);
-};
+    // 🧠 Delay closing dropdown slightly so touch event completes first
+    setTimeout(() => {
+      setShowResults(false);
+    }, 20);
+  };
 
   // ✅ Search student manually
   const handleSearchIcon = async () => {
@@ -130,8 +136,11 @@ const handleSelectStudent = (item: StudentSuggestionData) => {
 
     setSearchLoading(true);
     try {
-      const student = await getStudentById(studentToken, searchStudentId);
+      const students = await getAllStudents(studentToken);
+
+      const student = students.find((s) => s.id === searchStudentId);
       setSearchStudentData(student);
+
       console.log("Searched student:", student);
     } catch (error) {
       console.error("Error fetching student:", error);
@@ -145,20 +154,29 @@ const handleSelectStudent = (item: StudentSuggestionData) => {
   const handlePromote = async () => {
     setShowPromoteArea(false);
     setPromotionStatus(true);
-
+    setSearchLoading(true);
     try {
-      if (searchStudentData) {
-        const updatedStudent: Student = {
-          ...searchStudentData,
-          category: "officer",
-          studentPassword: "officer" + studentNumber,
-        };
-        await registerStudent(updatedStudent);
-        setIsPromoted(true);
-      }
-    } catch (error) {
-      console.error("Error promoting student:", error);
+      await promoteStudent(studentToken, searchStudentId);
+
+      setIsPromoted(true);
+
+      Alert.alert("Success 🎉", "Student has been successfully promoted!", [
+        { text: "OK" },
+      ]);
+    } catch (error: any) {
+      console.error(
+        "❌ Error promoting student:",
+        error.response?.data || error.message
+      );
+      Alert.alert(
+        "Error ❌",
+        `Failed to promote student.\n${
+          error.response?.data?.message || error.message
+        }`,
+        [{ text: "OK" }]
+      );
     } finally {
+      setSearchLoading(false);
       setPromotionStatus(false);
     }
   };
@@ -171,25 +189,28 @@ const handleSelectStudent = (item: StudentSuggestionData) => {
     }
 
     try {
-      setLoadingSendNotification(true);
-      await sendExpoNotification({
-        tokens: allTokens ?? [],
-        title,
-        message,
-      });
+      setLoading(true);
 
-      setAnnouncementTitle("");
-      setAnnouncementMessage("");
+      const extactAllTokens: string[] = allTokens.map(
+        (item) => item.notificationId
+      );
+
+      console.log(extactAllTokens);
+      await sendExpoNotification(studentToken, {
+        tokens: extactAllTokens,
+        title,
+        body: message,
+      });
+      console.log(title);
 
       Alert.alert("✅ Success", "Announcement sent successfully!");
     } catch (error: any) {
       console.error("❌ Error sending announcement:", error);
       Alert.alert("Error", "Failed to send announcement!");
     } finally {
-      setLoadingSendNotification(false);
+      setLoading(false);
     }
   };
-
   // ✨ Highlight match text in dropdown
   const renderHighlightedText = (name: string) => {
     if (!searchText) return <Text style={styles.resultText}>{name}</Text>;
@@ -329,10 +350,10 @@ const handleSelectStudent = (item: StudentSuggestionData) => {
             keyExtractor={(item) =>
               item.id?.toString() || Math.random().toString()
             }
-            renderItem={({ item }: { item: Student }) => {
+            renderItem={({ item }: { item: StudentModel }) => {
               const firstLetter =
                 item.studentName?.charAt(0).toUpperCase() || "?";
-              const isOfficer = item.category?.toLowerCase() === "officer";
+              const isOfficer = item.role?.toLowerCase() === "officer";
               return (
                 <TouchableOpacity style={styles.officerItem}>
                   <View style={styles.officerAvatar}>

@@ -1,7 +1,14 @@
 // import { updateAllStudentAttending } from "@/api/EventService";
 // import { addStudentUpcomingEvent, getEventById } from "@/api/spring";
-import { getEventById, updateAllStudentAttending } from "@/api/events/controller";
-import { addEventAttendanceAndEvaluation, addUpcomingEvent } from "@/api/students/controller";
+import {
+  getEventById,
+  getEventImageByLocation,
+  updateAllStudentAttending,
+} from "@/api/events/controller";
+import {
+  addEventAttendanceAndEvaluation,
+  addUpcomingEvent,
+} from "@/api/students/controller";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
@@ -24,8 +31,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { EventModel } from "@/api/events/model";
 import { EventAgenda } from "@/api/events/utils";
-import { StudentEventAttendedAndEvaluationDetails, StudentUpcomingEvents } from "@/api/students/utils";
-
+import {
+  StudentEventAttendedAndEvaluationDetails,
+  StudentUpcomingEvents,
+} from "@/api/students/utils";
 
 const EventDetails = () => {
   const { id } = useLocalSearchParams();
@@ -51,7 +60,7 @@ const EventDetails = () => {
     setLoading(true);
 
     try {
-      const studentUpcomingData: StudentUpcomingEvents  = {
+      const studentUpcomingData: StudentUpcomingEvents = {
         eventId: id.toString(),
         eventTitle: event.eventTitle,
         eventDate: event.eventDate,
@@ -68,22 +77,33 @@ const EventDetails = () => {
         setAlreadyModalVisible(true);
         return;
       }
-       
-      
-      const upcomingEvent = await addUpcomingEvent(studentToken,userId, studentUpcomingData)
-    //  console.log(upcomingEvent)  
 
-    const addProfileData: StudentEventAttendedAndEvaluationDetails ={
-      eventId: id as string,
-      eventTitle: event.eventTitle,
-      eventDateAndTime: event.eventDate,
-      attended: false,
-      evaluated: false
-    }
-    const profileData = await addEventAttendanceAndEvaluation(studentToken, userId, addProfileData)
-    
-    const newCount = event.allStudentAttending + 1
-    const increaseAllStudentAttending = await updateAllStudentAttending(studentToken, id as string, newCount)
+      const upcomingEvent = await addUpcomingEvent(
+        studentToken,
+        userId,
+        studentUpcomingData
+      );
+      //  console.log(upcomingEvent)
+
+      const addProfileData: StudentEventAttendedAndEvaluationDetails = {
+        eventId: id as string,
+        eventTitle: event.eventTitle,
+        eventDateAndTime: event.eventDate,
+        attended: false,
+        evaluated: false,
+      };
+      const profileData = await addEventAttendanceAndEvaluation(
+        studentToken,
+        userId,
+        addProfileData
+      );
+
+      const newCount = event.allStudentAttending + 1;
+      const increaseAllStudentAttending = await updateAllStudentAttending(
+        studentToken,
+        id as string,
+        newCount
+      );
 
       setLoading(false);
       setSuccessModalVisible(true);
@@ -204,7 +224,7 @@ const EventDetails = () => {
               }}
             >
               <ImageBackground
-                source={require("@/assets/images/auditorium.jpg")}
+                source={getEventImageByLocation(event.eventLocation)}
                 style={{
                   width: "100%",
                   height: 180,
@@ -286,7 +306,7 @@ const EventDetails = () => {
                   <Text style={styles.btnAttendingText}>I'm Attending</Text>
                 </TouchableHighlight>
               </View>
-              <View style={{ marginLeft: 10, marginBottom:15 }}>
+              <View style={{ marginLeft: 10, marginBottom: 15 }}>
                 <Text style={[styles.sectionTitle]}>Organizer</Text>
                 <View style={{ marginLeft: 10 }}>
                   <Text>{event.eventOrganizer?.organizerName}</Text>

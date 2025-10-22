@@ -38,11 +38,11 @@ import {
 } from "@/api/events/utils";
 import {
   addRecentEvaluation,
-  deleteStudentNotification,
+  deleteUpcomingEvent,
   markEventAsEvaluated,
   markStudentEvaluated
 } from "@/api/students/controller";
-import { StudentRecentEvaluation } from "../Oop/Types";
+import { StudentRecentEvaluation } from "@/api/students/utils";
 
 export default function RatingsScreen() {
   const { id } = useLocalSearchParams();
@@ -174,18 +174,18 @@ export default function RatingsScreen() {
       );
 
       // delete the event evaluated to student upcoming events
-      // const deletedUpcomingEvents = await deleteUpcomingEvent(
-      //   studentToken,
-      //   userId,
-      //   id as string
-      // );
-
-      // delete the event evaluated to student notification
-      const deletedNotification = await deleteStudentNotification(
+      const deletedUpcomingEvents = await deleteUpcomingEvent(
         studentToken,
         userId,
         id as string
       );
+
+      // delete the event evaluated to student notification
+      // const deletedNotification = await deleteStudentNotification(
+      //   studentToken,
+      //   userId,
+      //   id as string
+      // );
 
       setSuccessModalVisible(true);
     } catch (error) {

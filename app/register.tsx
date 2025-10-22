@@ -52,6 +52,7 @@ const Register = () => {
   const newStudent: StudentModel = {
     studentName: fullname,
     studentNumber: username,
+    role: "STUDENT",
     studentPassword: password,
     course: course,
     department: "no set",
