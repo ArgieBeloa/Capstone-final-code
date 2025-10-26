@@ -1,5 +1,9 @@
 import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
-import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
+import {
+  fetchEventImageById,
+  getAllEvents,
+  getEventImageByLocation,
+} from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { QrGeneratorProps } from "@/api/events/utils";
 import FloatingButton from "@/components/FloatingButton";
@@ -39,6 +43,8 @@ const Events = () => {
   const [eventDataQR, setEventDataQR] = useState<QrGeneratorProps>();
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [selectedTitle, setSelectedTitle] = useState("All");
+
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   const navigationTitle = ["All", "Technology", "Academic", "Health", "Others"];
   // const dateString = new Date(Date.now()).toString();
@@ -90,6 +96,9 @@ const Events = () => {
             })
           );
           setSuggestedTitleState(eventIdAndTitles);
+          //  const image= getEventImageUrl("")
+          // const image = fetchEventImageById("68fe3f9be8afa9ebda9d2fd8", studentToken);
+          // console.log(image);
         }
       } catch (error) {
         console.error("❌ Error loading data:", error);
@@ -141,6 +150,105 @@ const Events = () => {
     }
   }, [selectedTitle, eventData, selectedIndex]);
 
+  const RenderEventItem = ({ item }: { item: EventModel }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        console.log(item.eventImageUrl)
+        try {
+          const uri = await fetchEventImageById(
+            item.eventImageUrl!,
+            studentToken
+          );
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl]);
+
+    return (
+      <TouchableHighlight
+        onPress={() => handleViewDetails(item.id)}
+        underlayColor="transparent"
+      >
+        <View style={styles.eventFlatListContainer}>
+          <ImageBackground
+            source={
+              imageUri
+                ? { uri: imageUri }
+                : getEventImageByLocation(item.eventLocation)
+            }
+            style={styles.imageBgFlatlist}
+            resizeMode="cover"
+          >
+            {/* Loading overlay */}
+            {loadingImage && (
+              <View
+                style={{
+                  ...StyleSheet.absoluteFillObject,
+                  backgroundColor: "rgba(0,0,0,0.2)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            )}
+
+            {/* QR Button */}
+            <Pressable
+              style={styles.qrGeneratorbtn}
+              onPress={() => {
+                setModalIsVisible(true);
+                handleQrGenerator(item.id, item.eventTitle, studentToken);
+              }}
+            >
+              <MaterialIcons name="qr-code-2" size={24} color="black" />
+            </Pressable>
+
+            {/* Event Title */}
+            <View style={{ marginTop: "auto", paddingLeft: 10 }}>
+              <Text style={styles.eventTitleFlatlist}>{item.eventTitle}</Text>
+            </View>
+
+            {/* Info Row */}
+            <View style={styles.eventInfoRow}>
+              <AntDesign
+                name="calendar"
+                size={17}
+                color={COLORS.textColorWhite}
+              />
+              <Text style={styles.eventTitleTextFlatlist}>
+                {item.eventDate}
+              </Text>
+
+              <AntDesign
+                name="clockcircleo"
+                size={17}
+                color={COLORS.textColorWhite}
+              />
+              <Text style={styles.eventTitleTextFlatlist}>
+                {item.eventTime}
+              </Text>
+
+              <Entypo name="location" size={17} color={COLORS.textColorWhite} />
+              <Text style={styles.eventTitleTextFlatlist}>
+                {item.eventLocation}
+              </Text>
+            </View>
+          </ImageBackground>
+        </View>
+      </TouchableHighlight>
+    );
+  };
+
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
@@ -183,75 +291,7 @@ const Events = () => {
           {eventState.length ? (
             <FlatList
               data={eventState}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }: { item: EventModel }) => (
-                <TouchableHighlight
-                  onPress={() => handleViewDetails(item.id)}
-                  underlayColor="transparent"
-                >
-                  <View style={styles.eventFlatListContainer}>
-                    <ImageBackground
-                    source={getEventImageByLocation(item.eventLocation)}
-                      style={styles.imageBgFlatlist}
-                       resizeMode="cover"
-                    >
-                      {/* QR Button */}
-                      <Pressable
-                        style={styles.qrGeneratorbtn}
-                        onPress={() => {
-                          setModalIsVisible(true);
-                          handleQrGenerator(
-                            item.id,
-                            item.eventTitle,
-                            studentToken
-                          );
-                        }}
-                      >
-                        <MaterialIcons
-                          name="qr-code-2"
-                          size={24}
-                          color="black"
-                        />
-                      </Pressable>
-
-                      {/* Event Title */}
-                      <View style={{ marginTop: "auto", paddingLeft: 10 }}>
-                        <Text style={styles.eventTitleFlatlist}>
-                          {item.eventTitle}
-                        </Text>
-                      </View>
-
-                      {/* Info */}
-                      <View style={styles.eventInfoRow}>
-                        <AntDesign
-                          name="calendar"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.eventTitleTextFlatlist}>
-                          {item.eventDate}
-                        </Text>
-                        <AntDesign
-                          name="clockcircleo"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.eventTitleTextFlatlist}>
-                          {item.eventTime}
-                        </Text>
-                        <Entypo
-                          name="location"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.eventTitleTextFlatlist}>
-                          {item.eventLocation}
-                        </Text>
-                      </View>
-                    </ImageBackground>
-                  </View>
-                </TouchableHighlight>
-              )}
+              renderItem={({ item }) => <RenderEventItem item={item} />}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
                   <Text style={{ color: "Black" }}>No events available!</Text>

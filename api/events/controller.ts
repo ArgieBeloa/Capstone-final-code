@@ -162,7 +162,7 @@ export async function updateAllStudentAttending(
 
     const response = await axios.patch(
       `${BASE_URL}/updateAllStudentAttending/${eventId}?newCount=${newCount}`,
-      {}, // No request body
+      {},
       {
         headers: {
           Authorization: formattedToken,
@@ -205,6 +205,102 @@ export async function deleteEvent(
 }
 
 /**
+ * ✅ 9. Upload Event Image (ADMIN or OFFICER)
+ */
+export async function uploadEventImage(
+  token: string,
+  eventId: string,
+  file: File
+): Promise<EventModel> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axios.post(
+      `${BASE_URL}/${eventId}/upload-image`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log("✅ Event image uploaded successfully:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error uploading event image:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+}
+
+/**
+ * ✅ 10. Get Event Image URL (public)
+ * This helps display the image easily on the frontend.
+ */
+export function getEventImageUrl(eventImageId: string): string | null {
+  if (!eventImageId) return null;
+  return `${BASE_URL}/image/${eventImageId}`;
+}
+
+/**
+ * ✅ 11. Fetch Event Image as Blob and return Object URL (public)
+ * Usage: const imageUrl = await fetchEventImageById("68fe3f9be8afa9ebda9d2fd8");
+ */
+/**
+ * ✅ Fetch Event Image as Blob with JWT authentication
+ */
+
+// Return a data URI usable by React Native Image
+export const fetchEventImageById = async (
+  imageURL: string,
+  token: string
+): Promise<string | null> => {
+  try {
+    const response = await fetch(
+      `${imageURL}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error("❌ Failed to fetch image:", response.status);
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const base64 = base64ArrayBuffer(arrayBuffer);
+
+    // ✅ Correctly format data URI
+    const contentType = response.headers.get("Content-Type") || "image/jpeg";
+    return `data:${contentType};base64,${base64}`;
+  } catch (error) {
+    console.error("⚠️ Error fetching image:", error);
+    return null;
+  }
+};
+
+// ✅ Converts ArrayBuffer → Base64 (works better in RN)
+const base64ArrayBuffer = (arrayBuffer: ArrayBuffer) => {
+  let binary = "";
+  const bytes = new Uint8Array(arrayBuffer);
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+};
+
+/**
  * 🕒 Returns the current date and time in Philippine format (UTC+8)
  * Example Output: "2025-10-19T11:37 pm"
  */
@@ -221,31 +317,25 @@ export function getPhilippineDateTime(): string {
   const minutes = String(phTime.getUTCMinutes()).padStart(2, "0");
   const ampm = hours >= 12 ? "pm" : "am";
   hours = hours % 12;
-  hours = hours ? hours : 12; // convert '0' to '12'
+  hours = hours ? hours : 12;
 
   const timeString = `${hours}:${minutes} ${ampm}`;
   return `${year}-${month}-${day}T${timeString}`;
 }
 
 // utils/getEventImageByLocation.ts
-
 export const getEventImageByLocation = (location: string) => {
   switch (location) {
     case "Auditorium":
       return require("@/assets/images/auditorium.jpg");
-
     case "Slec":
       return require("@/assets/images/slec.jpg");
-
     case "CPC main":
       return require("@/assets/images/cpc_main.jpg");
-
     case "CPC Boulevard":
-      return require("@/assets/images/cpcLogo2.png");
-
+      return require("@/assets/images/cpcBoulevard.jpg");
     case "SM":
       return require("@/assets/images/sm.jpg");
-
     case "none":
       return require("@/assets/images/cpcLogo2.png");
     case "":

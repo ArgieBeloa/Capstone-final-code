@@ -6,32 +6,36 @@ import {
   EventOrganizer
 } from "./utils";
 
-// Optional: If you have an EventAgenda type, import it too
-// import { EventAgenda } from "./eventUtils"; // or wherever it's defined
-
 // ===============================
 // 📦 Event Model Interface (TS version of EventModel.java)
 // ===============================
 export interface EventModel {
   id: string;
 
-  // Info
+  // 🧑‍💼 Poster / creator info
+  whoPostedName?: string; // optional for compatibility
+
+  // 📝 Event Info
   eventTitle: string;
   eventShortDescription: string;
   eventBody: string;
   allStudentAttending: number;
-  eventDate: string; // ISO 8601 or string
+  eventDate: string; // e.g., "2025-11-15"
   eventTime: string; // e.g., "09:00 AM"
+  eventTimeLength: string; // e.g., "2 hours"
   eventLocation: string;
   eventCategory: string;
-  eventTimeLength: string; // e.g., "2 hours"
 
-  // Organizer
+  // 🧑‍🎓 Organizer
   eventOrganizer: EventOrganizer;
 
-  // Arrays / relations
+  // 🧾 Arrays / relations
   eventAttendances: EventAttendance[];
-  eventAgendas: EventAgenda[]; // If you have a TS interface for EventAgenda
+  eventAgendas: EventAgenda[];
   evaluationQuestions: EvaluationQuestion[];
   eventEvaluationDetails: EventEvaluationDetails[];
+
+  // 🖼️ Image fields
+  eventImageId?: string;     // MongoDB ObjectId of image in GridFS
+  eventImageUrl?: string;    // Public URL from backend (e.g. https://.../api/events/image/{id})
 }

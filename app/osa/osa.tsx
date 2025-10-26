@@ -345,6 +345,8 @@ const OsaScreen: React.FC = () => {
           )}
 
           {/* Officer List */}
+          <Text style={styles.currentOfficerText}>Current Officers</Text>
+
           <Animated.FlatList
             data={currentOfficer}
             keyExtractor={(item) =>
@@ -606,6 +608,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     elevation: 2,
+  },
+  currentOfficerText: {
+    fontSize: 18,
+    marginLeft: 10,
+    fontWeight: 700,
   },
   studentAvatar: {
     width: 45,
