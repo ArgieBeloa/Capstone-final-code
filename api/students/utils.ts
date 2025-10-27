@@ -4,11 +4,13 @@
 
 // 🔹 StudentUpcomingEvents.java
 export interface StudentUpcomingEvents {
+  eventImageId?: string; // MongoDB ObjectId of image in GridFS
+  eventImageUrl?: string;
   eventId: string;
   eventTitle: string;
   eventDate: string;
   eventTime: string;
-  eventLocation: string
+  eventLocation: string;
 }
 
 // 🔹 StudentEventAttended.java

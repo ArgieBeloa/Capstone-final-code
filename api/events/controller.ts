@@ -1,6 +1,7 @@
 import axios from "axios";
+import { Platform } from "react-native";
 import { EventModel } from "./model";
-import { EventAttendance, EventEvaluationDetails } from "./utils";
+import { EventAttendance, EventEvaluationDetails, PickedImage } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
 const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
@@ -207,36 +208,53 @@ export async function deleteEvent(
 /**
  * ✅ 9. Upload Event Image (ADMIN or OFFICER)
  */
-export async function uploadEventImage(
-  token: string,
-  eventId: string,
-  file: File
-): Promise<EventModel> {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
+// 🚀 Upload to Spring Boot backend
+  export const uploadImage = async (image: PickedImage,  eventId: string, token: string ) => {
+    if (!image) {
+      
+      return;
+    }
 
-    const response = await axios.post(
-      `${BASE_URL}/${eventId}/upload-image`,
-      formData,
-      {
+   
+    const url = `https://securebackend-ox2e.onrender.com/api/events/${eventId}/upload-image`;
+
+    try {
+      const formData = new FormData();
+
+      if (Platform.OS === "web") {
+        // 🖥 Web: must use real File
+        const response = await fetch(image.uri);
+        const blob = await response.blob();
+        const file = new File([blob], image.fileName ?? "upload.jpg", {
+          type: image.type,
+        });
+        formData.append("file", file);
+      } else {
+        // 📱 Native
+        formData.append("file", {
+          uri:
+            Platform.OS === "ios"
+              ? image.uri.replace("file://", "")
+              : image.uri,
+          name: image.fileName,
+          type: image.type,
+        } as any);
+      }
+
+      // ✅ Axios auto-handles boundaries
+      const response = await axios.post(url, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
         },
-      }
-    );
+      });
 
-    console.log("✅ Event image uploaded successfully:", response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error(
-      "❌ Error uploading event image:",
-      error.response?.data || error.message
-    );
-    throw error.response?.data || error;
-  }
-}
+     
+      console.log("Response:", response.data);
+    } catch (error: any) {
+      console.error("Upload error:", error);
+     
+    }
+  };
 
 /**
  * ✅ 10. Get Event Image URL (public)

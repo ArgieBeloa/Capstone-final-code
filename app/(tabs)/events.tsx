@@ -1,4 +1,8 @@
-import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
+import {
+  fetchEventImageById,
+  getAllEvents,
+  getEventImageByLocation,
+} from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -8,6 +12,7 @@ import { AntDesign, Entypo, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   FlatList,
   ImageBackground,
@@ -129,6 +134,92 @@ const Events = () => {
         </Text>
         {text.substring(endIndex)}
       </Text>
+    );
+  };
+
+  const RenderEvents = ({ item }: { item: EventModel }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        console.log(item.eventImageUrl);
+        try {
+          const uri = await fetchEventImageById(
+            item.eventImageUrl!,
+            studentToken
+          );
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl]);
+    return (
+      <TouchableHighlight onPress={() => haddleViewDetails(item.id)}>
+        <View style={styles.eventFlatListContainer}>
+          <ImageBackground
+            source={
+              imageUri
+                ? { uri: imageUri }
+                : getEventImageByLocation(item.eventLocation)
+            }
+            style={[styles.imageBgFlatlist]}
+            resizeMode="cover"
+          >
+            {/* Loading overlay */}
+            {loadingImage && (
+              <View
+                style={{
+                  ...StyleSheet.absoluteFillObject,
+                  backgroundColor: "rgba(0,0,0,0.2)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            )}
+            <View style={{ marginTop: "auto", paddingLeft: 10 }}>
+              <Text style={styles.eventTitleFlatlist}>{item.eventTitle}</Text>
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 5,
+                paddingLeft: 5,
+                marginBottom: 5,
+                flexWrap: "wrap",
+              }}
+            >
+              <AntDesign
+                name="calendar"
+                size={17}
+                color={COLORS.textColorWhite}
+              />
+              <Text style={styles.eventTitleTextFlatlist}>
+                {item.eventDate}
+              </Text>
+              <AntDesign
+                name="clockcircleo"
+                size={17}
+                color={COLORS.textColorWhite}
+              />
+              <Text style={styles.eventTitleTextFlatlist}>
+                {item.eventTime}
+              </Text>
+              <Entypo name="location" size={17} color={COLORS.textColorWhite} />
+              <Text style={styles.eventTitleTextFlatlist}>
+                {item.eventLocation}
+              </Text>
+            </View>
+          </ImageBackground>
+        </View>
+      </TouchableHighlight>
     );
   };
 
@@ -313,55 +404,7 @@ const Events = () => {
                 paddingVertical: 5,
               }}
               renderItem={({ item }: { item: EventModel }) => (
-                <TouchableHighlight onPress={() => haddleViewDetails(item.id)}>
-                  <View style={styles.eventFlatListContainer}>
-                    <ImageBackground
-                      source={getEventImageByLocation(item.eventLocation)}
-                      style={[styles.imageBgFlatlist]}
-                      resizeMode="cover"
-                    >
-                      <View style={{ marginTop: "auto", paddingLeft: 10 }}>
-                        <Text style={styles.eventTitleFlatlist}>
-                          {item.eventTitle}
-                        </Text>
-                      </View>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          gap: 5,
-                          paddingLeft: 5,
-                          marginBottom: 5,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <AntDesign
-                          name="calendar"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.eventTitleTextFlatlist}>
-                          {item.eventDate}
-                        </Text>
-                        <AntDesign
-                          name="clockcircleo"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.eventTitleTextFlatlist}>
-                          {item.eventTime}
-                        </Text>
-                        <Entypo
-                          name="location"
-                          size={17}
-                          color={COLORS.textColorWhite}
-                        />
-                        <Text style={styles.eventTitleTextFlatlist}>
-                          {item.eventLocation}
-                        </Text>
-                      </View>
-                    </ImageBackground>
-                  </View>
-                </TouchableHighlight>
+                <RenderEvents item={item} />
               )}
             />
           </>

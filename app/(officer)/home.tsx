@@ -21,7 +21,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
-import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
+import {
+  fetchEventImageById,
+  getAllEvents,
+  getEventImageByLocation,
+} from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 
 const Home = () => {
@@ -125,6 +129,156 @@ const Home = () => {
       setLoading(false);
     }
   };
+  const RenderLatestEvent = ({
+    latestEventState,
+  }: {
+    latestEventState: EventModel;
+  }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        console.log(latestEventState.eventImageUrl);
+        try {
+          const uri = await fetchEventImageById(
+            latestEventState.eventImageUrl!,
+            studentToken
+          );
+          setImageUri(uri);
+        } catch (error) {
+          console.error(
+            `❌ Failed to load image for event ${latestEventState.id}:`,
+            error
+          );
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [latestEventState.eventImageUrl]);
+
+    return (
+      <TouchableOpacity
+        onPress={() =>
+          router.push(`../officerEventDetails/${latestEventState.id}`)
+        }
+        style={styles.card}
+      >
+        <Image
+          source={
+            imageUri
+              ? { uri: imageUri }
+              : getEventImageByLocation(latestEventState.eventLocation)
+          }
+          resizeMode="cover"
+          style={styles.eventImage}
+        />
+        {/* Loading overlay */}
+        {loadingImage && (
+          <View
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: "rgba(0,0,0,0.2)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
+        <View style={styles.eventInfo}>
+          <Text style={styles.title}>{latestEventState.eventTitle}</Text>
+          <Text style={styles.info}>{latestEventState.eventDate}</Text>
+          <Text style={styles.info}>{latestEventState.eventTime}</Text>
+          <Text style={styles.info}>{latestEventState.eventTimeLength}</Text>
+
+          <LinearProgressBar
+            value={latestEventState.eventAttendances?.length || 0}
+            max={latestEventState.allStudentAttending}
+            title={"Attended"}
+          />
+          <LinearProgressBar
+            value={latestEventState.eventEvaluationDetails?.length || 0}
+            max={latestEventState.eventAttendances?.length || 0}
+            title={"Evaluated"}
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const RenderAllEvents = ({ item }: { item: EventModel }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        console.log(item.eventImageUrl);
+        try {
+          const uri = await fetchEventImageById(
+            item.eventImageUrl!,
+            studentToken
+          );
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl]);
+
+    return (
+      <TouchableOpacity
+        onPress={() => router.push(`../officerEventDetails/${item.id}`)}
+        style={styles.card}
+      >
+        <Image
+          source={
+            imageUri
+              ? { uri: imageUri }
+              : getEventImageByLocation(item.eventLocation)
+          }
+          resizeMode="cover"
+          style={styles.eventImage}
+        />
+        {/* Loading overlay */}
+        {loadingImage && (
+          <View
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: "rgba(0,0,0,0.2)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size="large" color="#fff" />
+          </View>
+        )}
+        <View style={styles.eventInfo}>
+          <Text style={styles.title}>{item.eventTitle}</Text>
+          <Text style={styles.info}>{item.eventDate}</Text>
+          <Text style={styles.info}>{item.eventTime}</Text>
+          <Text style={styles.info}>{item.eventTimeLength}</Text>
+
+          <LinearProgressBar
+            value={item.eventAttendances?.length || 0}
+            max={item.allStudentAttending}
+            title={"Attended"}
+          />
+          <LinearProgressBar
+            value={item.eventEvaluationDetails?.length || 0}
+            max={item.eventAttendances?.length || 0}
+            title={"Evaluated"}
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <LinearbackGround>
@@ -142,41 +296,7 @@ const Home = () => {
             <Text style={styles.subTitleText}>Latest Event</Text>
 
             {latestEventState ? (
-              <TouchableOpacity
-                onPress={() =>
-                  router.push(`../officerEventDetails/${latestEventState.id}`)
-                }
-                style={styles.card}
-              >
-                <Image
-                  source={getEventImageByLocation(
-                    latestEventState.eventLocation
-                  )}
-                  resizeMode="cover"
-                  style={styles.eventImage}
-                />
-                <View style={styles.eventInfo}>
-                  <Text style={styles.title}>
-                    {latestEventState.eventTitle}
-                  </Text>
-                  <Text style={styles.info}>{latestEventState.eventDate}</Text>
-                  <Text style={styles.info}>{latestEventState.eventTime}</Text>
-                  <Text style={styles.info}>
-                    {latestEventState.eventTimeLength}
-                  </Text>
-
-                  <LinearProgressBar
-                    value={latestEventState.eventAttendances?.length || 0}
-                    max={latestEventState.allStudentAttending}
-                    title={"Attended"}
-                  />
-                  <LinearProgressBar
-                    value={latestEventState.eventEvaluationDetails?.length || 0}
-                    max={latestEventState.eventAttendances?.length || 0}
-                    title={"Evaluated"}
-                  />
-                </View>
-              </TouchableOpacity>
+              <RenderLatestEvent latestEventState={latestEventState} />
             ) : (
               <Text style={styles.emptyText}>Loading latest event...</Text>
             )}
@@ -188,37 +308,7 @@ const Home = () => {
               data={eventState}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push(`../officerEventDetails/${item.id}`)
-                  }
-                  style={styles.card}
-                >
-                  <Image
-                    source={getEventImageByLocation(item.eventLocation)}
-                    resizeMode="cover"
-                    style={styles.eventImage}
-                  />
-                  <View style={styles.eventInfo}>
-                    <Text style={styles.title}>{item.eventTitle}</Text>
-                    <Text style={styles.info}>{item.eventDate}</Text>
-                    <Text style={styles.info}>{item.eventTime}</Text>
-                    <Text style={styles.info}>{item.eventTimeLength}</Text>
-
-                    <LinearProgressBar
-                      value={item.eventAttendances?.length || 0}
-                      max={item.allStudentAttending}
-                      title={"Attended"}
-                    />
-                    <LinearProgressBar
-                      value={item.eventEvaluationDetails?.length || 0}
-                      max={item.eventAttendances?.length || 0}
-                      title={"Evaluated"}
-                    />
-                  </View>
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => <RenderAllEvents item={item} />}
               ListEmptyComponent={
                 <Text style={styles.emptyText}>No events to display</Text>
               }

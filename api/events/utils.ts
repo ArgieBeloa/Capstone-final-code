@@ -57,3 +57,10 @@ export interface QrGeneratorProps {
   eventTitle: string;
   officerToken: string;
 }
+
+export interface PickedImage {
+  uri: string;
+  type: string;
+  fileName?: string;
+}
+

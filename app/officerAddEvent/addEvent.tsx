@@ -3,21 +3,24 @@ import {
   getAllStudents,
   sendExpoNotification,
 } from "@/api/admin/controller";
-import { createEvent } from "@/api/events/controller";
+import { createEvent, uploadImage } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentNotification } from "@/api/students/utils";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Calendar, Clock } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { PickedImage } from "@/api/events/utils";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -61,6 +64,8 @@ const AddEventScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
+  const [image, setImage] = useState<PickedImage | null>(null);
 
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
 
@@ -139,6 +144,8 @@ const AddEventScreen = () => {
         eventAgendas,
         evaluationQuestions,
         eventEvaluationDetails: [],
+        eventImageId: "", // MongoDB ObjectId of image in GridFS
+        eventImageUrl: "",
       };
 
       //add to db
@@ -152,6 +159,28 @@ const AddEventScreen = () => {
       Alert.alert("❌ Error", "Failed to create event.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePickPhoto = async () => {
+    const hasNewAPI = (ImagePicker as any).MediaType;
+    const mediaTypes = hasNewAPI
+      ? [(ImagePicker as any).MediaType.image]
+      : (ImagePicker as any).MediaTypeOptions.Images;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes,
+      allowsEditing: true,
+      quality: 0.9,
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setImage({
+        uri: asset.uri,
+        type: asset.mimeType ?? "image/jpeg",
+        fileName: asset.fileName ?? "upload.jpg",
+      });
     }
   };
 
@@ -191,6 +220,8 @@ const AddEventScreen = () => {
           title: eventTitle,
           body: eventShortDescription,
         });
+
+        await uploadImage(image!, newEventData.id, studentToken);
 
         console.log("✅ Notifications sent to all students!");
       } catch (error) {
@@ -335,6 +366,30 @@ const AddEventScreen = () => {
             <Picker.Item label="Academic" value="Academic" />
             <Picker.Item label="Others" value="Others" />
           </Picker>
+          <TouchableOpacity
+            onPress={handlePickPhoto}
+            style={styles.btnPickPhoto}
+          >
+            <Text style={styles.btnPickPhotoText}>Upload Photo</Text>
+          </TouchableOpacity>
+
+          {image && (
+            <Image
+              source={{ uri: image.uri }}
+              style={{
+                width: 200,
+                height: 200,
+                borderRadius: 10,
+                marginBottom: 10,
+                alignSelf: "center",
+              }}
+            />
+          )}
+
+          {/* Upload image only AFTER event is created */}
+          {/* {newEventData && (
+            <UploadEventImage eventId={newEventData.id} token={studentToken} />
+          )} */}
 
           <TextInput
             placeholder="Organizer Name"
@@ -475,6 +530,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 14,
     marginTop: 20,
+  },
+  btnPickPhoto: {
+    margin: "auto",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: "#28a745",
+    borderRadius: 10,
+  },
+  btnPickPhotoText: {
+    textAlign: "center",
+    fontWeight: 700,
+    color: "white",
   },
   submitText: {
     color: "#fff",

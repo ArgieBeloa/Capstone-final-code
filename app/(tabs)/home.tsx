@@ -1,10 +1,25 @@
-import { getAllEvents, getEventImageByLocation } from "@/api/events/controller";
+/*
+  1. dynamic events image
+  2. add logout button
+  3. add permission notification
+  4. add default evaluation
+  5. add image in addevents officer
+
+*/
+
+
+
+import {
+  fetchEventImageById,
+  getAllEvents,
+  getEventImageByLocation,
+} from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
 import {
   StudentNotification,
-  StudentUpcomingEvents
+  StudentUpcomingEvents,
 } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
@@ -18,6 +33,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   FlatList,
@@ -85,7 +101,7 @@ const Home = () => {
         );
 
         setStudentUpcomingEvents(updatedUpcomingEvents);
-        setStudentNotification(student.studentNotifications)
+        setStudentNotification(student.studentNotifications);
 
         const events = await getAllEvents(studentToken);
         setEvent(events);
@@ -147,6 +163,80 @@ const Home = () => {
         </Text>
         {text.substring(endIndex)}
       </Text>
+    );
+  };
+
+  const RenderUpcomingEvents = ({ item }: { item: StudentUpcomingEvents }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(true);
+
+    useEffect(() => {
+      const loadImage = async () => {
+        console.log(item.eventImageUrl);
+        try {
+          const uri = await fetchEventImageById(
+            item.eventImageUrl!,
+            studentToken
+          );
+          setImageUri(uri);
+        } catch (error) {
+          console.error(
+            `❌ Failed to load image for event ${item.eventId}:`,
+            error
+          );
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl]);
+
+    return (
+      <TouchableHighlight onPress={() => haddleRegisterClick(item.eventId)}>
+        <ImageBackground
+          source={
+            imageUri
+              ? { uri: imageUri }
+              : getEventImageByLocation(item.eventLocation)
+          }
+          style={[styles.page, { flex: 1 }]}
+          resizeMode="cover"
+        >
+          {/* Loading overlay */}
+          {loadingImage && (
+            <View
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: "rgba(0,0,0,0.2)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          )}
+          <View style={styles.page}>
+            <Text style={styles.pageTitle}>{item.eventTitle}</Text>
+            <View style={styles.pageInfoRow}>
+              <AntDesign
+                name="calendar"
+                size={17}
+                color={COLORS.textColorWhite}
+              />
+              <Text style={styles.pageConatinerText}>{item.eventDate}</Text>
+              <AntDesign
+                name="clockcircleo"
+                size={17}
+                color={COLORS.textColorWhite}
+              />
+              <Text style={styles.pageConatinerText}>{item.eventTime}</Text>
+              <Entypo name="location" size={17} color={COLORS.textColorWhite} />
+              <Text style={styles.pageConatinerText}>{item.eventLocation}</Text>
+            </View>
+          </View>
+        </ImageBackground>
+      </TouchableHighlight>
     );
   };
 
@@ -311,45 +401,7 @@ const Home = () => {
                   { useNativeDriver: false }
                 )}
                 renderItem={({ item }: { item: StudentUpcomingEvents }) => (
-                  <TouchableHighlight
-                    onPress={() => haddleRegisterClick(item.eventId)}
-                  >
-                    <ImageBackground
-                      source={getEventImageByLocation(item.eventLocation)}
-                      style={[styles.page, { flex: 1 }]}
-                      resizeMode="cover"
-                    >
-                      <View style={styles.page}>
-                        <Text style={styles.pageTitle}>{item.eventTitle}</Text>
-                        <View style={styles.pageInfoRow}>
-                          <AntDesign
-                            name="calendar"
-                            size={17}
-                            color={COLORS.textColorWhite}
-                          />
-                          <Text style={styles.pageConatinerText}>
-                            {item.eventDate}
-                          </Text>
-                          <AntDesign
-                            name="clockcircleo"
-                            size={17}
-                            color={COLORS.textColorWhite}
-                          />
-                          <Text style={styles.pageConatinerText}>
-                            {item.eventTime}
-                          </Text>
-                          <Entypo
-                            name="location"
-                            size={17}
-                            color={COLORS.textColorWhite}
-                          />
-                          <Text style={styles.pageConatinerText}>
-                            {item.eventLocation}
-                          </Text>
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  </TouchableHighlight>
+                  <RenderUpcomingEvents item={item} />
                 )}
               />
               <View style={styles.pagination}>
