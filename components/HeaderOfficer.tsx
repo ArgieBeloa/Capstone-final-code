@@ -43,7 +43,7 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
 
-  const router = useRouter()
+  const router = useRouter();
 
   // 🔍 Filter events
   useEffect(() => {
@@ -72,8 +72,7 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
   const handleSearchText = () => {
     // console.log("🔍 Search Title:", searchText);
     // console.log("🆔 Search ID:", searchEventId);
-   router.push(`../officerEventDetails/${searchEventId}`)
-
+    router.push(`../officerEventDetails/${searchEventId}`);
   };
 
   // ✨ Highlight search
@@ -121,38 +120,55 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
   };
 
   return (
-    <View>
+    <View style={{ justifyContent: "space-between" }}>
       {/* Header Row */}
       <View style={styles.headerContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{firstLetterName}</Text>
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Search..."
-            placeholderTextColor="#777"
-            value={searchText}
-            onChangeText={(text) => {
-              setSearchText(text);
-              if (text.trim() === "") setShowResults(false);
-              else setShowResults(true);
-            }}
-          />
-          <TouchableOpacity onPress={handleSearchText}>
-            <Ionicons name="search" size={20} color="#555" />
-          </TouchableOpacity>
-        </View>
-
-        {/* 📣 Announcer Button */}
-        <TouchableOpacity
-          style={{ marginHorizontal: 10 }}
-          onPress={handleAnnouncer}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 7,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
         >
-          <FontAwesome5 name="bullhorn" size={24} color="black" />
-        </TouchableOpacity>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{firstLetterName}</Text>
+          </View>
+          <View>
+            <Text style={{ fontWeight: 700 }}>{officerName}</Text>
+            <Text style={{ fontWeight: 600, fontSize: 14 }}>Officer</Text>
+          </View>
+        </View>
+
+        <View>
+          {/* Search */}
+          <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Search..."
+                placeholderTextColor="#777"
+                value={searchText}
+                onChangeText={(text) => {
+                  setSearchText(text);
+                  if (text.trim() === "") setShowResults(false);
+                  else setShowResults(true);
+                }}
+              />
+              <TouchableOpacity onPress={handleSearchText}>
+                <Ionicons name="search" size={20} color="#555" />
+              </TouchableOpacity>
+            </View>
+
+            {/* 📣 Announcer Button */}
+            <TouchableOpacity
+              style={{ marginHorizontal: 10 }}
+              onPress={handleAnnouncer}
+            >
+              <FontAwesome5 name="bullhorn" size={15} color="black" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       {/* 🔍 Search Results Dropdown */}
@@ -192,7 +208,10 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
             />
 
             <TextInput
-              style={[styles.modalInput, { height: 100, textAlignVertical: "top"}]}
+              style={[
+                styles.modalInput,
+                { height: 100, textAlignVertical: "top" },
+              ]}
               placeholder="Message"
               multiline
               value={announcementMessage}
@@ -200,7 +219,10 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
             />
 
             <View style={styles.modalButtons}>
-              <Button title="Cancel" onPress={() => setShowAnnouncementModal(false)} />
+              <Button
+                title="Cancel"
+                onPress={() => setShowAnnouncementModal(false)}
+              />
               <Button title="Send" onPress={onSendAnnouncementPress} />
             </View>
           </View>
@@ -222,8 +244,8 @@ const styles = StyleSheet.create({
   },
   avatar: {
     backgroundColor: "grey",
-    width: 50,
-    height: 50,
+    width: 55,
+    height: 55,
     borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
@@ -239,7 +261,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#e6e2e2ff",
     borderRadius: 10,
     paddingHorizontal: 10,
-    flex: 1,
     marginLeft: 10,
   },
   input: {

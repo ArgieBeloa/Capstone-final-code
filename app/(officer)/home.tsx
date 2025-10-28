@@ -284,13 +284,15 @@ const Home = () => {
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.container}>
-          {/* Header */}
           <HeaderOfficer
             officerName={studentData?.studentName ?? "Officer"}
             eventSuggestionData={suggestedTitleState}
             handleSendAnnouncement={handleSendAnnouncement}
           />
+        <View style={styles.container}>
+
+          {/* Header */}
+        
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Latest Event */}
@@ -340,7 +342,7 @@ export default Home;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     width: "95%",
     backgroundColor: COLORS.Forth,
     margin: 10,
