@@ -7,8 +7,6 @@
 
 */
 
-
-
 import {
   fetchEventImageById,
   getAllEvents,
@@ -30,11 +28,11 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
+  ActivityIndicator, Alert, Animated,
   Dimensions,
   FlatList,
   ImageBackground,
@@ -43,7 +41,7 @@ import {
   TextInput,
   TouchableHighlight,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -239,6 +237,40 @@ const Home = () => {
       </TouchableHighlight>
     );
   };
+
+  useEffect(() => {
+    const requestNotificationPermission = async () => {
+      try {
+        // 🔍 Check existing permission status
+        const { status: existingStatus } =
+          await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+
+        // 📩 Ask for permission if not yet granted
+        if (existingStatus !== "granted") {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+
+        // ❌ User denied notification access
+        if (finalStatus !== "granted") {
+          Alert.alert(
+            "Notifications Disabled",
+            "Please enable notifications in your settings to receive updates."
+          );
+          return;
+        }
+
+        // ✅ Permission granted — get Expo push token (optional)
+        const token = (await Notifications.getExpoPushTokenAsync()).data;
+        console.log("✅ Notification permission granted, token:", token);
+      } catch (error) {
+        console.error("Error requesting notification permission:", error);
+      }
+    };
+
+    requestNotificationPermission();
+  }, []);
 
   return (
     <LinearbackGround>

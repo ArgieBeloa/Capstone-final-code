@@ -1,19 +1,21 @@
-
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { Entypo, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Dimensions,
   FlatList,
+  Modal,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
+  TouchableHighlight,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -28,6 +30,7 @@ const Profile = () => {
   const [events, setEvents] = useState(eventData);
   const [doneEvents, setDoneEvents] = useState<EventModel[]>([]);
   const [soonEvents, setSoonEvents] = useState<EventModel[]>([]);
+  const [isLogout, setIsLogout] = useState<boolean>(false);
 
   // circle data
   const screenWidth = Dimensions.get("window").width;
@@ -41,7 +44,7 @@ const Profile = () => {
   const totalCount = eventData.length || 0;
   const progress = (eventDone / (totalCount || 1)) * circumference;
 
-  // 🕒 Utility to check event date vs Philippine time
+  // 🕒 Separate done & upcoming events
   const separateEventsByDate = (events: any[]) => {
     const nowPH = new Date(Date.now() + 8 * 60 * 60 * 1000);
     const todayPH = new Date(
@@ -64,7 +67,13 @@ const Profile = () => {
     return { doneEvents, upcomingEvents };
   };
 
-  // refresh
+  // 🔘 Logout
+  const handleLogout = () => {
+    setIsLogout(false);
+    router.push("/");
+  };
+
+  // 📅 Fetch events
   useEffect(() => {
     const loadEvents = async () => {
       const allEvents = await getAllEvents(studentToken);
@@ -75,6 +84,10 @@ const Profile = () => {
     };
     loadEvents();
   }, []);
+
+  const handlePrintAttendance = (id: string) => {
+    router.push(`../PrintAttendances/${id}`);
+  };
 
   // ✅ Done Events Header
   const headerDoneEvent = (
@@ -98,7 +111,7 @@ const Profile = () => {
           No completed events yet.
         </Text>
       ) : (
-        doneEvents.map((item, index) => (
+        doneEvents.map((item) => (
           <View
             key={item.id}
             style={{
@@ -137,7 +150,6 @@ const Profile = () => {
               </Text>
 
               <View style={{ marginBottom: 8 }}>
-                {/* Event Date / Time Length */}
                 <View
                   style={{
                     flexDirection: "row",
@@ -156,7 +168,6 @@ const Profile = () => {
                   </Text>
                 </View>
 
-                {/* Event Location */}
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Ionicons
                     name="location-outline"
@@ -181,45 +192,34 @@ const Profile = () => {
                 }}
               >
                 {Platform.OS === "web" ? (
-                  // 🖨️ Web: Show Print Button
                   <>
-                   <Text
+                    <Text
                       style={{
-                        color: "#000000ff",
+                        color: "#000",
                         marginLeft: 8,
                         fontWeight: "600",
-                        marginTop:5
-                        
-                      }}
-                    >Attendance</Text>
-            
-                  <TouchableOpacity
-                    onPress={() => handlePrintAttendance(item.id)}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: "#007bff",
-                      paddingHorizontal: 10,
-                      paddingVertical: 5,
-                      borderRadius: 8,
-                      marginLeft:5
-                    }}
-                  >
-                    <FontAwesome5 name="print" size={15} color="#fff" />
-                    {/* <Text
-                      style={{
-                        color: "#fff",
-                        marginLeft: 8,
-                        fontWeight: "600",
+                        marginTop: 5,
                       }}
                     >
-                    
-                    </Text> */}
-                  </TouchableOpacity>
-                  
-                        </>
+                      Attendance
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => handlePrintAttendance(item.id)}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: "#007bff",
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 8,
+                        marginLeft: 5,
+                      }}
+                    >
+                      <FontAwesome5 name="print" size={15} color="#fff" />
+                    </TouchableOpacity>
+                  </>
                 ) : (
-                  // 💾 Mobile (Android/iOS): Show Save Button
                   <>
                     <TouchableOpacity
                       onPress={() => handlePrintAttendance(item.id)}
@@ -241,7 +241,9 @@ const Profile = () => {
                         marginLeft: 8,
                         fontWeight: "600",
                       }}
-                    >Save</Text>
+                    >
+                      Attendance
+                    </Text>
                   </>
                 )}
               </View>
@@ -269,18 +271,8 @@ const Profile = () => {
         shadowRadius: 3,
         shadowOffset: { width: 0, height: 2 },
         marginHorizontal: 10,
-        position: "relative",
       }}
     >
-      <Text
-        style={{
-          fontSize: 20,
-          fontWeight: "700",
-          color: COLORS.TextColor,
-          marginBottom: 10,
-          marginLeft: 10,
-        }}
-      ></Text>
       <View style={{ marginRight: 10, width: 40, alignItems: "center" }}>
         <Ionicons name="time-outline" size={28} color="#4e9af1" />
       </View>
@@ -297,7 +289,6 @@ const Profile = () => {
         </Text>
 
         <View style={{ marginBottom: 8 }}>
-          {/* Event Date / Time Length */}
           <View
             style={{
               flexDirection: "row",
@@ -316,7 +307,6 @@ const Profile = () => {
             </Text>
           </View>
 
-          {/* Event Location */}
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Ionicons
               name="location-outline"
@@ -333,10 +323,6 @@ const Profile = () => {
     </View>
   );
 
-  const handlePrintAttendance = (id: string) => {
-    router.push(`../PrintAttendances/${id}`);
-  };
-
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
@@ -346,8 +332,31 @@ const Profile = () => {
             backgroundColor: COLORS.Forth,
             borderRadius: 10,
             marginHorizontal: 10,
+            position: "relative", // ✅ fix touch issue
           }}
         >
+          {/* 🔘 Logout icon */}
+          <TouchableHighlight
+            onPress={() => {
+              console.log("Logout pressed ✅");
+              setIsLogout(true);
+            }}
+            underlayColor="transparent"
+            style={{
+              position: "absolute",
+              top: 20,
+              right: 10,
+              zIndex: 100, // ✅ ensure visible
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
+              <Entypo name="log-out" size={24} color="black" />
+              <Text>Logout</Text>
+            </View>
+          </TouchableHighlight>
+
           <Text
             style={{
               textAlign: "center",
@@ -389,7 +398,6 @@ const Profile = () => {
           {/* Circle progress */}
           <View
             style={{
-              // backgroundColor: COLORS.Third,
               marginHorizontal: 10,
               borderRadius: 7,
               marginVertical: 10,
@@ -435,7 +443,7 @@ const Profile = () => {
             </View>
           </View>
 
-          {/* FlatList of events */}
+          {/* FlatList */}
           <FlatList
             ListHeaderComponent={headerDoneEvent}
             data={soonEvents}
@@ -452,6 +460,37 @@ const Profile = () => {
           />
         </View>
       </SafeAreaView>
+
+      {/* 🔘 Logout Confirmation Modal */}
+      <Modal
+        transparent
+        visible={isLogout}
+        animationType="fade"
+        onRequestClose={() => setIsLogout(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>
+              Are you sure you want to log out?
+            </Text>
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={() => setIsLogout(false)}
+                style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
+              >
+                <Text>Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleLogout}
+                style={[styles.modalBtn, { backgroundColor: "red" }]}
+              >
+                <Text style={{ color: "#fff" }}>Yes</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </LinearbackGround>
   );
 };
@@ -478,5 +517,33 @@ const styles = StyleSheet.create({
     color: COLORS.TextColor,
     fontWeight: "bold",
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 15,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  modalBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
 });

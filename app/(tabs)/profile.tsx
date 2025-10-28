@@ -1,14 +1,16 @@
 import { getStudentById } from "@/api/students/controller";
-import { StudentEventAttendedAndEvaluationDetails, StudentNotification } from "@/api/students/utils";
+import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { Entypo, Ionicons } from "@expo/vector-icons";
+import { Entypo } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Dimensions,
+  Modal,
+  Pressable,
   StyleSheet,
   Text,
   TouchableHighlight,
@@ -18,60 +20,46 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
-
 const Profile = () => {
   const screenWidth = Dimensions.get("window").width;
   const ratingFontSize = Math.min(screenWidth * 0.06, 20);
   const labelFontSize = Math.min(screenWidth * 0.045, 14);
-  const {
-    studentData,
-    setStudentData,
-    studentNumber,
-    studentToken,
-    eventData,
-    userId
-  } = useUser();
+
+  const { studentData, setStudentData, studentToken, eventData, userId } =
+    useUser();
+
   const [studentAttendedData, setStudentAttendedData] = useState<
     StudentEventAttendedAndEvaluationDetails[]
   >(studentData.studentEventAttendedAndEvaluationDetails);
 
-  const [studentNotification, setStudentNotification] = useState<
-    StudentNotification[]
-  >(studentData.studentNotifications);
+  const [isLogout, setIsLogout] = useState<boolean>(false);
   const router = useRouter();
 
   const radius = Math.max(40, Math.min(80, screenWidth / 6));
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
 
-  const attendedCount =
-    studentData.studentEventAttended.length;
+  const attendedCount = studentData.studentEventAttended.length;
   const totalCount = eventData.length || 0;
   const progress = (attendedCount / (totalCount || 1)) * circumference;
 
   useFocusEffect(
-     useCallback(() => {
-       const getStudentData = async () => {
-         const student = await getStudentById(studentToken, userId);
-         setStudentData(student);
-         setStudentAttendedData(student.studentEventAttendedAndEvaluationDetails)
-       };
-       getStudentData();
-     }, [])
-   );
-  const handleNotificationClick = () => {
-    router.push(`../Notification/studentNotication`);
-  };
+    useCallback(() => {
+      const getStudentData = async () => {
+        const student = await getStudentById(studentToken, userId);
+        setStudentData(student);
+        setStudentAttendedData(
+          student.studentEventAttendedAndEvaluationDetails
+        );
+      };
+      getStudentData();
+    }, [])
+  );
 
-  useEffect(()=>{
-    
-    // const test= async () => {
-    //  const res = await markStudentEvaluated(studentToken,userId, "670f92bb4b2d991a231a3345")
-    //   console.log(res)
-    // }
-    // test()
-    // console.log(studentData.studentEventAttendedAndEvaluationDetails)
-  },[])
+  const handleLogout = () => {
+    setIsLogout(false);
+    router.push("/");
+  };
 
   return (
     <LinearbackGround>
@@ -88,24 +76,16 @@ const Profile = () => {
               <Text style={styles.headerTitle}>Profile</Text>
             </View>
 
-            {/* Notification */}
+            {/* 🔘 Logout icon */}
             <TouchableHighlight
-              onPress={handleNotificationClick}
+              onPress={() => setIsLogout(true)}
               underlayColor="transparent"
             >
-              <View style={{ position: "relative" }}>
-                {studentNotification.length > 0 && (
-                  <View style={styles.notificationBadge}>
-                    <Text style={styles.notificationText}>
-                      {studentNotification.length}
-                    </Text>
-                  </View>
-                )}
-                <Ionicons
-                  name="notifications-outline"
-                  size={28}
-                  color={COLORS.TextColor}
-                />
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+              >
+                <Entypo name="log-out" size={24} color="black" />
+                <Text>Logout</Text>
               </View>
             </TouchableHighlight>
           </View>
@@ -177,99 +157,48 @@ const Profile = () => {
             <Text style={styles.sectionTitle}>Event Attended & Evaluated</Text>
 
             {studentAttendedData.length !== 0 ? (
-              <>
-                <Animated.FlatList
-                  data={studentAttendedData}
-                  keyExtractor={(item) => item.eventId}
-                  style={{ flex: 1 }}
-                  showsVerticalScrollIndicator
-                  renderItem={({
-                    item,
-                  }: {
-                    item: StudentEventAttendedAndEvaluationDetails,
-                  }) => {
+              <Animated.FlatList
+                data={studentAttendedData}
+                keyExtractor={(item) => item.eventId}
+                style={{ flex: 1 }}
+                showsVerticalScrollIndicator
+                renderItem={({ item }) => (
+                  <Animated.View
+                    entering={FadeInUp.duration(500)}
+                    style={styles.eventCard}
+                  >
+                    <View>
+                      <Text style={styles.eventText}>{item.eventTitle}</Text>
+                      <Text style={styles.eventText}>
+                        {item.eventDateAndTime}
+                      </Text>
+                    </View>
 
-                    return (
-                      <Animated.View
-                        entering={FadeInUp.duration(500)}
-                        style={styles.eventCard}
-                      >
-                        <View>
-                          <Text style={styles.eventText}>
-                            {item.eventTitle}
-                          </Text>
-                          <Text style={styles.eventText}>
-                            {item.eventDateAndTime}
-                          </Text>
-                        </View>
+                    <View
+                      style={{
+                        justifyContent: "center",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {item.attended ? (
+                        <Entypo name="check" size={24} color="green" />
+                      ) : (
+                        <Entypo name="cycle" size={24} color="orange" />
+                      )}
+                      <Text style={styles.statusText}>Attended</Text>
 
-                        {/* Attendance / Evaluation Status */}
-                        <View
-                          style={{
-                            justifyContent: "center",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          {/* Attended */}
-                          {item.attended ? (
-                            <Entypo
-                              name="check"
-                              size={24}
-                              color="green"
-                              style={{ alignSelf: "center" }}
-                            />
-                          ) : (
-                            <Entypo
-                              name="cycle"
-                              size={24}
-                              color="orange"
-                              style={{ alignSelf: "center" }}
-                            />
-                          )}
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "500",
-                              alignSelf: "center",
-                              marginRight: 10,
-                            }}
-                          >
-                            Attended
-                          </Text>
-
-                          {/* Evaluated */}
-                          {item.evaluated ? (
-                            <Entypo
-                              name="check"
-                              size={24}
-                              color="green"
-                              style={{ alignSelf: "center" }}
-                            />
-                          ) : (
-                            <Entypo
-                              name="cross"
-                              size={24}
-                              color="red"
-                              style={{ alignSelf: "center" }}
-                            />
-                          )}
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "500",
-                              alignSelf: "center",
-                            }}
-                          >
-                            Evaluated
-                          </Text>
-                        </View>
-                      </Animated.View>
-                    );
-                  }}
-                />
-              </>
+                      {item.evaluated ? (
+                        <Entypo name="check" size={24} color="green" />
+                      ) : (
+                        <Entypo name="cross" size={24} color="red" />
+                      )}
+                      <Text style={styles.statusText}>Evaluated</Text>
+                    </View>
+                  </Animated.View>
+                )}
+              />
             ) : (
               <View
                 style={{
@@ -301,6 +230,37 @@ const Profile = () => {
             )}
           </View>
         </View>
+
+        {/* 🔘 Logout Confirmation Modal */}
+        <Modal
+          transparent
+          visible={isLogout}
+          animationType="fade"
+          onRequestClose={() => setIsLogout(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>
+                Are you sure you want to log out?
+              </Text>
+              <View style={styles.modalButtons}>
+                <Pressable
+                  onPress={() => setIsLogout(false)}
+                  style={[styles.modalBtn, { backgroundColor: "#ccc" }]}
+                >
+                  <Text>Cancel</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleLogout}
+                  style={[styles.modalBtn, { backgroundColor: "red" }]}
+                >
+                  <Text style={{ color: "#fff" }}>Yes</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </LinearbackGround>
   );
@@ -337,19 +297,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   avatarText: { color: "white", fontSize: 20, fontWeight: "bold" },
-  notificationBadge: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "red",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  notificationText: { color: "white", fontSize: 12 },
   studentInfo: { marginVertical: 5 },
   infoText: { fontWeight: "500", marginBottom: 2 },
   circleContainer: {
@@ -383,4 +330,33 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   eventText: { fontWeight: "500", fontSize: 13 },
+  statusText: { fontSize: 10, fontWeight: "500", marginHorizontal: 4 },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 15,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  modalBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
 });

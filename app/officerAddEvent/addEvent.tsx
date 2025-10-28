@@ -3,14 +3,17 @@ import {
   getAllStudents,
   sendExpoNotification,
 } from "@/api/admin/controller";
-import { createEvent, uploadImage } from "@/api/events/controller";
+import {
+  createEvent,
+  pickImageFromGallery,
+  uploadEventImage,
+} from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentNotification } from "@/api/students/utils";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Calendar, Clock } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
@@ -54,7 +57,30 @@ const AddEventScreen = () => {
   >([]);
   const [evaluationQuestions, setEvaluationQuestions] = useState<
     { questionId: string; questionText: string }[]
-  >([]);
+  >([
+    {
+      questionId: "1",
+      questionText: "The over-all preparation in the conduct of the activity",
+    },
+    {
+      questionId: "2",
+      questionText:
+        "Alignment of the seminar/conference to VMGO of the college Importance and applicability",
+    },
+    {
+      questionId: "3",
+      questionText: "Venue and Accommodation of the activity",
+    },
+    {
+      questionId: "4",
+      questionText: "Timing/Phasing and Scheduling of the activity",
+    },
+    {
+      questionId: "5",
+      questionText:
+        "Dynamic inter-action among facilitator/s and participants during the activity",
+    },
+  ]);
 
   const [agendaTitle, setAgendaTitle] = useState("");
   const [agendaTime, setAgendaTime] = useState("");
@@ -68,6 +94,7 @@ const AddEventScreen = () => {
   const [image, setImage] = useState<PickedImage | null>(null);
 
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
+
 
   const isFormValid =
     eventTitle &&
@@ -157,30 +184,34 @@ const AddEventScreen = () => {
     } catch (e) {
       console.error(e);
       Alert.alert("❌ Error", "Failed to create event.");
-    } finally {
-      setLoading(false);
     }
   };
 
+  // 📸 Pick Image using the shared function
   const handlePickPhoto = async () => {
-    const hasNewAPI = (ImagePicker as any).MediaType;
-    const mediaTypes = hasNewAPI
-      ? [(ImagePicker as any).MediaType.image]
-      : (ImagePicker as any).MediaTypeOptions.Images;
+    const selected = await pickImageFromGallery();
+    if (selected) {
+      setImage(selected);
+      console.log("✅ Image selected:", selected.uri);
+    }
+  };
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes,
-      allowsEditing: true,
-      quality: 0.9,
-    });
+  // 🚀 Upload to backend
+  const handleUpload = async (eventId: string, token: string) => {
+    if (!image) {
+      Alert.alert("Please select an image first!");
+      return;
+    }
 
-    if (!result.canceled) {
-      const asset = result.assets[0];
-      setImage({
-        uri: asset.uri,
-        type: asset.mimeType ?? "image/jpeg",
-        fileName: asset.fileName ?? "upload.jpg",
-      });
+    try {
+      const result = await uploadEventImage(image, eventId, token);
+      console.log("✅ Upload success:", result);
+      Alert.alert("✅ Upload successful!");
+    } catch (error: any) {
+      console.error("❌ Upload failed:", error.message || error);
+      Alert.alert("❌ Upload failed", error.message || "Unknown error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -221,7 +252,7 @@ const AddEventScreen = () => {
           body: eventShortDescription,
         });
 
-        await uploadImage(image!, newEventData.id, studentToken);
+        await handleUpload(newEventData.id, studentToken);
 
         console.log("✅ Notifications sent to all students!");
       } catch (error) {

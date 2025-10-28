@@ -4,8 +4,8 @@ import LinearbackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -54,51 +54,52 @@ const Home = () => {
   // );
 
   // 🧠 Fetch all data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (eventData?.length) {
-          const students = await getAllStudents(studentToken);
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
+        try {
+          if (eventData?.length) {
+            const students = await getAllStudents(studentToken);
 
-          // get students expo token
-          const notificationIds = students
-            .filter((s) => !!s.notificationId)
-            .map((student) => ({
-              notificationId: student.notificationId,
-            }));
+            // get students expo token
+            const notificationIds = students
+              .filter((s) => !!s.notificationId)
+              .map((student) => ({
+                notificationId: student.notificationId,
+              }));
 
-          setAllTokens(notificationIds);
+            setAllTokens(notificationIds);
 
-          // 🎯 Fetch all events
-          const events = await getAllEvents(studentToken);
-          setEventState(events);
+            // 🎯 Fetch all events
+            const events = await getAllEvents(studentToken);
+            setEventState(events);
 
-          const eventIdAndTitles = events.map(
-            (event: { id: any; eventTitle: any }) => ({
-              eventId: event.id,
-              eventTitle: event.eventTitle,
-            })
-          );
-          setSuggestedTitleState(eventIdAndTitles);
+            const eventIdAndTitles = events.map(
+              (event: { id: any; eventTitle: any }) => ({
+                eventId: event.id,
+                eventTitle: event.eventTitle,
+              })
+            );
+            setSuggestedTitleState(eventIdAndTitles);
 
-          // 🎯 Get latest event
-          const allEventsData = await getAllEvents(studentToken);
+            // 🎯 Get latest event
+            const allEventsData = await getAllEvents(studentToken);
 
-          if (allEventsData?.length) {
-            const lastItem = allEventsData.at(-1);
-            setLatestEventState(lastItem);
-          } else {
-            setLatestEventState(undefined);
+            if (allEventsData?.length) {
+              const lastItem = allEventsData.at(-1);
+              setLatestEventState(lastItem);
+            } else {
+              setLatestEventState(undefined);
+            }
           }
+        } catch (error) {
+          console.error("❌ Error loading data:", error);
         }
-      } catch (error) {
-        console.error("❌ Error loading data:", error);
-      }
-    };
+      };
 
-    loadData();
-  }, []);
-
+      loadData();
+    }, [])
+  );
   // 📢 Send announcement
   const handleSendAnnouncement = async (title: string, message: string) => {
     if (!title.trim() || !message.trim()) {
@@ -320,6 +321,7 @@ const Home = () => {
         <FloatingButton
           iconName="plus"
           onPress={() => router.push("../officerAddEvent/addEvent")}
+          // onPress={() => router.push("../test")}
         />
 
         {/* Loading Modal */}
