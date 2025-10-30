@@ -179,6 +179,7 @@ export default function Index() {
                 loginButtonDisable && { opacity: 0.6 },
               ]}
               onPress={haddleAuthStudent}
+              // onPress={()=> router.push("./osa/osa")}
               disabled={loginButtonDisable}
             >
               <Text style={styles.loginButtonText}>Login</Text>

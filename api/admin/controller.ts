@@ -126,7 +126,7 @@ export async function sendExpoNotification(
  */
 export async function promoteStudent( token: string,userId: string,): Promise<any> {
   try {
-    const response = await axios.post(
+    const response = await axios.patch(
       `${BASE_URL}/promote/${userId}`,
       {}, // no body needed
       {
