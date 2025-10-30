@@ -69,7 +69,7 @@ export default function Index() {
       setStudentData(userData);
 
       if (response.role === "ADMIN") {
-         router.push("/osa/osa")
+         router.push("/osa/tabs/osa")
         
       } else if (response.role === "OFFICER") {
          setShowModalOfficer(true)

@@ -1,10 +1,11 @@
+import { getAllStudents } from "@/api/admin/controller";
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
 import { useUser } from "@/src/userContext";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   FlatList,
@@ -18,22 +19,23 @@ import Styles from "../styles/globalCss";
 import studentStyles from "../styles/students.styles";
 
 const Students = () => {
-  const { studentToken, eventData } = useUser();
-  const router = useRouter();
-
+  const { studentToken } = useUser();
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
-  const numberOfEvents: number = 1;
-
+  const [studentsData, setStudentsData] = useState<StudentModel[]>([]);
+  const [allStudents, setAllStudents] = useState<StudentModel[]>([]); // ✅ Keep all students for reset
   const [searchText, setSearchText] = useState("");
+  const [filteredStudents, setFilteredStudents] = useState<StudentModel[]>([]);
+  const [showResults, setShowResults] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
-  // 🔹 Animation setup
+  const numberOfEvents: number = 1;
+
+  // 🔹 Animation
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(30)).current;
 
-  // Animate list appearance
   const animateList = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -49,55 +51,78 @@ const Students = () => {
     ]).start();
   };
 
-  // Example static data
-  const studentsData: StudentModel[] = [
-    {
-      id: "1",
-      studentNumber: "2023-001",
-      studentPassword: "",
-      role: "STUDENT",
-      studentName: "John Doe",
-      course: "BSCS",
-      department: "Computer Science",
-      notificationId: "",
-      studentUpcomingEvents: [],
-      studentEventAttended: [
-        {
-          eventId: "e1",
-          eventTitle: "Orientation",
-          studentDateAttended: "2025-10-01",
-          evaluated: true,
-        },
-      ],
-      studentRecentEvaluations: [
-        {
-          eventId: "e1",
-          eventTitle: "Orientation",
-          studentRatingsGive: 0,
-          studentDateRated: "2025-10-01",
-        },
-      ],
-      studentNotifications: [],
-      studentEventAttendedAndEvaluationDetails: [],
-    },
-    {
-      id: "2",
-      studentNumber: "2023-002",
-      studentPassword: "",
-      role: "STUDENT",
-      studentName: "Jane Smith",
-      course: "BSIT",
-      department: "Information Technology",
-      notificationId: "",
-      studentUpcomingEvents: [],
-      studentEventAttended: [],
-      studentRecentEvaluations: [],
-      studentNotifications: [],
-      studentEventAttendedAndEvaluationDetails: [],
-    },
-  ];
+  // 🔹 Fetch all students
+  useFocusEffect(
+    useCallback(() => {
+      const loadStudents = async () => {
+        try {
+          const data = await getAllStudents(studentToken);
+          setStudentsData(data);
+          setAllStudents(data);
+        } catch (err) {
+          console.error("Error loading students:", err);
+        }
+      };
+      loadStudents();
+      animateList();
+    }, [studentToken])
+  );
 
-  // 🔹 Color icon logic
+  // 🔹 Filter logic for dropdown
+  useEffect(() => {
+    if (searchText.trim() === "") {
+      setFilteredStudents([]);
+      setShowResults(false);
+      return;
+    }
+
+    const lower = searchText.toLowerCase();
+    const filtered = studentsData.filter((student) =>
+      student.studentName.toLowerCase().includes(lower)
+    );
+
+    // ✅ Only show dropdown if text doesn’t exactly match a student
+    if (filtered.length > 0 && !filtered.some((s) => s.studentName === searchText)) {
+      setFilteredStudents(filtered);
+      setShowResults(true);
+    } else {
+      setFilteredStudents([]);
+      setShowResults(false);
+    }
+  }, [searchText]);
+
+  // 🔹 Search button → filter by name, student number, or id
+  const handleSearch = () => {
+    setShowResults(false);
+
+    if (searchText.trim() === "") {
+      setStudentsData(allStudents);
+      return;
+    }
+
+    const lower = searchText.toLowerCase();
+    const match = allStudents.filter(
+      (s) =>
+        s.studentName.toLowerCase() === lower ||
+        s.studentNumber.toLowerCase() === lower ||
+        s.id?.toLowerCase() === lower
+    );
+
+    if (match.length > 0) {
+      setStudentsData(match);
+    } else {
+      setStudentsData([]);
+    }
+  };
+
+  // 🔹 Reset to full list if search is cleared
+  useEffect(() => {
+    if (searchText.trim() === "") {
+      setStudentsData(allStudents);
+    }
+  }, [searchText, allStudents]);
+
+  // 🔹 Color logic
   const getColorIcon = (student: StudentModel): string => {
     const attended = student.studentEventAttended.length;
     const evaluatedCount = student.studentEventAttended.filter(
@@ -105,28 +130,20 @@ const Students = () => {
     ).length;
 
     if (numberOfEvents === 0) return "gray";
-
     const attendanceRate = attended / numberOfEvents;
     const evaluationRate = evaluatedCount / numberOfEvents;
 
-    if (attendanceRate === 1 && evaluationRate >= 0.8) {
-      return "green"; // Excellent
-    } else if (attendanceRate >= 0.5) {
-      return "orange"; // Average
-    } else {
-      return "red"; // Poor
-    }
+    if (attendanceRate === 1 && evaluationRate >= 0.8) return "green";
+    else if (attendanceRate >= 0.5) return "orange";
+    else return "red";
   };
 
-  // 🔹 Render each student
+  // 🔹 Render each student card
   const studentRenderItem = ({ item }: { item: StudentModel }) => (
     <Animated.View
       style={[
         studentStyles.containerItem,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY }],
-        },
+        { opacity: fadeAnim, transform: [{ translateY }] },
       ]}
     >
       {/* Avatar */}
@@ -136,7 +153,7 @@ const Students = () => {
         </Text>
       </View>
 
-      {/* Student Info */}
+      {/* Info */}
       <View style={studentStyles.containerStudentsInfo}>
         <Text style={studentStyles.studentNameText}>
           Name: {item.studentName}
@@ -148,7 +165,6 @@ const Students = () => {
           #: {item.studentNumber}
         </Text>
 
-        {/* Progress Bars */}
         <LinearProgressBar
           value={item.studentEventAttended.length}
           max={numberOfEvents}
@@ -172,13 +188,6 @@ const Students = () => {
     </Animated.View>
   );
 
-  // Run animation on focus
-  useFocusEffect(
-    useCallback(() => {
-      animateList();
-    }, [])
-  );
-
   return (
     <LinearbackGround>
       <SafeAreaView style={[Styles.safeAreaView, { flex: 1 }]}>
@@ -189,7 +198,7 @@ const Students = () => {
               <Text style={studentStyles.avatarText}>{firstLetterName}</Text>
             </View>
 
-            {/* Search */}
+            {/* Search Bar */}
             <View style={studentStyles.searchContainer}>
               <TextInput
                 style={studentStyles.input}
@@ -198,7 +207,7 @@ const Students = () => {
                 value={searchText}
                 onChangeText={setSearchText}
               />
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleSearch}>
                 <Ionicons name="search" size={20} color="#555" />
               </TouchableOpacity>
             </View>
@@ -212,10 +221,35 @@ const Students = () => {
             </TouchableOpacity>
           </View>
 
+          {/* Search Dropdown */}
+          {showResults && filteredStudents.length > 0 && (
+            <View style={Styles.resultsContainer}>
+              <FlatList
+                data={filteredStudents}
+                keyExtractor={(item: any) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={Styles.resultItem}
+                    onPress={() => {
+                      setSearchText(item.studentName);
+                      setShowResults(false);
+                      setFilteredStudents([]);
+                      // ✅ Filter main list to this student
+                      setStudentsData([item]);
+                    }}
+                  >
+                    <Text style={Styles.resultText}>{item.studentName}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          )}
+
+          {/* Title */}
           <Text style={Styles.title}>All Students</Text>
 
-          {/* List */}
-          {numberOfEvents ? (
+          {/* Student List */}
+          {studentsData.length > 0 ? (
             <FlatList
               data={studentsData}
               keyExtractor={(item: any) => item.id}
@@ -228,7 +262,7 @@ const Students = () => {
             />
           ) : (
             <Text style={{ textAlign: "center", marginTop: 20 }}>
-              Loading students...
+              No students found.
             </Text>
           )}
         </View>

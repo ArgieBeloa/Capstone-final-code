@@ -34,7 +34,7 @@ import {
 } from "react-native";
 
 const AddEventScreen = () => {
-  const { studentToken } = useUser();
+  const { studentToken, studentData} = useUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [newEventData, setNewEventData] = useState<EventModel | null>(null);
@@ -157,6 +157,7 @@ const AddEventScreen = () => {
       });
 
       const newEvent: any = {
+        whoPostedName: studentData.studentName,
         eventTitle,
         eventShortDescription,
         eventBody,

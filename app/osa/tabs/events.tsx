@@ -1,8 +1,12 @@
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  Button,
   FlatList,
   Image,
+  Modal,
   Platform,
   Pressable,
   Text,
@@ -12,171 +16,246 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
+import {
+  fetchEventImageById,
+  getAllEvents,
+  getEventImageByLocation,
+} from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import LinearbackGround from "@/components/LinearBackGround";
+import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { useFocusEffect, useRouter } from "expo-router";
 import eventStyles from "../styles/events.styles";
 import Styles from "../styles/globalCss";
+
 const Events = () => {
   const { studentToken } = useUser();
   const router = useRouter();
+
+  const [events, setEvents] = useState<EventModel[]>([]);
+  const [allEvents, setAllEvents] = useState<EventModel[]>([]); // ✅ keep a copy of all
+  const [eventTitles, setEventTitles] = useState<{ id: string; eventTitle: string }[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<{ id: string; eventTitle: string }[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [showResults, setShowResults] = useState(false);
+
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
+
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
-  const [searchText, setSearchText] = useState("");
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-
-  // trigger events
-  const handlePrintAttendance = (id: string) => {
-    router.push(`../../PrintAttendances/${id}`);
-  };
-  const handlePrint = async (id: string) => {
-    router.push(`../../PrintFolder/${id}`);
-  };
-
+  // ✅ Load all events and student notification tokens (refresh each time you revisit screen)
   useFocusEffect(
     useCallback(() => {
-      const loadEvents = async () => {};
+      const loadData = async () => {
+        try {
+          setLoading(true);
+          const eventsData = await getAllEvents(studentToken);
+          setEvents(eventsData);
+          setAllEvents(eventsData);
 
-      loadEvents();
-    }, [])
+          const titles = eventsData.map((e) => ({
+            id: e.id,
+            eventTitle: e.eventTitle,
+          }));
+          setEventTitles(titles);
+
+          const students = await getAllStudents(studentToken);
+          const notificationIds = students
+            .filter((s) => !!s.notificationId)
+            .map((s) => ({ notificationId: s.notificationId }));
+          setAllTokens(notificationIds);
+        } catch (err) {
+          console.error("❌ Error loading events:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadData();
+    }, [studentToken])
   );
 
-  // 🔹 Example Data
-  const exampleData: EventModel[] = [
-    {
-      id: "1",
-      whoPostedName: "Aries",
-      eventTitle: "CPC Donation Drive",
-      eventShortDescription: "Help the community through donations.",
-      eventBody: "Join us in our CPC Donation Drive to support those in need.",
-      allStudentAttending: 120,
-      eventDate: "2025-10-28",
-      eventTime: "8:00 AM",
-      eventTimeLength: "8:00 AM - 5:00 PM",
-      eventLocation: "Auditorium",
-      eventCategory: "Community",
-      eventOrganizer: { organizerName: "OSA", organizerEmail: "osa@cpc.edu" },
-      eventAttendances: [],
-      eventAgendas: [],
-      evaluationQuestions: [],
-      eventEvaluationDetails: [],
-    },
-    {
-      id: "2",
-      whoPostedName: "Aries",
-      eventTitle: "Wellness Seminar",
-      eventShortDescription: "Promoting mental and physical health.",
-      eventBody: "Attend our seminar with experts from the health sector.",
-      allStudentAttending: 80,
-      eventDate: "2025-11-05",
-      eventTime: "9:00 AM",
-      eventTimeLength: "9:00 AM - 4:00 PM",
-      eventLocation: "Hall A",
-      eventCategory: "Health",
-      eventOrganizer: { organizerName: "OSA", organizerEmail: "osa@cpc.edu" },
-      eventAttendances: [],
-      eventAgendas: [],
-      evaluationQuestions: [],
-      eventEvaluationDetails: [],
-    },
-    {
-      id: "3",
-      whoPostedName: "Aries",
-      eventTitle: "Leadership Training",
-      eventShortDescription: "Empower your leadership skills.",
-      eventBody: "A training program for future leaders of CPC.",
-      allStudentAttending: 95,
-      eventDate: "2025-11-10",
-      eventTime: "8:30 AM",
-      eventTimeLength: "8:30 AM - 5:00 PM",
-      eventLocation: "Main Hall",
-      eventCategory: "Training",
-      eventOrganizer: { organizerName: "OSA", organizerEmail: "osa@cpc.edu" },
-      eventAttendances: [],
-      eventAgendas: [],
-      evaluationQuestions: [],
-      eventEvaluationDetails: [],
-    },
-  ];
+  // ✅ Filter dropdown logic
+  useEffect(() => {
+    if (!searchText.trim()) {
+      setFilteredEvents([]);
+      setShowResults(false);
+      return;
+    }
 
-  // 🔹 Platform-specific icon for mobile/web
+    const lower = searchText.toLowerCase();
+    const filtered = eventTitles.filter((e) =>
+      e.eventTitle.toLowerCase().includes(lower)
+    );
+    setFilteredEvents(filtered);
+    setShowResults(filtered.length > 0);
+  }, [searchText, eventTitles]);
+
+  // ✅ When user selects an event from dropdown
+  const handleSelectEvent = (item: { id: string; eventTitle: string }) => {
+    setSearchText(item.eventTitle);
+    setShowResults(false);
+
+    const selectedEvent = allEvents.filter((ev) => ev.id === item.id);
+    setEvents(selectedEvent);
+
+    // Reset dropdown text to empty after small delay
+    setTimeout(() => setSearchText(""), 300);
+  };
+
+  // ✅ Reset to all events when search text cleared
+  useEffect(() => {
+    if (searchText.trim() === "") {
+      setEvents(allEvents);
+    }
+  }, [searchText, allEvents]);
+
+  // ✅ Send announcement
+  const handleSendAnnouncement = async (title: string, message: string) => {
+    if (!title.trim() || !message.trim()) {
+      Alert.alert("Missing fields", "Please fill out both title and message!");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const tokens = allTokens.map((t) => t.notificationId);
+      await sendExpoNotification(studentToken, {
+        tokens,
+        title,
+        body: message,
+      });
+
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+      setShowAnnouncementModal(false);
+      Alert.alert("✅ Success", "Announcement sent successfully!");
+    } catch (err) {
+      console.error("❌ Failed to send announcement:", err);
+      Alert.alert("Error", "Failed to send announcement!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Navigation
+  const handlePrintAttendance = (id: string) =>
+    router.push(`../../PrintAttendances/${id}`);
+  const handlePrint = (id: string) => router.push(`../../PrintFolder/${id}`);
+
   const platformIcon = Platform.OS === "web" ? "print" : "save";
 
-  // 🔹 Render each event card
-  const renderAllEvents = ({ item }: { item: EventModel }) => (
-    <View style={eventStyles.containerItem}>
-      <Image
-        source={require("@/assets/images/auditorium.jpg")}
-        style={eventStyles.image}
-        resizeMode="cover"
-      />
-      <View style={{ padding: 10 }}>
-        <Text style={{ fontWeight: "bold", fontSize: 18, color: "#222" }}>
-          {item.eventTitle}
-        </Text>
-        <Text style={{ fontSize: 14, color: "#555" }}>
-          {item.eventShortDescription}
-        </Text>
-        <Text style={{ fontSize: 12, color: "#777", marginTop: 4 }}>
-          {item.eventDate} • {item.eventTimeLength}
-        </Text>
-        <Text style={{ marginTop: 4 }}>Posted By: {item.whoPostedName}</Text>
+  // ✅ Render Event Card
+  const RenderEventItem = ({ item }: { item: EventModel }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null);
+    const [loadingImage, setLoadingImage] = useState(true);
 
-        {/* 🔹 Buttons Row */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginTop: 10,
-          }}
-        >
-          {/* Attendance — unchanged */}
-          <Pressable
-            style={eventStyles.iconButton}
-            onPress={() => handlePrintAttendance(item.id)}
-          >
-            <FontAwesome5 name={platformIcon} size={18} color="#000" />
-            <Text style={eventStyles.iconText}>Attendance</Text>
-          </Pressable>
+    useEffect(() => {
+      const loadImage = async () => {
+        if (!item.eventImageUrl) {
+          setLoadingImage(false);
+          return;
+        }
+        try {
+          const uri = await fetchEventImageById(item.eventImageUrl, studentToken);
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+      loadImage();
+    }, [item.eventImageUrl]);
 
-          {/* Evaluation */}
-          <Pressable
-            style={eventStyles.iconButton}
-            onPress={() => handlePrint(item.id)}
+    return (
+      <View style={eventStyles.containerItem}>
+        {loadingImage ? (
+          <View style={[eventStyles.image, { justifyContent: "center", alignItems: "center" }]}>
+            <ActivityIndicator size="large" color={COLORS.Primary} />
+          </View>
+        ) : (
+          <Image
+            source={
+              imageUri
+                ? { uri: imageUri }
+                : getEventImageByLocation(item.eventLocation)
+            }
+            style={eventStyles.image}
+            resizeMode="cover"
+          />
+        )}
+        <View style={{ padding: 10 }}>
+          <Text style={{ fontWeight: "bold", fontSize: 18, color: "#222" }}>
+            {item.eventTitle}
+          </Text>
+          <Text style={{ fontSize: 14, color: "#555" }}>
+            {item.eventShortDescription}
+          </Text>
+          <Text style={{ fontSize: 12, color: "#777", marginTop: 4 }}>
+            {item.eventDate} • {item.eventTimeLength}
+          </Text>
+          <Text style={{ marginTop: 4 }}>Posted By: {item.whoPostedName}</Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginTop: 10,
+            }}
           >
-            <FontAwesome5 name={platformIcon} size={18} color="#000" />
-            <Text style={eventStyles.iconText}>Evaluation</Text>
-          </Pressable>
+            <Pressable
+              style={eventStyles.iconButton}
+              onPress={() => handlePrintAttendance(item.id)}
+            >
+              <FontAwesome5 name={platformIcon} size={18} color="#000" />
+              <Text style={eventStyles.iconText}>Attendance</Text>
+            </Pressable>
+
+            <Pressable
+              style={eventStyles.iconButton}
+              onPress={() => handlePrint(item.id)}
+            >
+              <FontAwesome5 name={platformIcon} size={18} color="#000" />
+              <Text style={eventStyles.iconText}>Evaluation</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <LinearbackGround>
       <SafeAreaView style={[Styles.safeAreaView, { flex: 1 }]}>
         <View style={[Styles.container, { flex: 1 }]}>
-          {/* 🔹 Header */}
+          {/* Header */}
           <View style={eventStyles.headerContainer}>
             <View style={eventStyles.avatar}>
               <Text style={eventStyles.avatarText}>{firstLetterName}</Text>
             </View>
 
+            {/* Search */}
             <View style={eventStyles.searchContainer}>
               <TextInput
                 style={eventStyles.input}
-                placeholder="Search events..."
+                placeholder="Search event..."
                 placeholderTextColor="#777"
                 value={searchText}
-                onChangeText={(text) => setSearchText(text)}
+                onChangeText={setSearchText}
               />
               <TouchableOpacity>
                 <Ionicons name="search" size={20} color="#555" />
               </TouchableOpacity>
             </View>
 
+            {/* Announcement */}
             <TouchableOpacity
               style={{ marginHorizontal: 10 }}
               onPress={() => setShowAnnouncementModal(true)}
@@ -185,20 +264,86 @@ const Events = () => {
             </TouchableOpacity>
           </View>
 
-          {/* 🔹 All Events */}
+          {/* Search dropdown */}
+          {showResults && filteredEvents.length > 0 && (
+            <View style={Styles.resultsContainer}>
+              <FlatList
+                data={filteredEvents}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={Styles.resultItem}
+                    onPress={() => handleSelectEvent(item)}
+                  >
+                    <Text style={Styles.resultText}>{item.eventTitle}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          )}
+
+          {/* All Events */}
           <Text style={Styles.title}>All Events</Text>
 
-          {/* ✅ Scrollable FlatList */}
           <FlatList
-            data={exampleData}
+            data={events}
             keyExtractor={(item) => item.id}
-            renderItem={renderAllEvents}
-            contentContainerStyle={[
-              eventStyles.containerFlatlist,
-              { paddingBottom: 100 },
-            ]}
+            renderItem={({ item }) => <RenderEventItem item={item} />}
+            ListEmptyComponent={
+              <View style={Styles.emptyContainer}>
+                <Text style={{ color: "black" }}>No events available!</Text>
+              </View>
+            }
+            contentContainerStyle={[eventStyles.containerFlatlist, { paddingBottom: 100 }]}
             showsVerticalScrollIndicator={false}
           />
+
+          {/* Announcement Modal */}
+          <Modal
+            visible={showAnnouncementModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowAnnouncementModal(false)}
+          >
+            <View style={Styles.modalOverlay}>
+              <View style={Styles.modalContainer}>
+                <Text style={Styles.modalHeader}>📢 Send Announcement</Text>
+
+                <TextInput
+                  style={Styles.modalInput}
+                  placeholder="Title"
+                  value={announcementTitle}
+                  onChangeText={setAnnouncementTitle}
+                />
+                <TextInput
+                  style={[Styles.modalInput, { height: 100, textAlignVertical: "top" }]}
+                  placeholder="Message"
+                  multiline
+                  value={announcementMessage}
+                  onChangeText={setAnnouncementMessage}
+                />
+
+                <View style={Styles.modalButtons}>
+                  <Button title="Cancel" onPress={() => setShowAnnouncementModal(false)} />
+                  <Button
+                    title="Send"
+                    onPress={() =>
+                      handleSendAnnouncement(announcementTitle, announcementMessage)
+                    }
+                  />
+                </View>
+              </View>
+            </View>
+
+            {loading && (
+              <View style={Styles.loadingOverlay}>
+                <View style={Styles.loadingBox}>
+                  <ActivityIndicator size="large" color={COLORS.Primary} />
+                  <Text style={Styles.loadingText}>Sending announcement...</Text>
+                </View>
+              </View>
+            )}
+          </Modal>
         </View>
       </SafeAreaView>
     </LinearbackGround>
