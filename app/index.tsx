@@ -1,5 +1,7 @@
 // eas build --platform android --profile production
 //  eas build --platform android --profile development
+// npx expo export --platform web
+
 import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -24,7 +26,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { loginStudent, } from "@/api/admin/controller";
+import { loginStudent } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
 import { getStudentById } from "@/api/students/controller";
 
@@ -60,7 +62,7 @@ export default function Index() {
       const response = await loginStudent(username, password);
       // setStudentToken(response.token)
       setUserId(response._id);
-      setStudentToken(response.token.trim())
+      setStudentToken(response.token.trim());
 
       const events = await getAllEvents(response.token);
       setEventData(events);
@@ -69,12 +71,11 @@ export default function Index() {
       setStudentData(userData);
 
       if (response.role === "ADMIN") {
-         router.push("/osa/tabs/osa")
-        
+        router.push("/osa/tabs/osa");
       } else if (response.role === "OFFICER") {
-         setShowModalOfficer(true)
+        setShowModalOfficer(true);
       } else {
-        router.push("/(tabs)/home")
+        router.push("/(tabs)/home");
       }
 
       setLoading(false);

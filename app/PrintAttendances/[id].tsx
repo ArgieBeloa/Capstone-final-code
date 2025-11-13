@@ -57,7 +57,7 @@ const PrintScreen = () => {
 
           <table>
             <thead>
-              <tr><th>#</th><th>Name</th><th>Date</th<th>Role</th>></tr>
+              <tr><th>#</th><th>Name</th><th>Date</th><th>Role</th></tr>
             </thead>
             <tbody>${tableRows}</tbody>
           </table>

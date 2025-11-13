@@ -3,7 +3,6 @@ import {
   promoteStudent,
   sendExpoNotification,
 } from "@/api/admin/controller";
-
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
@@ -26,6 +25,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Styles from "../styles/globalCss";
 
 interface StudentSuggestionData {
   id: string;
@@ -201,7 +201,9 @@ const OsaScreen: React.FC = () => {
         title,
         body: message,
       });
-      console.log(title);
+     
+      setAnnouncementTitle("")
+      setAnnouncementMessage("")
 
       Alert.alert("✅ Success", "Announcement sent successfully!");
     } catch (error: any) {
@@ -264,7 +266,7 @@ const OsaScreen: React.FC = () => {
               style={{ marginHorizontal: 10 }}
               onPress={() => setShowAnnouncementModal(true)}
             >
-              <FontAwesome5 name="bullhorn" size={24} color="black" />
+              <FontAwesome5 name="bullhorn" size={18} color="black" />
             </TouchableOpacity>
           </View>
 
@@ -500,7 +502,7 @@ const OsaScreen: React.FC = () => {
                       alignItems: "center",
                     }}
                   >
-                    {loadingSendNotification ? (
+                    {loading ? (
                       <>
                         <ActivityIndicator
                           size="small"
@@ -520,6 +522,17 @@ const OsaScreen: React.FC = () => {
                 </View>
               </View>
             </View>
+
+            {loading && (
+              <View style={Styles.loadingOverlay}>
+                <View style={Styles.loadingBox}>
+                  <ActivityIndicator size="large" color={COLORS.Primary} />
+                  <Text style={Styles.loadingText}>
+                    Sending announcement...
+                  </Text>
+                </View>
+              </View>
+            )}
           </Modal>
         </View>
       </SafeAreaView>

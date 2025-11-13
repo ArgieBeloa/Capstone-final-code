@@ -217,7 +217,7 @@ const Students = () => {
               style={{ marginHorizontal: 10 }}
               onPress={() => setShowAnnouncementModal(true)}
             >
-              <FontAwesome5 name="bullhorn" size={24} color="black" />
+              <FontAwesome5 name="bullhorn" size={18} color="black" />
             </TouchableOpacity>
           </View>
 

@@ -35,7 +35,7 @@ const Events = () => {
   const router = useRouter();
 
   const [events, setEvents] = useState<EventModel[]>([]);
-  const [allEvents, setAllEvents] = useState<EventModel[]>([]); // ✅ keep a copy of all
+  const [allEvents, setAllEvents] = useState<EventModel[]>([]);
   const [eventTitles, setEventTitles] = useState<{ id: string; eventTitle: string }[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<{ id: string; eventTitle: string }[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -105,11 +105,11 @@ const Events = () => {
     const selectedEvent = allEvents.filter((ev) => ev.id === item.id);
     setEvents(selectedEvent);
 
-    // Reset dropdown text to empty after small delay
-    setTimeout(() => setSearchText(""), 300);
+    // ❌ Removed the part that clears search text automatically
+    setTimeout(()=> setShowResults(false), 300)
   };
 
-  // ✅ Reset to all events when search text cleared
+  // ✅ Reset to all events when search text manually cleared
   useEffect(() => {
     if (searchText.trim() === "") {
       setEvents(allEvents);
@@ -177,7 +177,12 @@ const Events = () => {
     return (
       <View style={eventStyles.containerItem}>
         {loadingImage ? (
-          <View style={[eventStyles.image, { justifyContent: "center", alignItems: "center" }]}>
+          <View
+            style={[
+              eventStyles.image,
+              { justifyContent: "center", alignItems: "center" },
+            ]}
+          >
             <ActivityIndicator size="large" color={COLORS.Primary} />
           </View>
         ) : (
@@ -260,7 +265,7 @@ const Events = () => {
               style={{ marginHorizontal: 10 }}
               onPress={() => setShowAnnouncementModal(true)}
             >
-              <FontAwesome5 name="bullhorn" size={24} color="black" />
+              <FontAwesome5 name="bullhorn" size={18} color="black" />
             </TouchableOpacity>
           </View>
 
@@ -294,7 +299,10 @@ const Events = () => {
                 <Text style={{ color: "black" }}>No events available!</Text>
               </View>
             }
-            contentContainerStyle={[eventStyles.containerFlatlist, { paddingBottom: 100 }]}
+            contentContainerStyle={[
+              eventStyles.containerFlatlist,
+              { paddingBottom: 100 },
+            ]}
             showsVerticalScrollIndicator={false}
           />
 
@@ -316,7 +324,10 @@ const Events = () => {
                   onChangeText={setAnnouncementTitle}
                 />
                 <TextInput
-                  style={[Styles.modalInput, { height: 100, textAlignVertical: "top" }]}
+                  style={[
+                    Styles.modalInput,
+                    { height: 100, textAlignVertical: "top" },
+                  ]}
                   placeholder="Message"
                   multiline
                   value={announcementMessage}
@@ -324,11 +335,17 @@ const Events = () => {
                 />
 
                 <View style={Styles.modalButtons}>
-                  <Button title="Cancel" onPress={() => setShowAnnouncementModal(false)} />
+                  <Button
+                    title="Cancel"
+                    onPress={() => setShowAnnouncementModal(false)}
+                  />
                   <Button
                     title="Send"
                     onPress={() =>
-                      handleSendAnnouncement(announcementTitle, announcementMessage)
+                      handleSendAnnouncement(
+                        announcementTitle,
+                        announcementMessage
+                      )
                     }
                   />
                 </View>
@@ -339,7 +356,9 @@ const Events = () => {
               <View style={Styles.loadingOverlay}>
                 <View style={Styles.loadingBox}>
                   <ActivityIndicator size="large" color={COLORS.Primary} />
-                  <Text style={Styles.loadingText}>Sending announcement...</Text>
+                  <Text style={Styles.loadingText}>
+                    Sending announcement...
+                  </Text>
                 </View>
               </View>
             )}

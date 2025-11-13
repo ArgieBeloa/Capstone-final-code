@@ -21,7 +21,7 @@ interface EventSuggestionData {
 interface HeaderOfficerProps {
   officerName: string;
   eventSuggestionData?: EventSuggestionData[];
-  handleSendAnnouncement: (title: string, message: string) => Promise<void>; // new prop
+  handleSendAnnouncement: (title: string, message: string) => Promise<void>;
 }
 
 const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
@@ -70,12 +70,10 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
   };
 
   const handleSearchText = () => {
-    // console.log("🔍 Search Title:", searchText);
-    // console.log("🆔 Search ID:", searchEventId);
-    router.push(`../officerEventDetails/${searchEventId}`);
+    if (searchEventId) router.push(`../officerEventDetails/${searchEventId}`);
   };
 
-  // ✨ Highlight search
+  // ✨ Highlight search text
   const renderHighlightedText = (title: string) => {
     if (!searchText) return <Text style={styles.resultText}>{title}</Text>;
     const lowerTitle = title.toLowerCase();
@@ -106,7 +104,7 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
     setShowResults(false);
   };
 
-  // 📢 Local handler calls parent prop
+  // 📢 Send announcement
   const onSendAnnouncementPress = async () => {
     if (!announcementTitle.trim() || !announcementMessage.trim()) {
       alert("Please fill out both title and message!");
@@ -123,51 +121,47 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
     <View style={{ justifyContent: "space-between" }}>
       {/* Header Row */}
       <View style={styles.headerContainer}>
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 7,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        {/* 🧍 Officer Info */}
+        <View style={styles.officerInfoContainer}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{firstLetterName}</Text>
           </View>
-          <View>
-            <Text style={{ fontWeight: 700 }}>{officerName}</Text>
-            <Text style={{ fontWeight: 600, fontSize: 14 }}>Officer</Text>
+          <View style={{ flexShrink: 1 }}>
+            <Text
+              style={styles.officerName}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {officerName}
+            </Text>
+            <Text style={styles.officerRole}>Officer</Text>
           </View>
         </View>
 
-        <View>
-          {/* Search */}
-          <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Search..."
-                placeholderTextColor="#777"
-                value={searchText}
-                onChangeText={(text) => {
-                  setSearchText(text);
-                  if (text.trim() === "") setShowResults(false);
-                  else setShowResults(true);
-                }}
-              />
-              <TouchableOpacity onPress={handleSearchText}>
-                <Ionicons name="search" size={20} color="#555" />
-              </TouchableOpacity>
-            </View>
-
-            {/* 📣 Announcer Button */}
-            <TouchableOpacity
-              style={{ marginHorizontal: 10 }}
-              onPress={handleAnnouncer}
-            >
-              <FontAwesome5 name="bullhorn" size={15} color="black" />
+        {/* 🔍 Search + 📣 */}
+        <View style={styles.rightSection}>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Search..."
+              placeholderTextColor="#777"
+              value={searchText}
+              onChangeText={(text) => {
+                setSearchText(text);
+                setShowResults(text.trim() !== "");
+              }}
+            />
+            <TouchableOpacity onPress={handleSearchText}>
+              <Ionicons name="search" size={20} color="#555" />
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={{ marginLeft: 10 }}
+            onPress={handleAnnouncer}
+          >
+            <FontAwesome5 name="bullhorn" size={15} color="black" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -208,10 +202,7 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
             />
 
             <TextInput
-              style={[
-                styles.modalInput,
-                { height: 100, textAlignVertical: "top" },
-              ]}
+              style={[styles.modalInput, { height: 100, textAlignVertical: "top" }]}
               placeholder="Message"
               multiline
               value={announcementMessage}
@@ -219,10 +210,7 @@ const HeaderOfficer: React.FC<HeaderOfficerProps> = ({
             />
 
             <View style={styles.modalButtons}>
-              <Button
-                title="Cancel"
-                onPress={() => setShowAnnouncementModal(false)}
-              />
+              <Button title="Cancel" onPress={() => setShowAnnouncementModal(false)} />
               <Button title="Send" onPress={onSendAnnouncementPress} />
             </View>
           </View>
@@ -238,15 +226,22 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingVertical: 8,
-    justifyContent: "space-between",
+  },
+  officerInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+    gap: 7,
+    maxWidth: "55%", // prevents overflow
   },
   avatar: {
     backgroundColor: "grey",
     width: 55,
     height: 55,
-    borderRadius: 25,
+    borderRadius: 27.5,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -255,25 +250,39 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
   },
+  officerName: {
+    fontWeight: "700",
+    fontSize: 16,
+    color: "#000",
+  },
+  officerRole: {
+    fontWeight: "600",
+    fontSize: 14,
+    color: "#555",
+  },
+  rightSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    flexShrink: 0,
+  },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#e6e2e2ff",
     borderRadius: 10,
     paddingHorizontal: 10,
-    marginLeft: 10,
+    height: 40,
   },
   input: {
-    flex: 1,
-    height: 40,
+    width: 130,
     color: "#000",
   },
   resultsContainer: {
     position: "absolute",
-    top: 60,
-    left: 60,
-    right: 0,
-    width: 200,
+    top: 65,
+    left: 70,
+    width: 220,
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ccc",
@@ -284,6 +293,7 @@ const styles = StyleSheet.create({
   },
   resultItem: {
     paddingVertical: 8,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderColor: "#eee",
   },
