@@ -56,7 +56,7 @@ const Events = () => {
   const handleQrGenerator = (
     eventId: string,
     eventTitle: string,
-    officerToken: string
+    officerToken: string,
   ) => {
     // ✅ Clean token before putting it in the QR
     const cleanToken = officerToken.replace(/^Bearer\s*/i, "").trim();
@@ -93,7 +93,7 @@ const Events = () => {
             (event: { id: any; eventTitle: any }) => ({
               eventId: event.id,
               eventTitle: event.eventTitle,
-            })
+            }),
           );
           setSuggestedTitleState(eventIdAndTitles);
           //  const image= getEventImageUrl("")
@@ -119,7 +119,7 @@ const Events = () => {
       setLoading(true);
 
       const extactAllTokens: string[] = allTokens.map(
-        (item) => item.notificationId
+        (item) => item.notificationId,
       );
 
       console.log(extactAllTokens);
@@ -144,7 +144,7 @@ const Events = () => {
       console.log(eventData);
     } else {
       const filtered = eventData.filter(
-        (event) => event.eventCategory === selectedTitle
+        (event) => event.eventCategory === selectedTitle,
       );
       setEventState(filtered);
     }
@@ -156,11 +156,11 @@ const Events = () => {
 
     useEffect(() => {
       const loadImage = async () => {
-        console.log(item.eventImageUrl)
+        console.log(item.eventImageUrl);
         try {
           const uri = await fetchEventImageById(
             item.eventImageUrl!,
-            studentToken
+            studentToken,
           );
           setImageUri(uri);
         } catch (error) {
@@ -202,12 +202,14 @@ const Events = () => {
               </View>
             )}
 
-            {/* QR Button */}
+            {/* QR generated Button */}
             <Pressable
               style={styles.qrGeneratorbtn}
               onPress={() => {
-                setModalIsVisible(true);
-                handleQrGenerator(item.id, item.eventTitle, studentToken);
+                // setModalIsVisible(true);
+                // handleQrGenerator(item.id, item.eventTitle, studentToken);
+                // router.push("/(officer)/OfficerScanner/officerScanner");
+                router.push(`../OfficerScanner/${item.id}`);
               }}
             >
               <MaterialIcons name="qr-code-2" size={24} color="black" />

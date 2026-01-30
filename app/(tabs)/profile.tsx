@@ -1,9 +1,10 @@
+import { EventAttendance } from "@/api/events/utils";
 import { getStudentById } from "@/api/students/controller";
 import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { Entypo } from "@expo/vector-icons";
+import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -16,6 +17,7 @@ import {
   TouchableHighlight,
   View,
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
@@ -24,6 +26,8 @@ const Profile = () => {
   const screenWidth = Dimensions.get("window").width;
   const ratingFontSize = Math.min(screenWidth * 0.06, 20);
   const labelFontSize = Math.min(screenWidth * 0.045, 14);
+  const [modalIsVisible, setModalIsVisible] = useState<boolean>(false);
+  const [studentDataQR, setStudentDataQR] = useState<EventAttendance>();
 
   const { studentData, setStudentData, studentToken, eventData, userId } =
     useUser();
@@ -43,22 +47,67 @@ const Profile = () => {
   const totalCount = eventData.length || 0;
   const progress = (attendedCount / (totalCount || 1)) * circumference;
 
+  // Get PH time
+  const now = new Date();
+  const phOffset = 8 * 60; // UTC+8 in minutes
+  const phTime = new Date(now.getTime() + phOffset * 60 * 1000);
+
+  // Format date
+  const year = phTime.getUTCFullYear();
+  const month = String(phTime.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(phTime.getUTCDate()).padStart(2, "0");
+
+  // Format 12-hour time with am/pm
+  let hours = phTime.getUTCHours();
+  const minutes = String(phTime.getUTCMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const timeString = `${hours}:${minutes} ${ampm}`;
+
+  // Combine date + time
+  const dateString = `${year}-${month}-${day}T${timeString}`;
+
   useFocusEffect(
     useCallback(() => {
       const getStudentData = async () => {
         const student = await getStudentById(studentToken, userId);
         setStudentData(student);
         setStudentAttendedData(
-          student.studentEventAttendedAndEvaluationDetails
+          student.studentEventAttendedAndEvaluationDetails,
         );
       };
       getStudentData();
-    }, [])
+    }, []),
   );
 
   const handleLogout = () => {
     setIsLogout(false);
     router.push("/");
+  };
+
+  // student qr generated
+  const handleStudentQR = (
+    studentId: string,
+    studentNumber: string,
+    studentName: string,
+    role: string,
+    department: string,
+    dateScanned: string,
+  ) => {
+    const qrPayload: EventAttendance = {
+      studentId,
+      studentNumber,
+      studentName,
+      role,
+      department,
+      dateScanned,
+    };
+
+    setStudentDataQR(qrPayload); // ✅ THIS WAS MISSING
+    setModalIsVisible(true);
+
+    console.log("✅ QR Payload:", qrPayload);
   };
 
   return (
@@ -76,18 +125,76 @@ const Profile = () => {
               <Text style={styles.headerTitle}>Profile</Text>
             </View>
 
-            {/* 🔘 Logout icon */}
-            <TouchableHighlight
-              onPress={() => setIsLogout(true)}
-              underlayColor="transparent"
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            {/* qr generated students data */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableHighlight
+                onPress={() =>
+                  handleStudentQR(
+                    studentData.id ?? "no_id",
+                    studentData.studentNumber,
+                    studentData.studentName,
+                    "Student",
+                    studentData.department,
+                    dateString,
+                  )
+                }
               >
-                <Entypo name="log-out" size={24} color="black" />
-                <Text>Logout</Text>
-              </View>
-            </TouchableHighlight>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <MaterialIcons
+                    name="qr-code-scanner"
+                    size={24}
+                    color="black"
+                  />
+                  <Text style={{ textAlign: "center" }}>QR</Text>
+                </View>
+              </TouchableHighlight>
+              {/* QR MODAL */}
+              <Modal
+                visible={modalIsVisible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => setModalIsVisible(false)}
+              >
+                <View style={styles.modalBackground}>
+                  <View style={styles.modalContainer}>
+                    <Text
+                      style={{
+                        marginBottom: 20,
+                        fontSize: 18,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Student QR
+                    </Text>
+                    <QRCode
+                      value={JSON.stringify(studentDataQR)}
+                      size={200}
+                      backgroundColor="white"
+                      color="black"
+                    />
+                    <Pressable
+                      style={styles.closeButton}
+                      onPress={() => setModalIsVisible(false)}
+                    >
+                      <Text>Close</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </Modal>
+
+              {/* 🔘 Logout icon */}
+              <TouchableHighlight
+                onPress={() => setIsLogout(true)}
+                underlayColor="transparent"
+              >
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+                >
+                  <Entypo name="log-out" size={24} color="black" />
+                  <Text>Logout</Text>
+                </View>
+              </TouchableHighlight>
+            </View>
           </View>
 
           {/* Student Info */}
@@ -358,5 +465,29 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    minWidth: 250,
+    alignItems: "center",
+  },
+  closeButton: {
+    backgroundColor: "#e74c3c",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  emptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
   },
 });

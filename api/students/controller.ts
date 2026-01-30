@@ -11,8 +11,11 @@ import {
 // =======================================
 // 🌐 BASE ENDPOINTS
 // =======================================
-const BASE_URL = "https://securebackend-ox2e.onrender.com/api/student";
-const apiForAttendance = "https://securebackend-ox2e.onrender.com";
+// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/student";
+// const apiForAttendance = "https://securebackend-ox2e.onrender.com";
+const apiForAttendance = "http://192.168.137.140:8080";
+
+const BASE_URL = "http://192.168.137.140:8080/api/student";
 
 // =======================================
 // 🧑‍🎓 STUDENT CONTROLLER API SERVICE
@@ -23,7 +26,7 @@ const apiForAttendance = "https://securebackend-ox2e.onrender.com";
  */
 export async function getStudentById(
   token: string,
-  studentId: string
+  studentId: string,
 ): Promise<StudentModel> {
   const res = await axios.get(`${BASE_URL}/${studentId}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -37,14 +40,14 @@ export async function getStudentById(
 export async function addRecentEvaluation(
   token: string,
   studentId: string,
-  evaluation: StudentRecentEvaluation
+  evaluation: StudentRecentEvaluation,
 ): Promise<StudentModel> {
   const res = await axios.post(
     `${BASE_URL}/${studentId}/addRecentEvaluation`,
     evaluation,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -55,14 +58,14 @@ export async function addRecentEvaluation(
 export async function addEventAttendanceAndEvaluation(
   token: string,
   studentId: string,
-  event: StudentEventAttendedAndEvaluationDetails
+  event: StudentEventAttendedAndEvaluationDetails,
 ): Promise<StudentModel> {
   const res = await axios.post(
     `${BASE_URL}/${studentId}/addAttendedEvaluation`,
     event,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -73,14 +76,14 @@ export async function addEventAttendanceAndEvaluation(
 export async function addEventAttendance(
   token: string,
   studentId: string,
-  event: StudentEventAttended
+  event: StudentEventAttended,
 ): Promise<StudentModel> {
   const res = await axios.post(
     `${apiForAttendance}/api/auth/admin/addAttendance/${studentId}`,
     event,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -91,14 +94,14 @@ export async function addEventAttendance(
 export async function addUpcomingEvent(
   token: string,
   studentId: string,
-  event: StudentUpcomingEvents
+  event: StudentUpcomingEvents,
 ): Promise<StudentModel> {
   const res = await axios.post(
     `${BASE_URL}/${studentId}/addUpcomingEvent`,
     event,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -109,14 +112,14 @@ export async function addUpcomingEvent(
 export async function addEventEvaluation(
   token: string,
   eventId: string,
-  evaluation: EventEvaluationDetails
+  evaluation: EventEvaluationDetails,
 ): Promise<any> {
   const res = await axios.post(
     `${BASE_URL}/${eventId}/addEvaluation`,
     evaluation,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -129,7 +132,7 @@ export async function addEventEvaluation(
 export async function markEventAsEvaluated(
   token: string,
   studentId: string,
-  eventId: string
+  eventId: string,
 ): Promise<any> {
   try {
     const response = await axios.post(
@@ -140,7 +143,7 @@ export async function markEventAsEvaluated(
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     console.log("✅ Event successfully marked as evaluated:", response.data);
@@ -148,7 +151,7 @@ export async function markEventAsEvaluated(
   } catch (error: any) {
     console.error(
       "❌ Error marking event as evaluated:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -164,14 +167,14 @@ export async function markEventAsEvaluated(
 export async function markStudentAttended(
   token: string,
   studentId: string,
-  eventId: string
+  eventId: string,
 ): Promise<any> {
   const res = await axios.put(
     `${BASE_URL}/mark-attended/${studentId}/${eventId}`,
     {},
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -182,14 +185,14 @@ export async function markStudentAttended(
 export async function markStudentEvaluated(
   token: string,
   studentId: string,
-  eventId: string
+  eventId: string,
 ): Promise<any> {
   const res = await axios.put(
     `${BASE_URL}/mark-evaluated/${studentId}/${eventId}`,
     {},
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -204,33 +207,33 @@ export async function markStudentEvaluated(
 export async function deleteStudentNotification(
   token: string,
   studentId: string,
-  notificationId: string
+  notificationId: string,
 ): Promise<any> {
   const res = await axios.delete(
     `${BASE_URL}/${studentId}/notifications/${notificationId}`,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
 
 /**
  * 🗑️ DELETE: Remove a student's upcoming event
- * 
+ *
  * @param token - JWT token (include the 'Bearer' prefix automatically)
  * @param studentId - The student's MongoDB ID
  * @param eventId - The upcoming event ID to delete
- * 
+ *
  * @returns Updated StudentModel after deletion
- * 
+ *
  * ✅ Example:
  * deleteUpcomingEvent(token, "68f4d09348d6e16db6b260f3", "68f08f2fea9158bed4ff2eb2");
  */
 export async function deleteUpcomingEvent(
   token: string,
   studentId: string,
-  eventId: string
+  eventId: string,
 ): Promise<any> {
   try {
     const response = await axios.delete(
@@ -240,7 +243,7 @@ export async function deleteUpcomingEvent(
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     console.log("✅ Upcoming event deleted successfully:", response.data);
@@ -248,9 +251,8 @@ export async function deleteUpcomingEvent(
   } catch (error: any) {
     console.error(
       "❌ Error deleting upcoming event:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
 }
-

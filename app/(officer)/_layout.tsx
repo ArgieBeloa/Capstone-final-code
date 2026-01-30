@@ -1,7 +1,8 @@
 import { COLORS } from "@/constants/ColorCpc";
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
-import { StyleSheet, useColorScheme } from "react-native";
+import { useRef } from "react";
+import { Animated, StyleSheet, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Layout = () => {
@@ -16,6 +17,20 @@ const Layout = () => {
     borderTopColor: "#ccc",
     height: 50 + insets.bottom,
     paddingBottom: insets.bottom,
+  };
+
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const onPressIn = () => {
+    Animated.spring(scale, { toValue: 0.9, useNativeDriver: true }).start();
+  };
+  const onPressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -54,7 +69,7 @@ const Layout = () => {
         options={{
           title: "statistic",
           tabBarIcon: ({ color, size }) => (
-       <FontAwesome6 name="ranking-star" size={size} color={color} />
+            <FontAwesome6 name="ranking-star" size={size} color={color} />
           ),
         }}
       />

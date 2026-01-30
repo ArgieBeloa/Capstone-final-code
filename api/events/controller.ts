@@ -4,9 +4,9 @@ import { Platform } from "react-native";
 import { EventModel } from "./model";
 import { EventAttendance, EventEvaluationDetails, PickedImage } from "./utils";
 
-
 // ✅ Base URL of your Spring Boot backend
-const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
+// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
+const BASE_URL = "http://192.168.137.140:8080/api/events";
 
 /**
  * ✅ 1. Get all events (public)
@@ -21,7 +21,7 @@ export async function getAllEvents(token: string): Promise<EventModel[]> {
   } catch (error: any) {
     console.error(
       "❌ Error fetching all events:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -32,7 +32,7 @@ export async function getAllEvents(token: string): Promise<EventModel[]> {
  */
 export async function getEventById(
   token: string,
-  id: string
+  id: string,
 ): Promise<EventModel> {
   try {
     const response = await axios.get(`${BASE_URL}/${id}`, {
@@ -43,7 +43,7 @@ export async function getEventById(
   } catch (error: any) {
     console.error(
       "❌ Error fetching event by ID:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -54,7 +54,7 @@ export async function getEventById(
  */
 export async function createEvent(
   event: EventModel,
-  token: string
+  token: string,
 ): Promise<EventModel> {
   try {
     const response = await axios.post(`${BASE_URL}/create`, event, {
@@ -65,7 +65,7 @@ export async function createEvent(
   } catch (error: any) {
     console.error(
       "❌ Error creating event:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -77,7 +77,7 @@ export async function createEvent(
 export async function addEventAttendanceRecords(
   token: string,
   eventId: string,
-  attendance: EventAttendance
+  attendance: EventAttendance,
 ): Promise<EventModel> {
   try {
     const response = await axios.post(
@@ -85,14 +85,14 @@ export async function addEventAttendanceRecords(
       attendance,
       {
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
     console.log("✅ Attendance added successfully:", response.data);
     return response.data;
   } catch (error: any) {
     console.error(
       "❌ Error adding attendance:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -104,7 +104,7 @@ export async function addEventAttendanceRecords(
 export async function addEventEvaluationRecords(
   token: string,
   eventId: string,
-  evaluation: EventEvaluationDetails
+  evaluation: EventEvaluationDetails,
 ): Promise<any> {
   try {
     const response = await axios.post(
@@ -112,14 +112,14 @@ export async function addEventEvaluationRecords(
       evaluation,
       {
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
     console.log("✅ Evaluation added successfully:", response.data);
     return response.data;
   } catch (error: any) {
     console.error(
       "❌ Error adding evaluation:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -131,7 +131,7 @@ export async function addEventEvaluationRecords(
 export async function updateEvent(
   eventId: string,
   newEvent: EventModel,
-  token: string
+  token: string,
 ): Promise<EventModel> {
   try {
     const response = await axios.put(`${BASE_URL}/${eventId}`, newEvent, {
@@ -142,7 +142,7 @@ export async function updateEvent(
   } catch (error: any) {
     console.error(
       "❌ Error updating event:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -154,7 +154,7 @@ export async function updateEvent(
 export async function updateAllStudentAttending(
   token: string,
   eventId: string,
-  newCount: number
+  newCount: number,
 ): Promise<any> {
   try {
     const formattedToken = token.startsWith("Bearer ")
@@ -171,7 +171,7 @@ export async function updateAllStudentAttending(
           Authorization: formattedToken,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     console.log("✅ Updated allStudentAttending successfully:", response.data);
@@ -179,7 +179,7 @@ export async function updateAllStudentAttending(
   } catch (error: any) {
     console.error(
       "❌ Error updating allStudentAttending:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
@@ -190,7 +190,7 @@ export async function updateAllStudentAttending(
  */
 export async function deleteEvent(
   eventId: string,
-  token: string
+  token: string,
 ): Promise<string> {
   try {
     const response = await axios.delete(`${BASE_URL}/${eventId}`, {
@@ -201,13 +201,12 @@ export async function deleteEvent(
   } catch (error: any) {
     console.error(
       "❌ Error deleting event:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw error.response?.data || error;
   }
 }
 // src/api/events/imagePicker.ts
-
 
 export const pickImageFromGallery = async (): Promise<PickedImage | null> => {
   const hasNewAPI = (ImagePicker as any).MediaType;
@@ -238,7 +237,7 @@ export const pickImageFromGallery = async (): Promise<PickedImage | null> => {
 export const uploadEventImage = async (
   image: PickedImage,
   eventId: string,
-  token: string
+  token: string,
 ) => {
   const url = `https://securebackend-ox2e.onrender.com/api/events/${eventId}/upload-image`;
 
@@ -269,7 +268,6 @@ export const uploadEventImage = async (
   return response.data;
 };
 
-
 /**
  * ✅ 10. Get Event Image URL (public)
  * This helps display the image easily on the frontend.
@@ -290,18 +288,15 @@ export function getEventImageUrl(eventImageId: string): string | null {
 // Return a data URI usable by React Native Image
 export const fetchEventImageById = async (
   imageURL: string,
-  token: string
+  token: string,
 ): Promise<string | null> => {
   try {
-    const response = await fetch(
-      `${imageURL}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await fetch(`${imageURL}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     if (!response.ok) {
       console.error("❌ Failed to fetch image:", response.status);

@@ -3,14 +3,15 @@ import { StudentModel } from "../students/model";
 import { StudentNotification } from "../students/utils";
 
 // ✅ Base URL of your Spring Boot backend
-const BASE_URL = "https://securebackend-ox2e.onrender.com/api/auth";
+// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/auth";
+const BASE_URL = "http://192.168.137.140:8080/api/auth";
 
 /* ===========================================================
    ✅ 1. Register a new student
    POST /api/auth/register 
 =========================================================== */
 export async function registerStudent(
-  newStudent: StudentModel
+  newStudent: StudentModel,
 ): Promise<string> {
   const res = await axios.post(`${BASE_URL}/register`, newStudent);
   return res.data;
@@ -22,7 +23,7 @@ export async function registerStudent(
 =========================================================== */
 export async function loginStudent(
   studentNumber: string,
-  studentPassword: string
+  studentPassword: string,
 ): Promise<{ _id: string; role: string; token: string }> {
   const res = await axios.post(`${BASE_URL}/login`, {
     studentNumber,
@@ -63,14 +64,14 @@ export async function getAllStudents(token: string): Promise<StudentModel[]> {
 =========================================================== */
 export async function addStudentNotificationToAll(
   event: StudentNotification,
-  token: string
+  token: string,
 ): Promise<string> {
   const res = await axios.post(
     `${BASE_URL}/admin/addStudentNotification`,
     event,
     {
       headers: { Authorization: `Bearer ${token}` },
-    }
+    },
   );
   return res.data;
 }
@@ -86,7 +87,7 @@ export async function sendExpoNotification(
     tokens: string[];
     title: string;
     body: string;
-  }
+  },
 ): Promise<string> {
   try {
     // ✅ Convert tokens from objects → plain strings
@@ -100,7 +101,7 @@ export async function sendExpoNotification(
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
 
     console.log("✅ Notification sent successfully:", response.data);
@@ -108,7 +109,7 @@ export async function sendExpoNotification(
   } catch (error: any) {
     console.error(
       "❌ Failed to send notification:",
-      error?.response?.data || error.message
+      error?.response?.data || error.message,
     );
     throw error;
   }
@@ -124,7 +125,10 @@ export async function sendExpoNotification(
  * @param token - The JWT token of the admin or authorized user.
  * @returns The API response data or throws an error if the request fails.
  */
-export async function promoteStudent( token: string,userId: string,): Promise<any> {
+export async function promoteStudent(
+  token: string,
+  userId: string,
+): Promise<any> {
   try {
     const response = await axios.patch(
       `${BASE_URL}/promote/${userId}`,
@@ -134,14 +138,14 @@ export async function promoteStudent( token: string,userId: string,): Promise<an
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     return response.data;
   } catch (error: any) {
     if (error.response) {
       throw new Error(
-        `Error ${error.response.status}: ${error.response.data.message || error.response.data}`
+        `Error ${error.response.status}: ${error.response.data.message || error.response.data}`,
       );
     } else if (error.request) {
       throw new Error("No response from server. Please check your connection.");
@@ -150,4 +154,3 @@ export async function promoteStudent( token: string,userId: string,): Promise<an
     }
   }
 }
-

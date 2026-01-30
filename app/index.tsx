@@ -75,7 +75,9 @@ export default function Index() {
       } else if (response.role === "OFFICER") {
         setShowModalOfficer(true);
       } else {
+        // student access
         router.push("/(tabs)/home");
+        // router.push("/(officer)/home");
       }
 
       setLoading(false);
@@ -106,7 +108,7 @@ export default function Index() {
           } else {
             Alert.alert(
               "Too many attempts",
-              "App is locked. Please close and reopen to try again."
+              "App is locked. Please close and reopen to try again.",
             );
             setButtonDisable(false);
           }
