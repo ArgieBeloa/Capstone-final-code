@@ -1,4 +1,3 @@
-
 import { registerStudent } from "@/api/admin/controller";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
@@ -49,13 +48,75 @@ const Register = () => {
 
   const router = useRouter();
 
+  // get deparment algorithm
+  const getDepartmentFromCourse = (course: string): string => {
+    const value = course.toLowerCase();
+
+    // 🔹 CET
+    if (
+      value.includes("information technology") ||
+      value.includes("computer science") ||
+      value.includes("engineering") ||
+      value.includes("electronics") ||
+      value.includes("civil") ||
+      value.includes("technology")
+    ) {
+      return "CET";
+    }
+
+    // 🔹 CASE
+    if (
+      value.includes("education") ||
+      value.includes("arts") ||
+      value.includes("english") ||
+      value.includes("psychology") ||
+      value.includes("filipino")
+    ) {
+      return "CASE";
+    }
+
+    // 🔹 CME
+    if (
+      value.includes("medical") ||
+      value.includes("nursing") ||
+      value.includes("midwifery") ||
+      value.includes("marine") ||
+      value.includes("health")
+    ) {
+      return "CME";
+    }
+
+    // 🔹 CHTM
+    if (
+      value.includes("hospitality") ||
+      value.includes("tourism") ||
+      value.includes("hotel") ||
+      value.includes("restaurant")
+    ) {
+      return "CHTM";
+    }
+    // 🔹 CBMA
+    if (value.includes("accountancy") || value.includes("business")) {
+      return "CBMA";
+    }
+
+    // 🔹 CCJ
+    if (value.includes("criminology") || value.includes("criminal justice")) {
+      return "CCJ";
+    }
+
+    // 🔸 fallback
+    return "UNASSIGNED";
+  };
+  const department = getDepartmentFromCourse(course);
+
   const newStudent: StudentModel = {
     studentName: fullname,
     studentNumber: username,
     role: "STUDENT",
     studentPassword: password,
     course: course,
-    department: "no set",
+    department: department,
     notificationId: expoPushToken || "no token",
     studentUpcomingEvents: [],
     studentEventAttended: [],
@@ -282,7 +343,7 @@ const Register = () => {
                     </Text>
                   ) : (
                     <Text style={styles.failText}>
-                     { `⚠️ Registration failed. The student number ${username} has already been used.` }
+                      {`⚠️ Registration failed. The student number ${username} has already been used.`}
                     </Text>
                   )}
                   <Pressable

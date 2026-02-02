@@ -138,6 +138,16 @@ const Events = () => {
       setLoading(false);
     }
   };
+
+  const isTodayEventDate = (eventDate: string): boolean => {
+    // Normalize to YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0];
+
+    // If eventDate already comes as YYYY-MM-DD
+    // return today === eventDate;
+    return today === today;
+  };
+
   useEffect(() => {
     if (selectedIndex === 0) {
       setEventState(eventData);
@@ -203,17 +213,16 @@ const Events = () => {
             )}
 
             {/* QR generated Button */}
-            <Pressable
-              style={styles.qrGeneratorbtn}
-              onPress={() => {
-                // setModalIsVisible(true);
-                // handleQrGenerator(item.id, item.eventTitle, studentToken);
-                // router.push("/(officer)/OfficerScanner/officerScanner");
-                router.push(`../OfficerScanner/${item.id}`);
-              }}
-            >
-              <MaterialIcons name="qr-code-2" size={24} color="black" />
-            </Pressable>
+            {isTodayEventDate(item.eventDate) && (
+              <Pressable
+                style={styles.qrGeneratorbtn}
+                onPress={() => {
+                  router.push(`../OfficerScanner/${item.id}`);
+                }}
+              >
+                <MaterialIcons name="qr-code-2" size={24} color="black" />
+              </Pressable>
+            )}
 
             {/* Event Title */}
             <View style={{ marginTop: "auto", paddingLeft: 10 }}>

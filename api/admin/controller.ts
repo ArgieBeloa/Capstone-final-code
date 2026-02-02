@@ -3,8 +3,10 @@ import { StudentModel } from "../students/model";
 import { StudentNotification } from "../students/utils";
 
 // ✅ Base URL of your Spring Boot backend
-// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/auth";
-const BASE_URL = "http://localhost:8080/api/auth";
+const BASE_URL = "https://securebackend-ox2e.onrender.com/api/auth";
+
+// Local development
+// const BASE_URL = "http://localhost:8080/api/auth";
 
 /* ===========================================================
    ✅ 1. Register a new student

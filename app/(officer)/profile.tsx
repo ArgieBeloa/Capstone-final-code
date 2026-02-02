@@ -32,6 +32,7 @@ import {
   loadAllLocalAttendance,
   loadStudents,
 } from "@/api/local/local";
+import Loading from "@/components/Loading";
 
 // Type for local attendance
 type LocalAttendance = {
@@ -51,6 +52,7 @@ const Profile = () => {
   const [soonEvents, setSoonEvents] = useState<EventModel[]>([]);
   const [localEvents, setLocalEvents] = useState<EventModel[]>([]);
   const [isLogout, setIsLogout] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 📊 circle progress
   const screenWidth = Dimensions.get("window").width;
@@ -134,6 +136,7 @@ const Profile = () => {
 
   // Upload local attendance to cloud
   const handleAttendanceLocal = async (id: string) => {
+    setIsLoading(true);
     try {
       const localData = await loadStudents(id);
       if (localData.length === 0) return;
@@ -159,6 +162,8 @@ const Profile = () => {
       setLocalEvents(localEventsData);
     } catch (error) {
       console.error("Upload failed", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -381,6 +386,8 @@ const Profile = () => {
             </View>
           </View>
         </Modal>
+
+        <Loading text="Please wait..." color="#4F46E5" visible={isLoading} />
       </SafeAreaView>
     </LinearbackGround>
   );

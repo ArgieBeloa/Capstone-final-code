@@ -34,7 +34,7 @@ const Rates = () => {
         setStudentAttendedState(student.studentEventAttended);
       };
       getStudentData();
-    }, [])
+    }, []),
   );
 
   return (
