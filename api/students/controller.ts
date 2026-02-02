@@ -13,9 +13,9 @@ import {
 // =======================================
 // const BASE_URL = "https://securebackend-ox2e.onrender.com/api/student";
 // const apiForAttendance = "https://securebackend-ox2e.onrender.com";
-const apiForAttendance = "http://192.168.137.140:8080";
+const apiForAttendance = "http://localhost:8080";
 
-const BASE_URL = "http://192.168.137.140:8080/api/student";
+const BASE_URL = "http://localhost:8080/api/student";
 
 // =======================================
 // 🧑‍🎓 STUDENT CONTROLLER API SERVICE

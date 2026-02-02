@@ -38,39 +38,56 @@ const PrintScreen = () => {
     loadEvent();
   }, [id, studentToken]);
 
-  const generateHTML = () => {
+  // =========================
+  // GENERATE HTML
+  // =========================
+  const generateHTML = (department?: string) => {
     if (!event) return "<p>No data available</p>";
 
-    const sortedAttendance: EventAttendance[] = [
-      ...(event.eventAttendances || []),
-    ].sort((a, b) => {
-      const idA = a.studentId ?? "";
-      const idB = b.studentId ?? "";
-      return idA.localeCompare(idB);
+    let attendance: EventAttendance[] = [...(event.eventAttendances || [])];
+
+    // 🔹 Filter ONLY if department is provided
+    if (department) {
+      attendance = attendance.filter((a) => a.department === department);
+    }
+
+    // 🔹 Sort: Role → Name
+    attendance.sort((a, b) => {
+      const roleA = a.role ?? "";
+      const roleB = b.role ?? "";
+      const roleCompare = roleA.localeCompare(roleB);
+      if (roleCompare !== 0) return roleCompare;
+
+      return (a.studentName ?? "").localeCompare(b.studentName ?? "");
     });
+
+    if (attendance.length === 0) {
+      return `<p>No attendance found</p>`;
+    }
 
     const chunkSize = 50;
     const pages: string[] = [];
 
-    for (let i = 0; i < sortedAttendance.length; i += chunkSize) {
-      const chunk = sortedAttendance.slice(i, i + chunkSize);
+    for (let i = 0; i < attendance.length; i += chunkSize) {
+      const chunk = attendance.slice(i, i + chunkSize);
 
       const rows = chunk
         .map(
           (s, index) => `
-          <tr>
-            <td>${i + index + 1}</td>
-            <td>${s.studentName}</td>
-            <td>${s.dateScanned ?? ""}</td>
-            <td>${s.role ?? ""}</td>
-          </tr>
-        `,
+            <tr>
+              <td>${i + index + 1}</td>
+              <td>${s.studentName}</td>
+              <td>${s.dateScanned ?? ""}</td>
+              <td>${s.role ?? ""}</td>
+            </tr>
+          `,
         )
         .join("");
 
       pages.push(`
         <div class="page">
           <h2>${event.eventTitle}</h2>
+          ${department ? `<h3>${department}</h3>` : ""}
           <p><strong>Date:</strong> ${event.eventDate}</p>
           <p><strong>Location:</strong> ${event.eventLocation}</p>
 
@@ -88,7 +105,7 @@ const PrintScreen = () => {
 
           <div class="footer">
             Page ${Math.floor(i / chunkSize) + 1} /
-            ${Math.ceil(sortedAttendance.length / chunkSize)}
+            ${Math.ceil(attendance.length / chunkSize)}
           </div>
         </div>
       `);
@@ -100,7 +117,7 @@ const PrintScreen = () => {
           <style>
             body { font-family: Arial; padding: 20px; }
             .page { page-break-after: always; }
-            h2 { text-align: center; }
+            h2, h3 { text-align: center; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th, td {
               border: 1px solid #ccc;
@@ -121,12 +138,15 @@ const PrintScreen = () => {
     `;
   };
 
-  const handlePrintOrSave = async () => {
+  // =========================
+  // PRINT HANDLER
+  // =========================
+  const handlePrint = async (department?: string) => {
     if (!event) return;
 
     setLoading(true);
     try {
-      const html = generateHTML();
+      const html = generateHTML(department);
 
       if (Platform.OS === "web") {
         const win = window.open("", "_blank");
@@ -138,7 +158,12 @@ const PrintScreen = () => {
         }
       } else {
         const { uri } = await Print.printToFileAsync({ html });
-        const safeName = event.eventTitle.replace(/[^\w\s-]/g, "");
+
+        const name = department
+          ? `${event.eventTitle}-${department}`
+          : `${event.eventTitle}-ALL`;
+
+        const safeName = name.replace(/[^\w\s-]/g, "");
         const fileUri = `${FileSystem.documentDirectory}${safeName}.pdf`;
 
         await FileSystem.moveAsync({ from: uri, to: fileUri });
@@ -168,9 +193,37 @@ const PrintScreen = () => {
           <Text>Location: {event.eventLocation}</Text>
 
           <View style={styles.buttonContainer}>
+            {/* ALL STUDENTS */}
             <Button
-              title={loading ? "Generating..." : "Save / Print PDF"}
-              onPress={handlePrintOrSave}
+              title={loading ? "Generating..." : "All students"}
+              onPress={() => handlePrint()}
+              disabled={loading}
+            />
+
+            {/* DEPARTMENTS */}
+            <Button
+              title="CET"
+              onPress={() => handlePrint("CET")}
+              disabled={loading}
+            />
+            <Button
+              title="CASE"
+              onPress={() => handlePrint("CASE")}
+              disabled={loading}
+            />
+            <Button
+              title="CME"
+              onPress={() => handlePrint("CME")}
+              disabled={loading}
+            />
+            <Button
+              title="CHTM"
+              onPress={() => handlePrint("CHTM")}
+              disabled={loading}
+            />
+            <Button
+              title="CCJ"
+              onPress={() => handlePrint("CCJ")}
               disabled={loading}
             />
           </View>
@@ -202,6 +255,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 20,
+    gap: 10,
     width: "80%",
   },
 });

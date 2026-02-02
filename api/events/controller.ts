@@ -6,7 +6,7 @@ import { EventAttendance, EventEvaluationDetails, PickedImage } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
 // const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
-const BASE_URL = "http://192.168.137.140:8080/api/events";
+const BASE_URL = "http://localhost:8080/api/events";
 
 /**
  * ✅ 1. Get all events (public)
