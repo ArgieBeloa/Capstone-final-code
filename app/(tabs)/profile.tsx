@@ -315,24 +315,6 @@ const Profile = () => {
                 }}
               >
                 <Text>No events available!</Text>
-                <View style={{ flexDirection: "row", marginTop: 5 }}>
-                  <Text>Please go to </Text>
-                  <TouchableHighlight
-                    onPress={() => router.push("/(tabs)/events")}
-                    underlayColor="transparent"
-                  >
-                    <Text
-                      style={{
-                        textDecorationLine: "underline",
-                        color: COLORS.Primary,
-                        fontWeight: "500",
-                      }}
-                    >
-                      Event tab
-                    </Text>
-                  </TouchableHighlight>
-                  <Text> to register.</Text>
-                </View>
               </View>
             )}
           </View>
