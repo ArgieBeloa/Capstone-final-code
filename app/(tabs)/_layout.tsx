@@ -1,21 +1,24 @@
 import { COLORS } from "@/constants/ColorCpc";
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { useRef } from "react";
-import { Animated, StyleSheet, TouchableOpacity, useColorScheme } from "react-native";
+import {
+  Animated,
+  StyleSheet,
+  useColorScheme
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 
 const _layout = () => {
   const colorScheme = useColorScheme();
   const activeTintColor = colorScheme === "dark" ? "#000" : COLORS.Primary;
   const inactiveTintColor = "#888";
-const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const tabBarStyle = {
     backgroundColor: colorScheme === "dark" ? "#121212" : "#fff",
     borderTopWidth: 0.5,
     borderTopColor: "#ccc",
-     height: 50 + insets.bottom, // ⬅️ add padding for safe area
+    height: 50 + insets.bottom, // ⬅️ add padding for safe area
     paddingBottom: insets.bottom,
   };
 
@@ -25,7 +28,12 @@ const insets = useSafeAreaInsets();
     Animated.spring(scale, { toValue: 0.9, useNativeDriver: true }).start();
   };
   const onPressOut = () => {
-    Animated.spring(scale, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }).start();
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -41,28 +49,26 @@ const insets = useSafeAreaInsets();
         name="home"
         options={{
           title: "Home",
-           tabBarIcon: ({ color, size, focused }) => {
+          tabBarIcon: ({ color, size, focused }) => {
             const iconName = focused ? "home" : "home-outline"; // You can set a different icon if you want
             return <Ionicons name={iconName} size={size} color={color} />;
           },
         }}
-                
       />
-
 
       <Tabs.Screen
         name="events"
         options={{
           title: "Events",
-           tabBarIcon: ({ color, size, focused }) => {
+          tabBarIcon: ({ color, size, focused }) => {
             const iconName = focused ? "calendar" : "calendar-outline"; // You can set a different icon if you want
             return <Ionicons name={iconName} size={size} color={color} />;
-          }, 
+          },
         }}
       />
-      
+
       {/* Center QR Scanner */}
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="qrscanner"
         options={{
           title: "",
@@ -84,13 +90,13 @@ const insets = useSafeAreaInsets();
             );
           },
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-            tabBarIcon: ({ color, size, focused }) => {
+          tabBarIcon: ({ color, size, focused }) => {
             const iconName = focused ? "person" : "person-outline"; // You can set a different icon if you want
             return <Ionicons name={iconName} size={size} color={color} />;
           },
@@ -101,7 +107,7 @@ const insets = useSafeAreaInsets();
         name="rates"
         options={{
           title: "Rates",
-            tabBarIcon: ({ color, size, focused }) => {
+          tabBarIcon: ({ color, size, focused }) => {
             const iconName = focused ? "star" : "star-outline"; // You can set a different icon if you want
             return <Ionicons name={iconName} size={size} color={color} />;
           },

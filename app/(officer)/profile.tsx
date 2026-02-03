@@ -32,6 +32,11 @@ import {
   loadAllLocalAttendance,
   loadStudents,
 } from "@/api/local/local";
+import {
+  addEventAttendance,
+  deleteStudentNotification,
+  markStudentAttended,
+} from "@/api/students/controller";
 import Loading from "@/components/Loading";
 
 // Type for local attendance
@@ -135,7 +140,7 @@ const Profile = () => {
   };
 
   // Upload local attendance to cloud
-  const handleAttendanceLocal = async (id: string) => {
+  const handleAttendanceLocal = async (id: string, eventTitle: string) => {
     setIsLoading(true);
     try {
       const localData = await loadStudents(id);
@@ -150,6 +155,20 @@ const Profile = () => {
           department: item.department,
           dateScanned: item.dateScanned,
         });
+
+        // attendance evaluation
+        await addEventAttendance(studentToken, item.studentId, {
+          eventId: id,
+          eventTitle: eventTitle,
+          studentDateAttended: item.dateScanned,
+          evaluated: false,
+        });
+
+        // 3. update profile data to attended
+        await markStudentAttended(studentToken, item.studentId, id);
+
+        // delete to student notification
+        await deleteStudentNotification(studentToken, item.studentId, id);
       }
 
       await deleteLocalAttendanceByEventId(id);
@@ -352,7 +371,7 @@ const Profile = () => {
             renderItem={({ item }) => (
               <EventCard
                 event={item}
-                onPrint={() => handleAttendanceLocal(item.id)}
+                onPrint={() => handleAttendanceLocal(item.id, item.eventTitle)}
                 uploadBtn
               />
             )}
