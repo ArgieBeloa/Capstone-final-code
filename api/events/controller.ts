@@ -5,10 +5,10 @@ import { EventModel } from "./model";
 import { EventAttendance, EventEvaluationDetails, PickedImage } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
-const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
+// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
 
 // local development
-// const BASE_URL = "http://localhost:8080/api/events";
+const BASE_URL = "http://localhost:8080/api/events";
 
 /**
  * ✅ 1. Get all events (public)
@@ -130,15 +130,27 @@ export async function addEventEvaluationRecords(
 /**
  * ✅ 6. Update Event (only ADMIN or OFFICER)
  */
+
 export async function updateEvent(
   eventId: string,
   newEvent: EventModel,
   token: string,
 ): Promise<EventModel> {
   try {
+    if (!token) {
+      throw new Error("Token is missing");
+    }
+
+    // 🔥 Always remove Bearer if it exists
+    const cleanToken = token.replace("Bearer ", "").trim();
+
     const response = await axios.put(`${BASE_URL}/${eventId}`, newEvent, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${cleanToken}`,
+        "Content-Type": "application/json",
+      },
     });
+
     console.log("✅ Event updated successfully:", response.data);
     return response.data;
   } catch (error: any) {
@@ -195,8 +207,17 @@ export async function deleteEvent(
   token: string,
 ): Promise<string> {
   try {
+    if (!token) {
+      throw new Error("Token is missing");
+    }
+
+    // 🔥 Always remove Bearer if it exists
+    const cleanToken = token.replace("Bearer ", "").trim();
+
+    console.log("🪙 Clean Token:", cleanToken);
+
     const response = await axios.delete(`${BASE_URL}/${eventId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${cleanToken}` },
     });
     console.log("✅ Event deleted successfully:", response.data);
     return response.data;

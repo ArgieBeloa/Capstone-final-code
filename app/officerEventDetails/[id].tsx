@@ -1,4 +1,3 @@
-
 import { getEventById } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EventAttendance, EventEvaluationDetails } from "@/api/events/utils";
@@ -21,7 +20,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 
-
 const EventViewMore = () => {
   const router = useRouter();
   const { studentToken } = useUser();
@@ -38,12 +36,15 @@ const EventViewMore = () => {
   const labelFontSize = Math.min(screenWidth * 0.045, 14);
 
   // 📊 States
-  const [eventFeedback, setEventFeedback] = useState<EventEvaluationDetails []>([]);
+  const [eventFeedback, setEventFeedback] = useState<EventEvaluationDetails[]>(
+    [],
+  );
   const [event, setEvent] = useState<EventModel>();
   const [eventAttended, setEventAttended] = useState<EventAttendance[]>([]);
   const [numberOfEvaluated, setNumberOfEvaluated] = useState<number>(0);
   const [overallPerformance, setOverallPerformance] = useState<number>(0);
-  const [numberOfStudentAttended, setNumberOfStudentAttended] = useState<number>(0);
+  const [numberOfStudentAttended, setNumberOfStudentAttended] =
+    useState<number>(0);
 
   // 🧠 Fetch Event Details
   useEffect(() => {
@@ -51,11 +52,10 @@ const EventViewMore = () => {
       try {
         const res = await getEventById(studentToken, id as string);
 
-
         if (!res) return;
 
-        const feedback =   res.eventEvaluationDetails
-        const attendances = res.eventAttendances
+        const feedback = res.eventEvaluationDetails;
+        const attendances = res.eventAttendances;
 
         setEventFeedback(feedback);
         setEventAttended(attendances);
@@ -68,7 +68,7 @@ const EventViewMore = () => {
             ? feedback.reduce(
                 (sum: number, item: EventEvaluationDetails) =>
                   sum + (item.studentAverageRate ?? 0),
-                0
+                0,
               ) / feedback.length
             : 0;
 
@@ -92,6 +92,15 @@ const EventViewMore = () => {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={[styles.statisticContainer]}>
           {/* Circular Performance Indicator */}
+          <TouchableOpacity
+            onPress={() => {
+              router.push(`../officerEditEvent/${id}`);
+            }}
+            style={styles.editBtn}
+          >
+            <Text style={{ color: COLORS.textColorWhite }}>Edit Event</Text>
+          </TouchableOpacity>
+
           <View style={styles.centerWrapper}>
             <Svg
               width={radius * 2 + strokeWidth}
@@ -310,5 +319,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333333",
     marginLeft: 10,
+  },
+  // edit event button styles
+  editBtn: {
+    backgroundColor: "green",
+    width: 100,
+    height: 20,
+    padding: 12,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+    margin: 5,
   },
 });

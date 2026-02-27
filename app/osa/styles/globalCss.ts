@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/ColorCpc";
 import { StyleSheet } from "react-native";
 
 const mobileViewStyles = StyleSheet.create({
@@ -124,10 +125,20 @@ const mobileViewStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-   emptyContainer: {
+  emptyContainer: {
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
+  },
+
+  // modal delete
+  modalContainerDelete: {
+    margin: "auto",
+    backgroundColor: COLORS.Forth,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+    borderRadius: 20,
   },
 });
 

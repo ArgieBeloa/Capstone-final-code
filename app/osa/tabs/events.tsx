@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
 import {
+  deleteEvent,
   fetchEventImageById,
   getAllEvents,
   getEventImageByLocation,
@@ -36,10 +37,16 @@ const Events = () => {
 
   const [events, setEvents] = useState<EventModel[]>([]);
   const [allEvents, setAllEvents] = useState<EventModel[]>([]);
-  const [eventTitles, setEventTitles] = useState<{ id: string; eventTitle: string }[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<{ id: string; eventTitle: string }[]>([]);
+  const [eventTitles, setEventTitles] = useState<
+    { id: string; eventTitle: string }[]
+  >([]);
+  const [filteredEvents, setFilteredEvents] = useState<
+    { id: string; eventTitle: string }[]
+  >([]);
   const [searchText, setSearchText] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [idDelete, setIdDelete] = useState<string>("");
 
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -78,7 +85,7 @@ const Events = () => {
         }
       };
       loadData();
-    }, [studentToken])
+    }, [studentToken]),
   );
 
   // ✅ Filter dropdown logic
@@ -91,7 +98,7 @@ const Events = () => {
 
     const lower = searchText.toLowerCase();
     const filtered = eventTitles.filter((e) =>
-      e.eventTitle.toLowerCase().includes(lower)
+      e.eventTitle.toLowerCase().includes(lower),
     );
     setFilteredEvents(filtered);
     setShowResults(filtered.length > 0);
@@ -106,7 +113,7 @@ const Events = () => {
     setEvents(selectedEvent);
 
     // ❌ Removed the part that clears search text automatically
-    setTimeout(()=> setShowResults(false), 300)
+    setTimeout(() => setShowResults(false), 300);
   };
 
   // ✅ Reset to all events when search text manually cleared
@@ -144,6 +151,20 @@ const Events = () => {
     }
   };
 
+  const handleDeleteBackEnd = async () => {
+    setLoading(true);
+    console.log(idDelete);
+    try {
+      await deleteEvent(idDelete, studentToken);
+      const events = await getAllEvents(studentToken);
+      setAllEvents(events);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ✅ Navigation
   const handlePrintAttendance = (id: string) =>
     router.push(`../../PrintAttendances/${id}`);
@@ -163,7 +184,10 @@ const Events = () => {
           return;
         }
         try {
-          const uri = await fetchEventImageById(item.eventImageUrl, studentToken);
+          const uri = await fetchEventImageById(
+            item.eventImageUrl,
+            studentToken,
+          );
           setImageUri(uri);
         } catch (error) {
           console.error(`❌ Failed to load image for event ${item.id}:`, error);
@@ -176,62 +200,76 @@ const Events = () => {
 
     return (
       <View style={eventStyles.containerItem}>
-        {loadingImage ? (
-          <View
-            style={[
-              eventStyles.image,
-              { justifyContent: "center", alignItems: "center" },
-            ]}
-          >
-            <ActivityIndicator size="large" color={COLORS.Primary} />
-          </View>
-        ) : (
-          <Image
-            source={
-              imageUri
-                ? { uri: imageUri }
-                : getEventImageByLocation(item.eventLocation)
+        {/* Presable */}
+        <Pressable
+          onLongPress={() =>
+            // handleDeleteEventById(item.id)
+            {
+              setIdDelete(item.id);
+              setShowDeleteModal(true);
             }
-            style={eventStyles.image}
-            resizeMode="cover"
-          />
-        )}
-        <View style={{ padding: 10 }}>
-          <Text style={{ fontWeight: "bold", fontSize: 18, color: "#222" }}>
-            {item.eventTitle}
-          </Text>
-          <Text style={{ fontSize: 14, color: "#555" }}>
-            {item.eventShortDescription}
-          </Text>
-          <Text style={{ fontSize: 12, color: "#777", marginTop: 4 }}>
-            {item.eventDate} • {item.eventTimeLength}
-          </Text>
-          <Text style={{ marginTop: 4 }}>Posted By: {item.whoPostedName}</Text>
-
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginTop: 10,
-            }}
-          >
-            <Pressable
-              style={eventStyles.iconButton}
-              onPress={() => handlePrintAttendance(item.id)}
+          }
+        >
+          {loadingImage ? (
+            <View
+              style={[
+                eventStyles.image,
+                { justifyContent: "center", alignItems: "center" },
+              ]}
             >
-              <FontAwesome5 name={platformIcon} size={18} color="#000" />
-              <Text style={eventStyles.iconText}>Attendance</Text>
-            </Pressable>
+              <ActivityIndicator size="large" color={COLORS.Primary} />
+            </View>
+          ) : (
+            <Image
+              source={
+                imageUri
+                  ? { uri: imageUri }
+                  : getEventImageByLocation(item.eventLocation)
+              }
+              style={eventStyles.image}
+              resizeMode="cover"
+            />
+          )}
 
-            <Pressable
-              style={eventStyles.iconButton}
-              onPress={() => handlePrint(item.id)}
+          <View style={{ padding: 10 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#222" }}>
+              {item.eventTitle}
+            </Text>
+            <Text style={{ fontSize: 14, color: "#555" }}>
+              {item.eventShortDescription}
+            </Text>
+            <Text style={{ fontSize: 12, color: "#777", marginTop: 4 }}>
+              {item.eventDate} • {item.eventTimeLength}
+            </Text>
+            <Text style={{ marginTop: 4 }}>
+              Posted By: {item.whoPostedName}
+            </Text>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 10,
+              }}
             >
-              <FontAwesome5 name={platformIcon} size={18} color="#000" />
-              <Text style={eventStyles.iconText}>Evaluation</Text>
-            </Pressable>
+              <Pressable
+                style={eventStyles.iconButton}
+                onPress={() => handlePrintAttendance(item.id)}
+              >
+                <FontAwesome5 name={platformIcon} size={18} color="#000" />
+                <Text style={eventStyles.iconText}>Attendance</Text>
+              </Pressable>
+
+              <Pressable
+                style={eventStyles.iconButton}
+                onPress={() => handlePrint(item.id)}
+              >
+                <FontAwesome5 name={platformIcon} size={18} color="#000" />
+                <Text style={eventStyles.iconText}>Evaluation</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
+        </Pressable>
       </View>
     );
   };
@@ -344,7 +382,7 @@ const Events = () => {
                     onPress={() =>
                       handleSendAnnouncement(
                         announcementTitle,
-                        announcementMessage
+                        announcementMessage,
                       )
                     }
                   />
@@ -362,6 +400,71 @@ const Events = () => {
                 </View>
               </View>
             )}
+          </Modal>
+
+          {/* modal delete */}
+          <Modal
+            visible={showDeleteModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowDeleteModal(false)}
+          >
+            <View style={Styles.modalContainerDelete}>
+              <Text
+                style={{
+                  fontWeight: 700,
+                  fontSize: 15,
+                  marginVertical: 15,
+                }}
+              >
+                Are you sure to delete this event?
+              </Text>
+              <View
+                style={{
+                  marginVertical: 5,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  flexDirection: "row",
+                }}
+              >
+                <Pressable
+                  style={{
+                    paddingVertical: 3,
+                    paddingHorizontal: 10,
+                    backgroundColor: "green",
+                    borderRadius: 20,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 16,
+                      marginHorizontal: 10,
+                    }}
+                    onPress={() => {
+                      setShowDeleteModal(false);
+                      handleDeleteBackEnd();
+                    }}
+                  >
+                    Yes
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={{
+                    paddingVertical: 3,
+                    paddingHorizontal: 10,
+                    backgroundColor: "red",
+                    borderRadius: 20,
+                  }}
+                  onPress={() => setShowDeleteModal(false)}
+                >
+                  <Text style={{ color: "white", marginHorizontal: 10 }}>
+                    Cancel
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           </Modal>
         </View>
       </SafeAreaView>

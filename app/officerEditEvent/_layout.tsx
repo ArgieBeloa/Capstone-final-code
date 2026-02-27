@@ -29,7 +29,7 @@ export default function RootLayout() {
         {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
         <Stack.Screen
           name="[id]"
-          options={{ headerTitle: "Event Details", headerTitleAlign: "center" }}
+          options={{ headerTitle: "Edit Event", headerTitleAlign: "center" }}
         />
         {/* <Stack.Screen name="EventFeedbackPrint" options={{ headerTitle: "Event Details", headerTitleAlign: "center" }} /> */}
 
