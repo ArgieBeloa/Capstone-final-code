@@ -16,7 +16,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
+import {
+  deleteStudent,
+  getAllStudents,
+  sendExpoNotification
+} from "@/api/admin/controller";
 import {
   deleteEvent,
   fetchEventImageById,
@@ -56,6 +60,14 @@ const Events = () => {
 
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
+
+  // testing delete event by id
+  useEffect(() => {
+    const testingApi = async () => {
+      await deleteStudent("697851dcb1b8cc916431a285", studentToken);
+    };
+    testingApi();
+  }, []);
 
   // ✅ Load all events and student notification tokens (refresh each time you revisit screen)
   useFocusEffect(

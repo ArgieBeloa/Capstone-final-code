@@ -156,3 +156,61 @@ export async function promoteStudent(
     }
   }
 }
+
+export async function demoteOfficer(
+  userId: string,
+  token: string,
+): Promise<any> {
+  try {
+    const response = await axios.patch(
+      `${BASE_URL}/demote/${userId}`,
+      {}, // no body needed
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      throw new Error(
+        `Error ${error.response.status}: ${error.response.data.message || error.response.data}`,
+      );
+    } else if (error.request) {
+      throw new Error("No response from server. Please check your connection.");
+    } else {
+      throw new Error(`Request error: ${error.message}`);
+    }
+  }
+}
+
+export async function deleteStudent(
+  id: string,
+  token: string,
+): Promise<string> {
+  try {
+    if (!token) {
+      throw new Error("Token is missing");
+    }
+
+    // 🔥 Always remove Bearer if it exists
+    const cleanToken = token.replace("Bearer ", "").trim();
+
+    console.log("🪙 Clean Token:", cleanToken);
+
+    const response = await axios.delete(`${BASE_URL}/deleteStudent/${id}`, {
+      headers: { Authorization: `Bearer ${cleanToken}` },
+    });
+    console.log("✅ Student deleted successfully:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error deleting event:",
+      error.response?.data || error.message,
+    );
+    throw error.response?.data || error;
+  }
+}
