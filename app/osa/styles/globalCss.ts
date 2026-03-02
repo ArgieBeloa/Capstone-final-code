@@ -140,6 +140,73 @@ const mobileViewStyles = StyleSheet.create({
     padding: 10,
     borderRadius: 20,
   },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 25,
+    elevation: 10, // Android shadow
+    shadowColor: "#000", // iOS shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+
+  title_2: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 10,
+    color: "#222",
+  },
+
+  message: {
+    fontSize: 15,
+    textAlign: "center",
+    color: "#555",
+    marginBottom: 25,
+    lineHeight: 20,
+  },
+
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+
+  cancelButton: {
+    backgroundColor: "#E5E7EB",
+    marginRight: 10,
+  },
+
+  deleteButton: {
+    backgroundColor: "#EF4444",
+    marginLeft: 10,
+  },
+
+  cancelText: {
+    color: "#333",
+    fontWeight: "600",
+  },
+
+  deleteText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
 });
 
 export default mobileViewStyles;

@@ -1,4 +1,5 @@
 import {
+  demoteOfficer,
   getAllStudents,
   promoteStudent,
   sendExpoNotification,
@@ -58,6 +59,7 @@ const OsaScreen: React.FC = () => {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [selectedId, setSelectedId] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [loadingSendNotification, setLoadingSendNotification] = useState(false);
@@ -65,6 +67,7 @@ const OsaScreen: React.FC = () => {
   const [promotionStatus, setPromotionStatus] = useState(false);
   const [showPromoteArea, setShowPromoteArea] = useState(false);
   const [isPromoted, setIsPromoted] = useState(false);
+  const [isDemoteVisible, setIsDemoteVisible] = useState(false);
 
   // 🧠 Load all students on mount
   useEffect(() => {
@@ -73,7 +76,7 @@ const OsaScreen: React.FC = () => {
         const students = await getAllStudents(studentToken);
 
         const onlyOfficers = students.filter(
-          (item: StudentModel) => item.role?.toLowerCase() === "officer"
+          (item: StudentModel) => item.role?.toLowerCase() === "officer",
         );
         setCurrentOfficer(onlyOfficers);
 
@@ -97,7 +100,7 @@ const OsaScreen: React.FC = () => {
     };
 
     fetchStudents();
-  }, []);
+  }, [isPromoted, isDemoteVisible]);
 
   // 🔍 Filter students when typing
   useEffect(() => {
@@ -108,7 +111,7 @@ const OsaScreen: React.FC = () => {
 
     const lower = searchText.toLowerCase();
     const filtered = studentSuggestionData.filter((item) =>
-      item.studentName.toLowerCase().includes(lower)
+      item.studentName.toLowerCase().includes(lower),
     );
     setFilteredStudents(filtered);
     setShowResults(true);
@@ -166,14 +169,14 @@ const OsaScreen: React.FC = () => {
     } catch (error: any) {
       console.error(
         "❌ Error promoting student:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
       Alert.alert(
         "Error ❌",
         `Failed to promote student.\n${
           error.response?.data?.message || error.message
         }`,
-        [{ text: "OK" }]
+        [{ text: "OK" }],
       );
     } finally {
       setSearchLoading(false);
@@ -192,7 +195,7 @@ const OsaScreen: React.FC = () => {
       setLoading(true);
 
       const extactAllTokens: string[] = allTokens.map(
-        (item) => item.notificationId
+        (item) => item.notificationId,
       );
 
       console.log(extactAllTokens);
@@ -201,9 +204,9 @@ const OsaScreen: React.FC = () => {
         title,
         body: message,
       });
-     
-      setAnnouncementTitle("")
-      setAnnouncementMessage("")
+
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
 
       Alert.alert("✅ Success", "Announcement sent successfully!");
     } catch (error: any) {
@@ -235,6 +238,18 @@ const OsaScreen: React.FC = () => {
         {after}
       </Text>
     );
+  };
+
+  const handleDemote = async () => {
+    try {
+      setLoading(true);
+
+      await demoteOfficer(selectedId, studentToken);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -359,7 +374,13 @@ const OsaScreen: React.FC = () => {
                 item.studentName?.charAt(0).toUpperCase() || "?";
               const isOfficer = item.role?.toLowerCase() === "officer";
               return (
-                <TouchableOpacity style={styles.officerItem}>
+                <TouchableOpacity
+                  style={styles.officerItem}
+                  onLongPress={() => {
+                    setIsDemoteVisible(true);
+                    setSelectedId(item.id as string);
+                  }}
+                >
                   <View style={styles.officerAvatar}>
                     <Text style={styles.officerAvatarText}>{firstLetter}</Text>
                   </View>
@@ -391,7 +412,7 @@ const OsaScreen: React.FC = () => {
           {/* Modals */}
           <Loading visible={promotionStatus || loading || searchLoading} />
           <Mymodal
-            redirectPath="osa/osa"
+            redirectPath="osa"
             visible={isPromoted}
             message="Student Promoted"
             onClose={() => setIsPromoted(false)}
@@ -399,6 +420,98 @@ const OsaScreen: React.FC = () => {
 
           {/* announcement modal */}
           {/* 📢 Announcement Modal */}
+          {/* SUCCESS MODAL */}
+          <Modal
+            visible={isPromoted}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsPromoted(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 20,
+              }}
+            >
+              <View
+                style={{
+                  width: "100%",
+                  backgroundColor: "#fff",
+                  borderRadius: 25,
+                  padding: 30,
+                  alignItems: "center",
+                  elevation: 10,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 10,
+                }}
+              >
+                {/* Green Circle Icon */}
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: "#22C55E",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: 20,
+                  }}
+                >
+                  <Text style={{ fontSize: 40, color: "white" }}>✓</Text>
+                </View>
+
+                {/* Title */}
+                <Text
+                  style={{
+                    fontSize: 22,
+                    fontWeight: "bold",
+                    marginBottom: 8,
+                    color: "#111",
+                  }}
+                >
+                  Success
+                </Text>
+
+                {/* Message */}
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: "#555",
+                    textAlign: "center",
+                    marginBottom: 25,
+                  }}
+                >
+                  Student Promoted
+                </Text>
+
+                {/* OK Button */}
+                <Pressable
+                  onPress={() => setIsPromoted(false)}
+                  style={{
+                    backgroundColor: "#22C55E",
+                    paddingVertical: 12,
+                    paddingHorizontal: 50,
+                    borderRadius: 15,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 16,
+                      fontWeight: "600",
+                    }}
+                  >
+                    OK
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
           <Modal
             visible={showAnnouncementModal}
             transparent
@@ -490,7 +603,7 @@ const OsaScreen: React.FC = () => {
                     onPress={() =>
                       handleSendAnnouncement(
                         announcementTitle,
-                        announcementMessage
+                        announcementMessage,
                       )
                     }
                     style={{
@@ -533,6 +646,140 @@ const OsaScreen: React.FC = () => {
                 </View>
               </View>
             )}
+          </Modal>
+
+          {/* DEMOTE MODAL */}
+          <Modal
+            visible={isDemoteVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsDemoteVisible(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                justifyContent: "center",
+                alignItems: "center",
+                paddingHorizontal: 20,
+              }}
+            >
+              <View
+                style={{
+                  width: "100%",
+                  backgroundColor: "#fff",
+                  borderRadius: 25,
+                  padding: 30,
+                  elevation: 10,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 10,
+                }}
+              >
+                {/* Warning Icon */}
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: "#EF4444",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    alignSelf: "center",
+                    marginBottom: 20,
+                  }}
+                >
+                  <Text
+                    style={{ fontSize: 35, color: "white", fontWeight: "bold" }}
+                  >
+                    !
+                  </Text>
+                </View>
+
+                {/* Title */}
+                <Text
+                  style={{
+                    fontSize: 22,
+                    fontWeight: "bold",
+                    marginBottom: 8,
+                    textAlign: "center",
+                    color: "#111",
+                  }}
+                >
+                  Demote Student
+                </Text>
+
+                {/* Message */}
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: "#555",
+                    textAlign: "center",
+                    marginBottom: 25,
+                  }}
+                >
+                  Are you sure you want to demote this student?
+                </Text>
+
+                {/* Buttons */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  {/* Cancel */}
+                  <Pressable
+                    onPress={() => setIsDemoteVisible(false)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#E5E7EB",
+                      paddingVertical: 12,
+                      borderRadius: 15,
+                      alignItems: "center",
+                      marginRight: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#333",
+                        fontSize: 15,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Cancel
+                    </Text>
+                  </Pressable>
+
+                  {/* Demote */}
+                  <Pressable
+                    onPress={() => {
+                      setIsDemoteVisible(false);
+                      handleDemote(); // your demote function
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#EF4444",
+                      paddingVertical: 12,
+                      borderRadius: 15,
+                      alignItems: "center",
+                      marginLeft: 10,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 15,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Demote
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
           </Modal>
         </View>
       </SafeAreaView>

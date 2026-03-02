@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  deleteStudent,
   getAllStudents,
   sendExpoNotification
 } from "@/api/admin/controller";
@@ -64,7 +63,7 @@ const Events = () => {
   // testing delete event by id
   useEffect(() => {
     const testingApi = async () => {
-      await deleteStudent("697851dcb1b8cc916431a285", studentToken);
+      // await deleteStudent("697851dcb1b8cc916431a285", studentToken);
     };
     testingApi();
   }, []);
@@ -414,67 +413,40 @@ const Events = () => {
             )}
           </Modal>
 
-          {/* modal delete */}
+          {/* DELETE MODAL */}
           <Modal
             visible={showDeleteModal}
             transparent
-            animationType="slide"
+            animationType="fade"
             onRequestClose={() => setShowDeleteModal(false)}
           >
-            <View style={Styles.modalContainerDelete}>
-              <Text
-                style={{
-                  fontWeight: 700,
-                  fontSize: 15,
-                  marginVertical: 15,
-                }}
-              >
-                Are you sure to delete this event?
-              </Text>
-              <View
-                style={{
-                  marginVertical: 5,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  flexDirection: "row",
-                }}
-              >
-                <Pressable
-                  style={{
-                    paddingVertical: 3,
-                    paddingHorizontal: 10,
-                    backgroundColor: "green",
-                    borderRadius: 20,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 16,
-                      marginHorizontal: 10,
-                    }}
+            <View style={Styles.overlay}>
+              <View style={Styles.modalCard}>
+                <Text style={Styles.title}>Delete Event</Text>
+
+                <Text style={Styles.message}>
+                  Are you sure you want to delete this event? This action cannot
+                  be undone.
+                </Text>
+
+                <View style={Styles.buttonContainer}>
+                  <Pressable
+                    style={[Styles.button, Styles.cancelButton]}
+                    onPress={() => setShowDeleteModal(false)}
+                  >
+                    <Text style={Styles.cancelText}>Cancel</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[Styles.button, Styles.deleteButton]}
                     onPress={() => {
                       setShowDeleteModal(false);
                       handleDeleteBackEnd();
                     }}
                   >
-                    Yes
-                  </Text>
-                </Pressable>
-                <Pressable
-                  style={{
-                    paddingVertical: 3,
-                    paddingHorizontal: 10,
-                    backgroundColor: "red",
-                    borderRadius: 20,
-                  }}
-                  onPress={() => setShowDeleteModal(false)}
-                >
-                  <Text style={{ color: "white", marginHorizontal: 10 }}>
-                    Cancel
-                  </Text>
-                </Pressable>
+                    <Text style={Styles.deleteText}>Delete</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </Modal>
