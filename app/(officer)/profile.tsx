@@ -143,7 +143,7 @@ const Profile = () => {
   const handleAttendanceLocal = async (id: string, eventTitle: string) => {
     setIsLoading(true);
     try {
-      const localData = await loadStudents(id);
+      const localData: any = await loadStudents(id);
       if (localData.length === 0) return;
 
       for (const item of localData) {
@@ -168,7 +168,13 @@ const Profile = () => {
         await markStudentAttended(studentToken, item.studentId, id);
 
         // delete to student notification
-        await deleteStudentNotification(studentToken, item.studentId, id);
+
+        const notificationData = student.studentNotifications.find(
+          (n) => n.eventId === id,
+        );
+        if (notificationData) {
+          await deleteStudentNotification(studentToken, item.studentId, id);
+        }
       }
 
       await deleteLocalAttendanceByEventId(id);
