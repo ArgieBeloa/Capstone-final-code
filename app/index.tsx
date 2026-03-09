@@ -28,7 +28,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { loginStudent } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
+import {
+  getOfflineStudents,
+  saveEventOfflineLocal,
+  saveStudentOfflineLocal,
+} from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
+import NetInfo from "@react-native-community/netinfo";
 
 export default function Index() {
   const [password, setPassword] = useState("");
@@ -40,14 +46,56 @@ export default function Index() {
   const [attempts, setAttempts] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showModalOfficer, setShowModalOfficer] = useState(false);
+  const [showModalNoInternetUser, setShowModalNoInternetUser] = useState(false);
 
   const router = useRouter();
-  const { setStudentData, setStudentToken, setUserId, setEventData } =
-    useUser();
+  const {
+    setStudentData,
+    setStudentToken,
+    setUserId,
+    setEventData,
+    setIsUserHasInternet,
+    isUserHasInternet,
+    studentDataOffline,
+    setStudentDataOffline,
+    eventDataOffline,
+    setEventDataOffline,
+  } = useUser();
 
   const haddleRegister = () => {
     router.push("/register");
   };
+
+  useEffect(() => {
+    // function offline data
+    const getOfflineData = async () => {
+      console.log("local data ");
+      const localData = await getOfflineStudents();
+      const studentLocal = localData.find((item: null) => item !== null);
+      console.log("local data student", studentLocal);
+      setStudentDataOffline(studentLocal);
+    };
+
+    const checkInternet = NetInfo.addEventListener((state) => {
+      if (state.isConnected) {
+        setIsUserHasInternet(true);
+        setShowModalNoInternetUser(false);
+      } else {
+        setIsUserHasInternet(false);
+        setShowModalNoInternetUser(true);
+        getOfflineData();
+      }
+    });
+
+    // const getLocal = async () => {
+    //   const localData = await getOfflineStudents();
+    //   const studentLocal = localData.find((item: null) => item !== null);
+    //   setStudentDataOffline(studentLocal);
+    // };
+
+    checkInternet();
+    // getLocal();
+  }, []);
 
   const haddleAuthStudent = async () => {
     setLoading(true);
@@ -66,9 +114,13 @@ export default function Index() {
 
       const events = await getAllEvents(response.token);
       setEventData(events);
+      setEventDataOffline(events);
+      await saveEventOfflineLocal(events);
 
       const userData = await getStudentById(response.token, response._id);
       setStudentData(userData);
+      setStudentDataOffline(userData);
+      await saveStudentOfflineLocal(userData);
 
       if (response.role === "ADMIN") {
         router.push("/osa/tabs/osa");
@@ -337,6 +389,67 @@ export default function Index() {
                     Login as Officer
                   </Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* modal save user data local */}
+          <Modal
+            visible={showModalNoInternetUser}
+            transparent
+            animationType="fade"
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: "white",
+                  padding: 20,
+                  borderRadius: 10,
+                  width: "80%",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    marginBottom: 10,
+                  }}
+                >
+                  ⚠️ Offline Mode
+                </Text>
+
+                <Text style={{ textAlign: "center", marginBottom: 20 }}>
+                  No internet connection.
+                </Text>
+
+                <Pressable
+                  onPress={() => {
+                    if (studentDataOffline.role === "OFFICER") {
+                      setShowModalOfficer(true);
+                    } else {
+                      router.push("/(tabs)/home");
+                    }
+                    setShowModalNoInternetUser(false);
+                  }}
+                  style={{
+                    backgroundColor: "#007bff",
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 6,
+                  }}
+                >
+                  <Text style={{ color: "white", fontWeight: "bold" }}>
+                    Go Offline Mode
+                  </Text>
+                </Pressable>
               </View>
             </View>
           </Modal>

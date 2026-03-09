@@ -4,6 +4,7 @@ import {
   getEventImageByLocation,
 } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
+import { getOfflineEvents, getOfflineStudents } from "@/api/local/userOffline";
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
@@ -26,7 +27,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Events = () => {
-  const { studentToken, studentData, eventData } = useUser();
+  const {
+    studentToken,
+    studentData,
+    eventData,
+    isUserHasInternet,
+    eventDataOffline,
+    studentDataOffline,
+  } = useUser();
 
   const navigationTitle: string[] = [
     "All",
@@ -37,14 +45,14 @@ const Events = () => {
   ];
   const [selectedTitle, setSelectedTitle] = useState("All");
 
-  const [eventState, setEventState] = useState<EventModel[]>(eventData);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const router = useRouter();
-  const student: StudentModel = studentData;
-  const firstLetter = student.studentName.charAt(0);
+
+  const [eventState, setEventState] = useState<EventModel[]>();
+  const [student, setStudent] = useState<StudentModel>();
 
   const [studentNotification, setStudentNotification] = useState<number>(
-    studentData.studentNotifications.length || 0
+    studentData.studentNotifications.length || 0,
   );
   const [searchText, setSearchText] = useState("");
   const [searchSuggestion, setSearchSuggestion] = useState<EventModel[]>([]);
@@ -69,18 +77,38 @@ const Events = () => {
     setSelectedTitle(title);
   };
   useEffect(() => {
+    // offline mode
+    const getOfflineData = async () => {
+      const localData = await getOfflineStudents();
+      const studentLocal = localData.find((item: null) => item !== null);
+
+      const localDataEvents = await getOfflineEvents();
+      const eventsLocal = localDataEvents.find((item: null) => item !== null);
+
+      // set data
+      setStudent(studentLocal);
+      setEventState(eventsLocal);
+    };
+
+    // online mode event data
     const getEvent = async () => {
       if (selectedIndex === 0) {
         setEventState(eventData);
       } else {
         // const event =  selectedTitle);
         const event = eventData.filter(
-          (event) => event.eventCategory === selectedTitle
+          (event) => event.eventCategory === selectedTitle,
         );
         setEventState(event);
       }
     };
-    getEvent();
+
+    // check internet
+    if (isUserHasInternet) {
+      getEvent();
+    } else {
+      getOfflineData();
+    }
   }, [selectedTitle]);
 
   // Fetch & filter events for search
@@ -96,7 +124,7 @@ const Events = () => {
 
       const filtered = allEvents
         .filter((event: EventModel) =>
-          event.eventTitle.toLowerCase().includes(query)
+          event.eventTitle.toLowerCase().includes(query),
         )
         .sort((a: EventModel, b: EventModel) => {
           const aTitle = a.eventTitle.toLowerCase();
@@ -147,7 +175,7 @@ const Events = () => {
         try {
           const uri = await fetchEventImageById(
             item.eventImageUrl!,
-            studentToken
+            studentToken,
           );
           setImageUri(uri);
         } catch (error) {
@@ -229,12 +257,14 @@ const Events = () => {
         {/* Header */}
         <View style={styles.headContainer}>
           <View style={styles.profileCircle}>
-            <Text style={styles.profileText}>{firstLetter}</Text>
+            <Text style={styles.profileText}>
+              {student?.studentName.charAt(0) ?? "G"}
+            </Text>
           </View>
 
           <View style={styles.headerText}>
             <Text style={styles.greeting}>Good Day</Text>
-            <Text style={styles.name}>{student.studentName}</Text>
+            <Text style={styles.name}>{student?.studentName ?? "No name"}</Text>
           </View>
 
           {/* 🔎 Search bar */}
@@ -269,7 +299,9 @@ const Events = () => {
                 try {
                   const allEvents = await getAllEvents(studentToken);
                   const filtered = allEvents.filter((event: EventModel) =>
-                    event.eventTitle.toLowerCase().includes(query.toLowerCase())
+                    event.eventTitle
+                      .toLowerCase()
+                      .includes(query.toLowerCase()),
                   );
                   setSearchSuggestion(filtered);
                   setShowSuggestions(true);
@@ -395,7 +427,7 @@ const Events = () => {
 
         {/* Events List */}
 
-        {eventState.length !== 0 ? (
+        {eventState?.length !== 0 ? (
           <>
             <Animated.FlatList
               data={eventState}

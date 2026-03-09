@@ -13,6 +13,7 @@ import {
   getEventImageByLocation,
 } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
+import { getOfflineEvents, getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
 import {
@@ -32,7 +33,9 @@ import * as Notifications from "expo-notifications";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, Alert, Animated,
+  ActivityIndicator,
+  Alert,
+  Animated,
   Dimensions,
   FlatList,
   ImageBackground,
@@ -41,17 +44,22 @@ import {
   TextInput,
   TouchableHighlight,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
 const Home = () => {
-  const { studentToken, userId, studentData, setStudentData, eventData } =
-    useUser();
+  const {
+    studentToken,
+    userId,
+    studentData,
+    setStudentData,
+    eventData,
+    isUserHasInternet,
+  } = useUser();
   const student: StudentModel = studentData;
-  const firstLetter = student.studentName.charAt(0);
 
   const [studentNotification, setStudentNotification] = useState<
     StudentNotification[]
@@ -87,15 +95,18 @@ const Home = () => {
   useFocusEffect(
     useCallback(() => {
       const getStudentData = async () => {
+        console.log("use effect");
+
         const student = await getStudentById(studentToken, userId);
+        console.log("student online ", student);
         setStudentData(student);
         const upcomingEvents = student.studentUpcomingEvents;
         const recentEvaluation = student.studentRecentEvaluations;
         const updatedUpcomingEvents = upcomingEvents.filter(
           (upEvent) =>
             !recentEvaluation.some(
-              (evalEvent) => evalEvent.eventId === upEvent.eventId
-            )
+              (evalEvent) => evalEvent.eventId === upEvent.eventId,
+            ),
         );
 
         setStudentUpcomingEvents(updatedUpcomingEvents);
@@ -104,8 +115,26 @@ const Home = () => {
         const events = await getAllEvents(studentToken);
         setEvent(events);
       };
-      getStudentData();
-    }, [])
+
+      // function offline data
+      const getOfflineData = async () => {
+        console.log("local data ");
+        const localData = await getOfflineStudents();
+        const studentLocal = localData.find((item: null) => item !== null);
+        console.log("local data student", studentLocal);
+        const localDataEvents = await getOfflineEvents();
+        const eventsLocal = localDataEvents.find((item: null) => item !== null);
+
+        // set data
+        setStudentData(studentLocal);
+        setEvent(eventsLocal);
+      };
+      if (isUserHasInternet) {
+        getStudentData();
+      } else {
+        getOfflineData();
+      }
+    }, []),
   );
 
   // 🔍 Smart search with sorting and live update
@@ -121,7 +150,7 @@ const Home = () => {
 
       const filtered = allEvents
         .filter((event: EventModel) =>
-          event.eventTitle.toLowerCase().includes(query)
+          event.eventTitle.toLowerCase().includes(query),
         )
         .sort((a: EventModel, b: EventModel) => {
           const aTitle = a.eventTitle.toLowerCase();
@@ -174,13 +203,13 @@ const Home = () => {
         try {
           const uri = await fetchEventImageById(
             item.eventImageUrl!,
-            studentToken
+            studentToken,
           );
           setImageUri(uri);
         } catch (error) {
           console.error(
             `❌ Failed to load image for event ${item.eventId}:`,
-            error
+            error,
           );
         } finally {
           setLoadingImage(false);
@@ -256,7 +285,7 @@ const Home = () => {
         if (finalStatus !== "granted") {
           Alert.alert(
             "Notifications Disabled",
-            "Please enable notifications in your settings to receive updates."
+            "Please enable notifications in your settings to receive updates.",
           );
           return;
         }
@@ -278,12 +307,16 @@ const Home = () => {
         {/* Header */}
         <View style={styles.headContainer}>
           <View style={styles.profileCircle}>
-            <Text style={styles.profileText}>{firstLetter}</Text>
+            <Text style={styles.profileText}>
+              {student?.studentName.charAt(0) ?? "G"}
+            </Text>
           </View>
 
           <View style={styles.headerText}>
             <Text style={styles.greeting}>Good Day</Text>
-            <Text style={styles.name}>{student.studentName}</Text>
+            <Text style={styles.name}>
+              {student?.studentName ?? "No Student"}
+            </Text>
           </View>
 
           {/* 🔎 Search bar */}
@@ -318,7 +351,9 @@ const Home = () => {
                 try {
                   const allEvents = await getAllEvents(studentToken);
                   const filtered = allEvents.filter((event: EventModel) =>
-                    event.eventTitle.toLowerCase().includes(query.toLowerCase())
+                    event.eventTitle
+                      .toLowerCase()
+                      .includes(query.toLowerCase()),
                   );
                   setSearchSuggestion(filtered);
                   setShowSuggestions(true);
@@ -430,7 +465,7 @@ const Home = () => {
                 showsHorizontalScrollIndicator={false}
                 onScroll={Animated.event(
                   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                  { useNativeDriver: false }
+                  { useNativeDriver: false },
                 )}
                 renderItem={({ item }: { item: StudentUpcomingEvents }) => (
                   <RenderUpcomingEvents item={item} />

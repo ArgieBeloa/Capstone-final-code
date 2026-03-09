@@ -16,10 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  getAllStudents,
-  sendExpoNotification
-} from "@/api/admin/controller";
+import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
 import {
   deleteEvent,
   fetchEventImageById,
@@ -220,6 +217,9 @@ const Events = () => {
               setShowDeleteModal(true);
             }
           }
+          onPress={() => {
+            router.push(`../../EventDetails/${item.id}`);
+          }}
         >
           {loadingImage ? (
             <View
@@ -352,7 +352,7 @@ const Events = () => {
               eventStyles.containerFlatlist,
               { paddingBottom: 100 },
             ]}
-            showsVerticalScrollIndicator={false}
+            // showsVerticalScrollIndicator={false}
           />
 
           {/* Announcement Modal */}

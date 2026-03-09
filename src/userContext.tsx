@@ -5,7 +5,18 @@ import React, { createContext, useContext, useState } from "react";
 type UserContextType = {
   //userId
   userId: string;
-  setUserId: (userId: string)  => void;
+  setUserId: (userId: string) => void;
+
+  //user internet
+  isUserHasInternet: boolean;
+  setIsUserHasInternet: (isUserHasInternet: boolean) => void;
+
+  // user offline mode data
+  studentDataOffline: StudentModel;
+  setStudentDataOffline: (studentDataOffline: StudentModel) => void;
+
+  eventDataOffline: EventModel[];
+  setEventDataOffline: (eventDataOffline: EventModel[]) => void;
 
   // studentNumber
   studentNumber: string;
@@ -30,7 +41,16 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [studentNumber, setStudentNumber] = useState("");
   const [userId, setUserId] = useState("");
   const [studentData, setStudentData] = useState<StudentModel | any>();
-  const [eventData, setEventData] = useState<EventModel[]| any>();
+  const [eventData, setEventData] = useState<EventModel[] | any>();
+
+  // offline data
+  const [isUserHasInternet, setIsUserHasInternet] = useState<boolean>(false);
+  const [studentDataOffline, setStudentDataOffline] = useState<
+    StudentModel | any
+  >();
+  const [eventDataOffline, setEventDataOffline] = useState<
+    EventModel[] | any
+  >();
 
   const [studentToken, setStudentToken] = useState<string>("no token");
 
@@ -39,6 +59,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         userId,
         setUserId,
+        isUserHasInternet,
+        setIsUserHasInternet,
+        studentDataOffline,
+        setStudentDataOffline,
+        eventDataOffline,
+        setEventDataOffline,
         studentNumber,
         setStudentNumber,
         studentData,
