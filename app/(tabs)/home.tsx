@@ -128,6 +128,8 @@ const Home = () => {
         // set data
         setStudentData(studentLocal);
         setEvent(eventsLocal);
+        setStudentUpcomingEvents(studentLocal.studentUpcomingEvents);
+        setStudentNotification(studentLocal.studentNotifications);
       };
       if (isUserHasInternet) {
         getStudentData();

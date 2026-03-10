@@ -1,3 +1,4 @@
+import { getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentEventAttended } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -13,11 +14,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const Rates = () => {
   // student attended data
-  const { studentData, setStudentData, studentToken, userId } = useUser();
+  const {
+    studentData,
+    setStudentData,
+    studentToken,
+    userId,
+    isUserHasInternet,
+  } = useUser();
 
   const [studentAttendentState, setStudentAttendedState] = useState<
     StudentEventAttended[]
-  >(studentData.studentEventAttended);
+  >([]);
 
   const router = useRouter();
 
@@ -28,12 +35,26 @@ const Rates = () => {
   };
   useFocusEffect(
     useCallback(() => {
+      // offline mode
+      const getOfflineData = async () => {
+        const localData = await getOfflineStudents();
+        const studentLocal = localData.find((item: null) => item !== null);
+
+        setStudentAttendedState(studentLocal?.studentEventAttended || []);
+      };
+
+      // online mode
       const getStudentData = async () => {
         const student = await getStudentById(studentToken, userId);
         setStudentData(student);
         setStudentAttendedState(student.studentEventAttended);
       };
-      getStudentData();
+      // check internet
+      if (isUserHasInternet) {
+        getStudentData();
+      } else {
+        getOfflineData();
+      }
     }, []),
   );
 
@@ -44,7 +65,7 @@ const Rates = () => {
           <Text style={styles.containerEventHeaderText}>Event Attended</Text>
         </View>
         <View style={{ flex: 1 }}>
-          {studentAttendentState.length !== 0 ? (
+          {studentAttendentState?.length > 0 ? (
             <>
               <Animated.FlatList
                 data={studentAttendentState}
@@ -54,6 +75,7 @@ const Rates = () => {
                   return (
                     <TouchableHighlight
                       onPress={() => haddleEvaluationPage(item.eventId)}
+                      disabled={item.evaluated}
                     >
                       <Animated.View
                         entering={FadeInUp.duration(500)}
@@ -105,7 +127,7 @@ const Rates = () => {
               }}
             >
               <Text>No events Attended available!</Text>
-              <View style={{ flexDirection: "row", marginTop: 5 }}>
+              {/* <View style={{ flexDirection: "row", marginTop: 5 }}>
                 <Text>Please go to </Text>
                 <TouchableHighlight
                   onPress={() => router.push("/(tabs)/qrscanner")}
@@ -122,7 +144,7 @@ const Rates = () => {
                   </Text>
                 </TouchableHighlight>
                 <Text> to Scan.</Text>
-              </View>
+              </View> */}
             </View>
           )}
         </View>

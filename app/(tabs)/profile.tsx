@@ -1,5 +1,8 @@
+import { EventModel } from "@/api/events/model";
 import { EventAttendance } from "@/api/events/utils";
+import { getOfflineEvents, getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
+import { StudentModel } from "@/api/students/model";
 import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
 import { COLORS } from "@/constants/ColorCpc";
@@ -28,13 +31,22 @@ const Profile = () => {
   const labelFontSize = Math.min(screenWidth * 0.045, 14);
   const [modalIsVisible, setModalIsVisible] = useState<boolean>(false);
   const [studentDataQR, setStudentDataQR] = useState<EventAttendance>();
+  const [student, setStudent] = useState<StudentModel>();
+  const [events, setEvents] = useState<EventModel[]>();
 
-  const { studentData, setStudentData, studentToken, eventData, userId } =
-    useUser();
+  const {
+    studentData,
+    setStudentData,
+    studentToken,
+    eventData,
+    userId,
+    isUserHasInternet,
+    eventDataOffline,
+  } = useUser();
 
   const [studentAttendedData, setStudentAttendedData] = useState<
     StudentEventAttendedAndEvaluationDetails[]
-  >(studentData.studentEventAttendedAndEvaluationDetails);
+  >(student?.studentEventAttendedAndEvaluationDetails || []);
 
   const [isLogout, setIsLogout] = useState<boolean>(false);
   const router = useRouter();
@@ -43,8 +55,8 @@ const Profile = () => {
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
 
-  const attendedCount = studentData.studentEventAttended.length;
-  const totalCount = eventData.length || 0;
+  const attendedCount = student?.studentEventAttended?.length || 0;
+  const totalCount = events?.length || 0;
   const progress = (attendedCount / (totalCount || 1)) * circumference;
 
   // Get PH time
@@ -70,14 +82,40 @@ const Profile = () => {
 
   useFocusEffect(
     useCallback(() => {
-      const getStudentData = async () => {
-        const student = await getStudentById(studentToken, userId);
-        setStudentData(student);
+      // offline mode
+      const getOfflineData = async () => {
+        const localData = await getOfflineStudents();
+        const localDataEvents = await getOfflineEvents();
+
+        console.log("all local student data ", localData);
+        const studentLocal = localData.find((item: null) => item !== null);
+        const eventsLocal = localDataEvents.find((item: null) => item !== null);
+
+        // set data
+        setStudent(studentLocal);
         setStudentAttendedData(
-          student.studentEventAttendedAndEvaluationDetails,
+          studentLocal.studentEventAttendedAndEvaluationDetails,
         );
+        setEvents(eventsLocal);
       };
-      getStudentData();
+
+      // online mode
+      const getStudentData = async () => {
+        const studentResponse = await getStudentById(studentToken, userId);
+        setStudent(studentResponse);
+        setStudentAttendedData(
+          studentResponse.studentEventAttendedAndEvaluationDetails,
+        );
+
+        setEvents(eventData);
+      };
+
+      // check internet
+      if (isUserHasInternet) {
+        getStudentData();
+      } else {
+        getOfflineData();
+      }
     }, []),
   );
 
@@ -104,10 +142,8 @@ const Profile = () => {
       dateScanned,
     };
 
-    setStudentDataQR(qrPayload); // ✅ THIS WAS MISSING
+    setStudentDataQR(qrPayload);
     setModalIsVisible(true);
-
-    console.log("✅ QR Payload:", qrPayload);
   };
 
   return (
@@ -119,7 +155,7 @@ const Profile = () => {
             <View style={styles.headerLeft}>
               <View style={styles.avatarArea}>
                 <Text style={styles.avatarText}>
-                  {studentData.studentName.charAt(0).toUpperCase()}
+                  {student?.studentName?.charAt(0)?.toUpperCase() || "?"}
                 </Text>
               </View>
               <Text style={styles.headerTitle}>Profile</Text>
@@ -130,11 +166,11 @@ const Profile = () => {
               <TouchableHighlight
                 onPress={() =>
                   handleStudentQR(
-                    studentData.id ?? "no_id",
-                    studentData.studentNumber,
-                    studentData.studentName,
+                    student?.id ?? "no_id",
+                    student?.studentNumber ?? "",
+                    student?.studentName ?? "",
                     "Student",
-                    studentData.department,
+                    student?.department ?? "",
                     dateString,
                   )
                 }
@@ -200,13 +236,13 @@ const Profile = () => {
           {/* Student Info */}
           <View style={styles.studentInfo}>
             <Text style={styles.infoText}>
-              Student Name: {studentData.studentName}
+              Student Name: {student?.studentName ?? "no name"}
             </Text>
             <Text style={styles.infoText}>
-              Student #: {studentData.studentNumber}
+              Student #: {student?.studentNumber ?? "No Numer"}
             </Text>
             <Text style={styles.infoText}>
-              Course: {studentData.course.toUpperCase()}
+              Course: {student?.course.toUpperCase() ?? "?"}
             </Text>
           </View>
 

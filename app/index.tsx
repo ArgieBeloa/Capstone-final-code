@@ -28,12 +28,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { loginStudent } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
+import { EventModel } from "@/api/events/model";
 import {
   getOfflineStudents,
   saveEventOfflineLocal,
   saveStudentOfflineLocal,
+  updateEventOfflineLocal,
+  updateStudentOfflineLocal,
 } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
+import { StudentModel } from "@/api/students/model";
 import NetInfo from "@react-native-community/netinfo";
 
 export default function Index() {
@@ -64,6 +68,26 @@ export default function Index() {
 
   const haddleRegister = () => {
     router.push("/register");
+  };
+  const checkUserLocalData = async (
+    userData: StudentModel,
+    events: EventModel[],
+  ) => {
+    const localData = await getOfflineStudents();
+
+    if (localData.length > 0) {
+      const userUpdated = await updateStudentOfflineLocal(userData);
+      const eventsUpdated = await updateEventOfflineLocal(events);
+      console.log("User updated ", userUpdated);
+      console.log("Event updated ", eventsUpdated);
+    } else {
+      // console.log("No offline students saved.");
+      await saveStudentOfflineLocal(userData);
+      await saveEventOfflineLocal(events);
+
+      setEventDataOffline(events);
+      setStudentDataOffline(userData);
+    }
   };
 
   useEffect(() => {
@@ -114,13 +138,12 @@ export default function Index() {
 
       const events = await getAllEvents(response.token);
       setEventData(events);
-      setEventDataOffline(events);
-      await saveEventOfflineLocal(events);
 
       const userData = await getStudentById(response.token, response._id);
       setStudentData(userData);
-      setStudentDataOffline(userData);
-      await saveStudentOfflineLocal(userData);
+
+      // local copy of user
+      checkUserLocalData(userData, events);
 
       if (response.role === "ADMIN") {
         router.push("/osa/tabs/osa");
@@ -432,12 +455,13 @@ export default function Index() {
 
                 <Pressable
                   onPress={() => {
-                    if (studentDataOffline.role === "OFFICER") {
-                      setShowModalOfficer(true);
-                    } else {
-                      router.push("/(tabs)/home");
-                    }
+                    // if (studentDataOffline?.role === "OFFICER") {
+                    //   setShowModalOfficer(true);
+                    // } else {
+                    //   router.push("/(tabs)/home");
+                    // }
                     setShowModalNoInternetUser(false);
+                    router.push("/(tabs)/home");
                   }}
                   style={{
                     backgroundColor: "#007bff",
