@@ -48,6 +48,7 @@ const Events = () => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const router = useRouter();
 
+  const [allEvents, setAllEvents] = useState<EventModel[]>([]);
   const [eventState, setEventState] = useState<EventModel[]>();
   const [student, setStudent] = useState<StudentModel>();
 
@@ -88,19 +89,13 @@ const Events = () => {
       // set data
       setStudent(studentLocal);
       setEventState(eventsLocal);
+      setAllEvents(eventsLocal);
     };
 
     // online mode event data
     const getEvent = async () => {
-      if (selectedIndex === 0) {
-        setEventState(eventData);
-      } else {
-        // const event =  selectedTitle);
-        const event = eventData.filter(
-          (event) => event.eventCategory === selectedTitle,
-        );
-        setEventState(event);
-      }
+      setAllEvents(eventData);
+      setEventState(eventData);
     };
 
     // check internet
@@ -108,6 +103,19 @@ const Events = () => {
       getEvent();
     } else {
       getOfflineData();
+    }
+  }, []);
+
+  // filter event by category
+  useEffect(() => {
+    console.log(selectedTitle);
+    if (selectedTitle === "All") {
+      setEventState(allEvents);
+    } else {
+      const getEventByCategory = eventState?.filter(
+        (e) => e.eventCategory === selectedTitle,
+      );
+      setEventState(getEventByCategory);
     }
   }, [selectedTitle]);
 
@@ -141,7 +149,38 @@ const Events = () => {
       setSearchSuggestion(filtered);
     };
 
-    fetchFilteredEvents();
+    const fetchFilteredEventsOffline = async () => {
+      if (!studentToken || searchText.trim() === "") {
+        setSearchSuggestion([]);
+        return;
+      }
+
+      const query = searchText.toLowerCase();
+
+      const filtered = eventDataOffline
+        .filter((event: EventModel) =>
+          event.eventTitle.toLowerCase().includes(query),
+        )
+        .sort((a: EventModel, b: EventModel) => {
+          const aTitle = a.eventTitle.toLowerCase();
+          const bTitle = b.eventTitle.toLowerCase();
+
+          if (aTitle === query) return -1;
+          if (bTitle === query) return 1;
+          if (aTitle.startsWith(query) && !bTitle.startsWith(query)) return -1;
+          if (bTitle.startsWith(query) && !aTitle.startsWith(query)) return 1;
+
+          return aTitle.indexOf(query) - bTitle.indexOf(query);
+        });
+
+      setSearchSuggestion(filtered);
+    };
+
+    if (isUserHasInternet) {
+      fetchFilteredEvents();
+    } else {
+      fetchFilteredEventsOffline();
+    }
   }, [searchText]);
 
   // Highlight matching letters

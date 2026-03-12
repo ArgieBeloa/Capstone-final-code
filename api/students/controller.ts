@@ -1,4 +1,5 @@
 import axios from "axios";
+import { GLOBAL_URL } from "../admin/url";
 import { EventEvaluationDetails } from "../events/utils";
 import { StudentModel } from "./model";
 import {
@@ -11,13 +12,15 @@ import {
 // =======================================
 // 🌐 BASE ENDPOINTS
 // =======================================
-const BASE_URL = "https://securebackend-ox2e.onrender.com/api/student";
-const apiForAttendance = "https://securebackend-ox2e.onrender.com";
+// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/student";
+// const apiForAttendance = "https://securebackend-ox2e.onrender.com";
 
 // local development
 // const apiForAttendance = "http://localhost:8080";
 // const BASE_URL = "http://localhost:8080/api/student";
 
+const BASE_URL = `${GLOBAL_URL}/api/student`;
+const apiForAttendance = `${GLOBAL_URL}`;
 // =======================================
 // 🧑‍🎓 STUDENT CONTROLLER API SERVICE
 // =======================================

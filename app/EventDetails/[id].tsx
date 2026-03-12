@@ -1,7 +1,6 @@
 // import { updateAllStudentAttending } from "@/api/EventService";
 // import { addStudentUpcomingEvent, getEventById } from "@/api/spring";
 import {
-  getEventById,
   getEventImageByLocation,
   updateAllStudentAttending,
 } from "@/api/events/controller";
@@ -38,7 +37,15 @@ import {
 
 const EventDetails = () => {
   const { id } = useLocalSearchParams();
-  const { studentToken, studentData, userId } = useUser();
+  const {
+    studentToken,
+    studentData,
+    userId,
+    isUserHasInternet,
+    eventDataOffline,
+    studentDataOffline,
+    eventData,
+  } = useUser();
 
   const studentId = studentData.id;
   const [studentUpcomingEvents, setStudentUpcomingEvents] = useState<
@@ -69,7 +76,7 @@ const EventDetails = () => {
       };
 
       const alreadyExists = studentUpcomingEvents.some(
-        (e) => e.eventId === id.toString()
+        (e) => e.eventId === id.toString(),
       );
 
       if (alreadyExists) {
@@ -81,7 +88,7 @@ const EventDetails = () => {
       const upcomingEvent = await addUpcomingEvent(
         studentToken,
         userId,
-        studentUpcomingData
+        studentUpcomingData,
       );
       //  console.log(upcomingEvent)
 
@@ -95,14 +102,14 @@ const EventDetails = () => {
       const profileData = await addEventAttendanceAndEvaluation(
         studentToken,
         userId,
-        addProfileData
+        addProfileData,
       );
 
       const newCount = event.allStudentAttending + 1;
       const increaseAllStudentAttending = await updateAllStudentAttending(
         studentToken,
         id as string,
-        newCount
+        newCount,
       );
 
       setLoading(false);
@@ -114,25 +121,46 @@ const EventDetails = () => {
     }
   };
 
+  // useEffect(() => {
+  //   const fetchEventDetails = async () => {
+  //     setStudentUpcomingEvents(studentData.studentUpcomingEvents);
+
+  //     try {
+  //       const fetchedEvent = await getEventById(studentToken, id as string);
+  //       const eventData = Array.isArray(fetchedEvent)
+  //         ? fetchedEvent[0]
+  //         : fetchedEvent;
+
+  //       setEvent(eventData);
+  //       setEventAgendas(eventData.eventAgendas || []);
+  //     } catch (error) {
+  //       console.error("Error fetching event:", error);
+  //     }
+  //   };
+
+  //   fetchEventDetails();
+  // }, [id, studentToken]);
+
   useEffect(() => {
-    const fetchEventDetails = async () => {
-      setStudentUpcomingEvents(studentData.studentUpcomingEvents);
+    const getEvent = async () => {
+      if (isUserHasInternet) {
+        setStudentUpcomingEvents(studentData.studentUpcomingEvents);
+        const event = eventData.find((e) => e.id === id);
 
-      try {
-        const fetchedEvent = await getEventById(studentToken, id as string);
-        const eventData = Array.isArray(fetchedEvent)
-          ? fetchedEvent[0]
-          : fetchedEvent;
+        if (!event) return;
 
-        setEvent(eventData);
-        setEventAgendas(eventData.eventAgendas || []);
-      } catch (error) {
-        console.error("Error fetching event:", error);
+        setEvent(event);
+        setEventAgendas(event.eventAgendas);
+      } else {
+        setStudentUpcomingEvents(studentDataOffline.studentUpcomingEvents);
+        const event = eventDataOffline.find((e) => e.id === id);
+        if (!event) return;
+        setEvent(event);
+        setEventAgendas(event.eventAgendas);
       }
     };
-
-    fetchEventDetails();
-  }, [id, studentToken]);
+    getEvent();
+  }, []);
 
   // Agenda Section
   const AgendaSection = ({

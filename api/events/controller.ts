@@ -1,14 +1,15 @@
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
+import { GLOBAL_URL } from "../admin/url";
 import { EventModel } from "./model";
 import { EventAttendance, EventEvaluationDetails, PickedImage } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
-const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
+// const BASE_URL = "https://securebackend-ox2e.onrender.com/api/events";
 
 // local development
-// const BASE_URL = "http://localhost:8080/api/events";
+const BASE_URL = `${GLOBAL_URL}/api/events`;
 
 /**
  * ✅ 1. Get all events (public)
