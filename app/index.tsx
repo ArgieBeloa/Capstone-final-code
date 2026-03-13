@@ -65,7 +65,12 @@ export default function Index() {
     eventDataOffline,
     setEventDataOffline,
   } = useUser();
-
+  const handleOffline = (userRole: string) => {
+    if (userRole) {
+      setShowModalOfficer(true);
+    }
+    router.push("/(tabs)/home");
+  };
   const haddleRegister = () => {
     router.push("/register");
   };
@@ -461,7 +466,7 @@ export default function Index() {
                     //   router.push("/(tabs)/home");
                     // }
                     setShowModalNoInternetUser(false);
-                    router.push("/(tabs)/home");
+                    handleOffline(studentDataOffline.role);
                   }}
                   style={{
                     backgroundColor: "#007bff",

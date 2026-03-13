@@ -118,10 +118,9 @@ const Home = () => {
 
       // function offline data
       const getOfflineData = async () => {
-        console.log("local data ");
         const localData = await getOfflineStudents();
         const studentLocal = localData.find((item: null) => item !== null);
-        console.log("local data student", studentLocal);
+
         const localDataEvents = await getOfflineEvents();
         const eventsLocal = localDataEvents.find((item: null) => item !== null);
 

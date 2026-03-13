@@ -27,10 +27,11 @@ import {
   getEventImageByLocation,
 } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
+import { getOfflineEvents } from "@/api/local/userOffline";
 
 const Home = () => {
   const router = useRouter();
-  const { eventData, studentToken, studentData } = useUser();
+  const { eventData, studentToken, studentData, isUserHasInternet } = useUser();
 
   const [suggestedTitleState, setSuggestedTitleState] = useState<
     { eventId: string; eventTitle: string }[]
@@ -56,6 +57,9 @@ const Home = () => {
   // 🧠 Fetch all data
   useFocusEffect(
     useCallback(() => {
+      //offline function
+
+      // online function
       const loadData = async () => {
         try {
           if (eventData?.length) {
@@ -78,7 +82,7 @@ const Home = () => {
               (event: { id: any; eventTitle: any }) => ({
                 eventId: event.id,
                 eventTitle: event.eventTitle,
-              })
+              }),
             );
             setSuggestedTitleState(eventIdAndTitles);
 
@@ -97,9 +101,38 @@ const Home = () => {
         }
       };
 
-      loadData();
-    }, [])
+      const getOfflineData = async () => {
+        const localDataEvents = await getOfflineEvents();
+        const eventsLocal = localDataEvents.find((item: null) => item !== null);
+
+        // set data
+        setEventState(eventsLocal);
+        if (eventsLocal?.length) {
+          const lastItem = eventsLocal.at(-1);
+          setLatestEventState(lastItem);
+        } else {
+          setLatestEventState(undefined);
+        }
+
+        // Search sugest
+        const eventIdAndTitles = eventsLocal.map(
+          (event: { id: any; eventTitle: any }) => ({
+            eventId: event.id,
+            eventTitle: event.eventTitle,
+          }),
+        );
+        setSuggestedTitleState(eventIdAndTitles);
+      };
+
+      // Check internet
+      if (isUserHasInternet) {
+        loadData();
+      } else {
+        getOfflineData();
+      }
+    }, []),
   );
+
   // 📢 Send announcement
   const handleSendAnnouncement = async (title: string, message: string) => {
     if (!title.trim() || !message.trim()) {
@@ -111,7 +144,7 @@ const Home = () => {
       setLoading(true);
 
       const extactAllTokens: string[] = allTokens.map(
-        (item) => item.notificationId
+        (item) => item.notificationId,
       );
 
       console.log(extactAllTokens);
@@ -144,13 +177,13 @@ const Home = () => {
         try {
           const uri = await fetchEventImageById(
             latestEventState.eventImageUrl!,
-            studentToken
+            studentToken,
           );
           setImageUri(uri);
         } catch (error) {
           console.error(
             `❌ Failed to load image for event ${latestEventState.id}:`,
-            error
+            error,
           );
         } finally {
           setLoadingImage(false);
@@ -220,7 +253,7 @@ const Home = () => {
         try {
           const uri = await fetchEventImageById(
             item.eventImageUrl!,
-            studentToken
+            studentToken,
           );
           setImageUri(uri);
         } catch (error) {
@@ -284,15 +317,13 @@ const Home = () => {
   return (
     <LinearbackGround>
       <SafeAreaView style={{ flex: 1 }}>
-          <HeaderOfficer
-            officerName={studentData?.studentName ?? "Officer"}
-            eventSuggestionData={suggestedTitleState}
-            handleSendAnnouncement={handleSendAnnouncement}
-          />
+        <HeaderOfficer
+          officerName={studentData?.studentName ?? "Officer"}
+          eventSuggestionData={suggestedTitleState}
+          handleSendAnnouncement={handleSendAnnouncement}
+        />
         <View style={styles.container}>
-
           {/* Header */}
-        
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Latest Event */}

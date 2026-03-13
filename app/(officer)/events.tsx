@@ -1,4 +1,4 @@
-import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
+import { sendExpoNotification } from "@/api/admin/controller";
 import {
   fetchEventImageById,
   getAllEvents,
@@ -6,6 +6,7 @@ import {
 } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { QrGeneratorProps } from "@/api/events/utils";
+import { getOfflineEvents } from "@/api/local/userOffline";
 import FloatingButton from "@/components/FloatingButton";
 import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -30,7 +31,13 @@ import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Events = () => {
-  const { eventData, studentData, studentToken } = useUser();
+  const {
+    eventData,
+    studentData,
+    studentToken,
+    isUserHasInternet,
+    eventDataOffline,
+  } = useUser();
   const router = useRouter();
 
   const [suggestedTitleState, setSuggestedTitleState] = useState<
@@ -43,6 +50,9 @@ const Events = () => {
   const [eventDataQR, setEventDataQR] = useState<QrGeneratorProps>();
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [selectedTitle, setSelectedTitle] = useState("All");
+  const [allEvents, setAllEvents] = useState<EventModel[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [searchSuggestion, setSearchSuggestion] = useState<EventModel[]>([]);
 
   const [imageUri, setImageUri] = useState<string | null>(null);
 
@@ -53,60 +63,128 @@ const Events = () => {
     router.push(`../officerEventDetails/${id}`);
   };
 
-  const handleQrGenerator = (
-    eventId: string,
-    eventTitle: string,
-    officerToken: string,
-  ) => {
-    // ✅ Clean token before putting it in the QR
-    const cleanToken = officerToken.replace(/^Bearer\s*/i, "").trim();
-    const data: QrGeneratorProps = {
-      eventId,
-      eventTitle,
-      officerToken: cleanToken,
-    };
-    setEventDataQR(data);
-    console.log("✅ QR data created:", data);
-  };
-
-  // 🧠 Fetch all data
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (eventData?.length) {
-          const students = await getAllStudents(studentToken);
+    // offline mode
+    const getOfflineData = async () => {
+      const localDataEvents = await getOfflineEvents();
+      const eventsLocal = localDataEvents.find((item: null) => item !== null);
 
-          // get students expo token
-          const notificationIds = students
-            .filter((s) => !!s.notificationId)
-            .map((student) => ({
-              notificationId: student.notificationId,
-            }));
-
-          setAllTokens(notificationIds);
-
-          // 🎯 Fetch all events
-          const events = await getAllEvents(studentToken);
-          setEventState(events);
-
-          const eventIdAndTitles = events.map(
-            (event: { id: any; eventTitle: any }) => ({
-              eventId: event.id,
-              eventTitle: event.eventTitle,
-            }),
-          );
-          setSuggestedTitleState(eventIdAndTitles);
-          //  const image= getEventImageUrl("")
-          // const image = fetchEventImageById("68fe3f9be8afa9ebda9d2fd8", studentToken);
-          // console.log(image);
-        }
-      } catch (error) {
-        console.error("❌ Error loading data:", error);
-      }
+      // set data
+      setEventState(eventsLocal);
+      setAllEvents(eventsLocal);
     };
 
-    loadData();
+    // online mode event data
+    const getEvent = async () => {
+      setAllEvents(eventData);
+      setEventState(eventData);
+    };
+
+    // check internet
+    if (isUserHasInternet) {
+      getEvent();
+    } else {
+      getOfflineData();
+    }
   }, []);
+
+  // filter event by category
+  useEffect(() => {
+    console.log(selectedTitle);
+    if (selectedTitle === "All") {
+      setEventState(allEvents);
+    } else {
+      const getEventByCategory = eventState?.filter(
+        (e) => e.eventCategory === selectedTitle,
+      );
+      setEventState(getEventByCategory);
+    }
+  }, [selectedTitle]);
+
+  // Fetch & filter events for search
+  useEffect(() => {
+    const fetchFilteredEvents = async () => {
+      if (!studentToken || searchText.trim() === "") {
+        setSearchSuggestion([]);
+        return;
+      }
+
+      const allEvents = await getAllEvents(studentToken);
+      const query = searchText.toLowerCase();
+
+      const filtered = allEvents
+        .filter((event: EventModel) =>
+          event.eventTitle.toLowerCase().includes(query),
+        )
+        .sort((a: EventModel, b: EventModel) => {
+          const aTitle = a.eventTitle.toLowerCase();
+          const bTitle = b.eventTitle.toLowerCase();
+
+          if (aTitle === query) return -1;
+          if (bTitle === query) return 1;
+          if (aTitle.startsWith(query) && !bTitle.startsWith(query)) return -1;
+          if (bTitle.startsWith(query) && !aTitle.startsWith(query)) return 1;
+
+          return aTitle.indexOf(query) - bTitle.indexOf(query);
+        });
+
+      setSearchSuggestion(filtered);
+    };
+
+    const fetchFilteredEventsOffline = async () => {
+      if (!studentToken || searchText.trim() === "") {
+        setSearchSuggestion([]);
+        return;
+      }
+
+      const query = searchText.toLowerCase();
+
+      const filtered = eventDataOffline
+        .filter((event: EventModel) =>
+          event.eventTitle.toLowerCase().includes(query),
+        )
+        .sort((a: EventModel, b: EventModel) => {
+          const aTitle = a.eventTitle.toLowerCase();
+          const bTitle = b.eventTitle.toLowerCase();
+
+          if (aTitle === query) return -1;
+          if (bTitle === query) return 1;
+          if (aTitle.startsWith(query) && !bTitle.startsWith(query)) return -1;
+          if (bTitle.startsWith(query) && !aTitle.startsWith(query)) return 1;
+
+          return aTitle.indexOf(query) - bTitle.indexOf(query);
+        });
+
+      setSearchSuggestion(filtered);
+    };
+
+    if (isUserHasInternet) {
+      fetchFilteredEvents();
+    } else {
+      fetchFilteredEventsOffline();
+    }
+  }, [searchText]);
+
+  // Highlight matching letters
+  const highlightMatch = (text: string, query: string) => {
+    if (!query) return <Text>{text}</Text>;
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const startIndex = lowerText.indexOf(lowerQuery);
+
+    if (startIndex === -1) return <Text>{text}</Text>;
+
+    const endIndex = startIndex + query.length;
+    return (
+      <Text>
+        {text.substring(0, startIndex)}
+        <Text style={{ fontWeight: "bold", color: COLORS.Primary }}>
+          {text.substring(startIndex, endIndex)}
+        </Text>
+        {text.substring(endIndex)}
+      </Text>
+    );
+  };
 
   // 📢 Send announcement
   const handleSendAnnouncement = async (title: string, message: string) => {
@@ -148,6 +226,7 @@ const Events = () => {
     return today === today;
   };
 
+  /*
   useEffect(() => {
     if (selectedIndex === 0) {
       setEventState(eventData);
@@ -159,6 +238,8 @@ const Events = () => {
       setEventState(filtered);
     }
   }, [selectedTitle, eventData, selectedIndex]);
+
+  */
 
   const RenderEventItem = ({ item }: { item: EventModel }) => {
     const [imageUri, setImageUri] = useState<string | null>(null);
@@ -299,7 +380,7 @@ const Events = () => {
 
         {/* EVENTS LIST */}
         <View style={{ flex: 1 }}>
-          {eventState.length ? (
+          {eventState?.length !== 0 ? (
             <FlatList
               data={eventState}
               renderItem={({ item }) => <RenderEventItem item={item} />}

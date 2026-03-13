@@ -32,6 +32,7 @@ import {
   loadAllLocalAttendance,
   loadStudents,
 } from "@/api/local/local";
+import { getOfflineEvents } from "@/api/local/userOffline";
 import {
   addEventAttendance,
   deleteStudentNotification,
@@ -46,13 +47,19 @@ type LocalAttendance = {
 };
 
 const Profile = () => {
-  const { studentData, eventData, studentToken } = useUser();
+  const {
+    studentData,
+    eventData,
+    studentToken,
+    isUserHasInternet,
+    eventDataOffline,
+  } = useUser();
   const router = useRouter();
   const isFocused = useIsFocused();
 
   const student: StudentModel = studentData;
 
-  const [events, setEvents] = useState(eventData);
+  const [events, setEvents] = useState<EventModel[]>([]);
   const [doneEvents, setDoneEvents] = useState<EventModel[]>([]);
   const [soonEvents, setSoonEvents] = useState<EventModel[]>([]);
   const [localEvents, setLocalEvents] = useState<EventModel[]>([]);
@@ -64,8 +71,8 @@ const Profile = () => {
   const radius = Math.max(40, Math.min(80, screenWidth / 6));
   const strokeWidth = 14;
   const circumference = 2 * Math.PI * radius;
-  const eventDone = doneEvents.length;
-  const totalCount = eventData.length || 0;
+  const eventDone = doneEvents?.length ?? 0;
+  const totalCount = events?.length ?? 0;
   const progress = (eventDone / (totalCount || 1)) * circumference;
 
   // 🕒 Separate done & upcoming events
@@ -92,6 +99,7 @@ const Profile = () => {
 
   // 📅 Fetch events and local attendance
   useEffect(() => {
+    // online data
     const loadEvents = async () => {
       const allEvents = await getAllEvents(studentToken);
       setEvents(allEvents);
@@ -100,16 +108,37 @@ const Profile = () => {
       setSoonEvents(upcoming);
     };
 
-    const loadLocalEvents = async () => {
-      const eventsLocal = await loadAllLocalAttendance();
-      const eventIds = Object.keys(eventsLocal);
-      const localEventsData = eventData.filter((event) =>
-        eventIds.includes(event.id),
-      );
-      setLocalEvents(localEventsData);
+    const offlineData = async () => {
+      // offline data
+      const localDataEvents = await getOfflineEvents();
+      const eventsLocal = localDataEvents.find((item: null) => item !== null);
+      setEvents(eventsLocal);
+      const { done, upcoming } = separateEventsByDate(eventsLocal);
+      setDoneEvents(done);
+      setSoonEvents(upcoming);
     };
 
-    loadEvents();
+    // attendance local copy
+    const loadLocalEvents = async () => {
+      const eventsLocal = await loadAllLocalAttendance();
+
+      const eventIds = Object.keys(eventsLocal || {});
+
+      const sourceEvents = isUserHasInternet
+        ? (eventData ?? [])
+        : (eventDataOffline ?? []);
+
+      const localEventsData = sourceEvents.filter(
+        (event) => event?.id && eventIds.includes(event.id),
+      );
+
+      setLocalEvents(localEventsData);
+    };
+    if (isUserHasInternet) {
+      loadEvents();
+    } else {
+      offlineData();
+    }
     loadLocalEvents();
   }, []);
 
@@ -118,15 +147,22 @@ const Profile = () => {
     if (isFocused) {
       const reloadLocalEvents = async () => {
         const eventsLocal = await loadAllLocalAttendance();
-        const eventIds = Object.keys(eventsLocal);
-        const localEventsData = eventData.filter((event) =>
+        const eventIds = Object.keys(eventsLocal || {});
+
+        const sourceEvents = isUserHasInternet
+          ? eventData || []
+          : eventDataOffline || [];
+
+        const localEventsData = sourceEvents.filter((event) =>
           eventIds.includes(event.id),
         );
+
         setLocalEvents(localEventsData);
       };
+
       reloadLocalEvents();
     }
-  }, [isFocused]);
+  }, [isFocused, isUserHasInternet, eventData, eventDataOffline]);
 
   // Logout
   const handleLogout = () => {
@@ -181,10 +217,18 @@ const Profile = () => {
 
       const eventsLocal = await loadAllLocalAttendance();
       const eventIds = Object.keys(eventsLocal);
-      const localEventsData = eventData.filter((event) =>
-        eventIds.includes(event.id),
-      );
-      setLocalEvents(localEventsData);
+
+      if (isUserHasInternet) {
+        const localEventsData = (eventData || []).filter((event) =>
+          eventIds.includes(event.id),
+        );
+        setLocalEvents(localEventsData);
+      } else {
+        const localEventsData = (eventDataOffline || []).filter((event) =>
+          eventIds.includes(event.id),
+        );
+        setLocalEvents(localEventsData);
+      }
     } catch (error) {
       console.error("Upload failed", error);
     } finally {

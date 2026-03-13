@@ -77,6 +77,7 @@ const Events = () => {
   const handleClickNavigation = (title: string) => {
     setSelectedTitle(title);
   };
+
   useEffect(() => {
     // offline mode
     const getOfflineData = async () => {

@@ -1,6 +1,7 @@
 import { getAllStudents, sendExpoNotification } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
+import { getOfflineEvents } from "@/api/local/userOffline";
 import HeaderOfficer from "@/components/HeaderOfficer";
 import LinearbackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
@@ -23,7 +24,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Statistic = () => {
-  const { studentToken, studentData, eventData } = useUser();
+  const {
+    studentToken,
+    studentData,
+    eventData,
+    isUserHasInternet,
+    studentDataOffline,
+    eventDataOffline,
+  } = useUser();
   const router = useRouter();
 
   const [statisticEvent, setStatisticEvent] = useState<EventModel[]>([]);
@@ -39,12 +47,15 @@ const Statistic = () => {
 
   // 🧠 Fetch events and students once, and whenever a new event is added
   useEffect(() => {
+    // online data
     const loadData = async () => {
       try {
         setLoading(true);
 
         // ✅ Fetch all students
+
         const students = await getAllStudents(studentToken);
+
         const notificationIds = students
           .filter((s) => !!s.notificationId)
           .map((student) => ({
@@ -53,8 +64,10 @@ const Statistic = () => {
         setAllTokens(notificationIds);
 
         // ✅ Fetch all events
+
         const allEvents = await getAllEvents(studentToken);
-        console.log("📊 All events:", allEvents);
+
+        setStatisticEvent(allEvents);
 
         // 🧮 Compute attendance & evaluation stats
         const rankedEvents = allEvents
@@ -62,7 +75,7 @@ const Statistic = () => {
             const attendanceCount = event.eventAttendances?.length || 0;
             const evaluationScores =
               event.eventEvaluationDetails?.map(
-                (e: any) => e.studentAverageRate
+                (e: any) => e.studentAverageRate,
               ) || [];
             const evaluationAvg = evaluationScores.length
               ? evaluationScores.reduce((sum, val) => sum + val, 0) /
@@ -114,7 +127,88 @@ const Statistic = () => {
       }
     };
 
-    loadData();
+    // offline data
+    const offlineData = async () => {
+      try {
+        setLoading(true);
+
+        // ✅ Fetch all events
+
+        const localDataEvents = await getOfflineEvents();
+        const eventsLocal = localDataEvents.find((item: null) => item !== null);
+
+        setStatisticEvent(eventsLocal);
+
+        // 🧮 Compute attendance & evaluation stats
+        const rankedEvents = eventsLocal
+          .map((event: EventModel) => {
+            const attendanceCount = event.eventAttendances?.length || 0;
+            const evaluationScores =
+              event.eventEvaluationDetails?.map(
+                (e: any) => e.studentAverageRate,
+              ) || [];
+            const evaluationAvg = evaluationScores.length
+              ? evaluationScores.reduce((sum, val) => sum + val, 0) /
+                evaluationScores.length
+              : 0;
+
+            const attendanceRate =
+              (attendanceCount / (event.allStudentAttending || 1)) * 100;
+            const performanceScore =
+              attendanceRate * 0.6 + (evaluationAvg / 5) * 40; // weighted score
+
+            return {
+              ...event,
+              attendanceRate,
+              evaluationAvg,
+              performanceScore,
+            };
+          })
+          .sort(
+            (
+              a: { performanceScore: number },
+              b: { performanceScore: number },
+            ) => b.performanceScore - a.performanceScore,
+          );
+
+        setStatisticEvent(rankedEvents);
+
+        // 🧩 Prepare event suggestions for HeaderOfficer
+        const eventIdAndTitles = eventsLocal.map(
+          (event: { id: any; eventTitle: any }) => ({
+            eventId: event.id ?? "",
+            eventTitle: event.eventTitle,
+          }),
+        );
+        setSuggestedTitleState(eventIdAndTitles);
+
+        // 🎬 Trigger entry animation
+        Animated.parallel([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 800,
+            easing: Easing.out(Easing.exp),
+            useNativeDriver: true,
+          }),
+        ]).start();
+      } catch (error) {
+        console.error("❌ Error loading data:", error);
+        Alert.alert("Error", "Failed to load event statistics.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isUserHasInternet) {
+      loadData();
+    } else {
+      offlineData();
+    }
   }, [eventData]); // ✅ Re-run when new event is added
 
   // 🏆 Rank icons
@@ -139,7 +233,7 @@ const Statistic = () => {
       setLoading(true);
 
       const extractAllTokens = allTokens.map(
-        (item) => item.notificationId
+        (item) => item.notificationId,
       ) as string[];
 
       await sendExpoNotification(studentToken, {
