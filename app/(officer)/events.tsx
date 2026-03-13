@@ -222,8 +222,8 @@ const Events = () => {
     const today = new Date().toISOString().split("T")[0];
 
     // If eventDate already comes as YYYY-MM-DD
-    // return today === eventDate;
-    return today === today;
+    return today === eventDate;
+    // return today === today;
   };
 
   /*
