@@ -95,6 +95,7 @@ const Events = () => {
 
     // online mode event data
     const getEvent = async () => {
+      setStudent(studentData);
       setAllEvents(eventData);
       setEventState(eventData);
     };
