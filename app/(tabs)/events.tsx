@@ -95,9 +95,10 @@ const Events = () => {
 
     // online mode event data
     const getEvent = async () => {
+      const events = await getAllEvents(studentToken);
       setStudent(studentData);
-      setAllEvents(eventData);
-      setEventState(eventData);
+      setAllEvents(events);
+      setEventState(events);
     };
 
     // check internet
