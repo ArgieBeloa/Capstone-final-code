@@ -135,6 +135,16 @@ const Home = () => {
       } else {
         getOfflineData();
       }
+
+      // // check if register event is already deleted by admin
+      // const registerId: string[] = student.studentUpcomingEvents.map(
+      //   (e) => e.eventId,
+      // );
+      // const eventId: string[] = eventData.map((e) => e.id);
+
+      // const results = eventId.some(() => registerId);
+
+      // console.log(results);
     }, []),
   );
 
@@ -199,25 +209,28 @@ const Home = () => {
     const [loadingImage, setLoadingImage] = useState(true);
 
     useEffect(() => {
-      const loadImage = async () => {
-        console.log(item.eventImageUrl);
-        try {
-          const uri = await fetchEventImageById(
-            item.eventImageUrl!,
-            studentToken,
-          );
-          setImageUri(uri);
-        } catch (error) {
-          console.error(
-            `❌ Failed to load image for event ${item.eventId}:`,
-            error,
-          );
-        } finally {
-          setLoadingImage(false);
-        }
-      };
+      if (isUserHasInternet) {
+        const loadImage = async () => {
+          try {
+            const uri = await fetchEventImageById(
+              item.eventImageUrl!,
+              studentToken,
+            );
+            setImageUri(uri);
+          } catch (error) {
+            console.error(
+              `❌ Failed to load image for event ${item.eventId}:`,
+              error,
+            );
+          } finally {
+            setLoadingImage(false);
+          }
+        };
 
-      loadImage();
+        loadImage();
+      } else {
+        setLoadingImage(false);
+      }
     }, [item.eventImageUrl]);
 
     return (

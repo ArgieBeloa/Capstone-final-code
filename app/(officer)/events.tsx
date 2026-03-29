@@ -247,22 +247,29 @@ const Events = () => {
     const [loadingImage, setLoadingImage] = useState(true);
 
     useEffect(() => {
-      const loadImage = async () => {
-        console.log(item.eventImageUrl);
-        try {
-          const uri = await fetchEventImageById(
-            item.eventImageUrl!,
-            studentToken,
-          );
-          setImageUri(uri);
-        } catch (error) {
-          console.error(`❌ Failed to load image for event ${item.id}:`, error);
-        } finally {
-          setLoadingImage(false);
-        }
-      };
+      if (isUserHasInternet) {
+        const loadImage = async () => {
+          console.log(item.eventImageUrl);
+          try {
+            const uri = await fetchEventImageById(
+              item.eventImageUrl!,
+              studentToken,
+            );
+            setImageUri(uri);
+          } catch (error) {
+            console.error(
+              `❌ Failed to load image for event ${item.id}:`,
+              error,
+            );
+          } finally {
+            setLoadingImage(false);
+          }
+        };
 
-      loadImage();
+        loadImage();
+      } else {
+        setLoadingImage(false);
+      }
     }, [item.eventImageUrl]);
 
     return (
