@@ -46,17 +46,15 @@ const PrintScreen = () => {
 
     let attendance: EventAttendance[] = [...(event.eventAttendances || [])];
 
-    // 🔹 Filter ONLY if department is provided
+    // Filter by department
     if (department) {
       attendance = attendance.filter((a) => a.department === department);
     }
 
-    // 🔹 Sort: Role → Name
+    // Sort by Department → Name
     attendance.sort((a, b) => {
-      const roleA = a.role ?? "";
-      const roleB = b.role ?? "";
-      const roleCompare = roleA.localeCompare(roleB);
-      if (roleCompare !== 0) return roleCompare;
+      const depCompare = (a.department ?? "").localeCompare(b.department ?? "");
+      if (depCompare !== 0) return depCompare;
 
       return (a.studentName ?? "").localeCompare(b.studentName ?? "");
     });
@@ -65,24 +63,29 @@ const PrintScreen = () => {
       return `<p>No attendance found</p>`;
     }
 
-    const chunkSize = 50;
+    const chunkSize = 80; // 80 per page
+    const columnSize = 40; // 40 per column
     const pages: string[] = [];
 
     for (let i = 0; i < attendance.length; i += chunkSize) {
       const chunk = attendance.slice(i, i + chunkSize);
 
-      const rows = chunk
-        .map(
-          (s, index) => `
+      const col1 = chunk.slice(0, columnSize);
+      const col2 = chunk.slice(columnSize, chunkSize);
+
+      const renderRows = (data: EventAttendance[], startIndex: number) =>
+        data
+          .map(
+            (s, index) => `
             <tr>
-              <td>${i + index + 1}</td>
+              <td>${startIndex + index + 1}</td>
               <td>${s.studentName}</td>
               <td>${s.dateScanned ?? ""}</td>
-              <td>${s.role ?? ""}</td>
+              <td>${s.department ?? ""}</td>
             </tr>
           `,
-        )
-        .join("");
+          )
+          .join("");
 
       pages.push(`
         <div class="page">
@@ -91,17 +94,37 @@ const PrintScreen = () => {
           <p><strong>Date:</strong> ${event.eventDate}</p>
           <p><strong>Location:</strong> ${event.eventLocation}</p>
 
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Role</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+          <div class="columns">
+            <!-- LEFT COLUMN -->
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Date</th>
+                  <th>Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderRows(col1, i)}
+              </tbody>
+            </table>
+
+            <!-- RIGHT COLUMN -->
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Date</th>
+                  <th>Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderRows(col2, i + columnSize)}
+              </tbody>
+            </table>
+          </div>
 
           <div class="footer">
             Page ${Math.floor(i / chunkSize) + 1} /
@@ -117,14 +140,28 @@ const PrintScreen = () => {
           <style>
             body { font-family: Arial; padding: 20px; }
             .page { page-break-after: always; }
+
             h2, h3 { text-align: center; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+
+            .columns {
+              display: flex;
+              gap: 10px;
+            }
+
+            table {
+              width: 50%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+
             th, td {
               border: 1px solid #ccc;
-              padding: 8px;
-              font-size: 12px;
+              padding: 6px;
+              font-size: 10px;
             }
+
             th { background: #f0f0f0; }
+
             .footer {
               text-align: right;
               margin-top: 10px;
@@ -193,39 +230,17 @@ const PrintScreen = () => {
           <Text>Location: {event.eventLocation}</Text>
 
           <View style={styles.buttonContainer}>
-            {/* ALL STUDENTS */}
             <Button
               title={loading ? "Generating..." : "All students"}
               onPress={() => handlePrint()}
               disabled={loading}
             />
 
-            {/* DEPARTMENTS */}
-            <Button
-              title="CET"
-              onPress={() => handlePrint("CET")}
-              disabled={loading}
-            />
-            <Button
-              title="CASE"
-              onPress={() => handlePrint("CASE")}
-              disabled={loading}
-            />
-            <Button
-              title="CME"
-              onPress={() => handlePrint("CME")}
-              disabled={loading}
-            />
-            <Button
-              title="CHTM"
-              onPress={() => handlePrint("CHTM")}
-              disabled={loading}
-            />
-            <Button
-              title="CCJ"
-              onPress={() => handlePrint("CCJ")}
-              disabled={loading}
-            />
+            <Button title="CET" onPress={() => handlePrint("CET")} />
+            <Button title="CASE" onPress={() => handlePrint("CASE")} />
+            <Button title="CME" onPress={() => handlePrint("CME")} />
+            <Button title="CHTM" onPress={() => handlePrint("CHTM")} />
+            <Button title="CCJ" onPress={() => handlePrint("CCJ")} />
           </View>
         </>
       ) : (

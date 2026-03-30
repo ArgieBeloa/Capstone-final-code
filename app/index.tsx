@@ -66,10 +66,11 @@ export default function Index() {
     setEventDataOffline,
   } = useUser();
   const handleOffline = (userRole: string) => {
-    if (userRole) {
+    if (userRole === "OFFICER") {
       setShowModalOfficer(true);
+    } else {
+      router.push("/(tabs)/home");
     }
-    router.push("/(tabs)/home");
   };
   const haddleRegister = () => {
     router.push("/register");
