@@ -12,6 +12,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Modal,
@@ -38,7 +39,6 @@ import {
   deleteStudentNotification,
   markStudentAttended,
 } from "@/api/students/controller";
-import Loading from "@/components/Loading";
 
 // Type for local attendance
 type LocalAttendance = {
@@ -177,60 +177,52 @@ const Profile = () => {
 
   // Upload local attendance to cloud
   const handleAttendanceLocal = async (id: string, eventTitle: string) => {
+    if (isLoading) return; // prevent double click
     setIsLoading(true);
+
     try {
-      const localData: any = await loadStudents(id);
-      if (localData.length === 0) return;
+      const localData: any[] = await loadStudents(id);
 
-      for (const item of localData) {
-        await addEventAttendanceRecords(studentToken, id, {
-          studentId: item.studentId,
-          studentNumber: item.studentNumber,
-          studentName: item.studentName,
-          role: item.role,
-          department: item.department,
-          dateScanned: item.dateScanned,
-        });
-
-        // attendance evaluation
-        await addEventAttendance(studentToken, item.studentId, {
-          eventId: id,
-          eventTitle: eventTitle,
-          studentDateAttended: item.dateScanned,
-          evaluated: false,
-        });
-
-        // 3. update profile data to attended
-        await markStudentAttended(studentToken, item.studentId, id);
-
-        // delete to student notification
-
-        const notificationData = student.studentNotifications.find(
-          (n) => n.eventId === id,
-        );
-        if (notificationData) {
-          await deleteStudentNotification(studentToken, item.studentId, id);
-        }
+      if (!localData || localData.length === 0) {
+        return;
       }
 
+      // Upload all students in parallel
+      await Promise.all(
+        localData.map(async (item) => {
+          await addEventAttendanceRecords(studentToken, id, {
+            studentId: item.studentId,
+            studentNumber: item.studentNumber,
+            studentName: item.studentName,
+            role: item.role,
+            department: item.department,
+            dateScanned: item.dateScanned,
+          });
+
+          await addEventAttendance(studentToken, item.studentId, {
+            eventId: id,
+            eventTitle,
+            studentDateAttended: item.dateScanned,
+            evaluated: false,
+          });
+
+          await markStudentAttended(studentToken, item.studentId, id);
+
+          await deleteStudentNotification(studentToken, item.studentId, id);
+        }),
+      );
+
+      // Delete local attendance from storage
       await deleteLocalAttendanceByEventId(id);
 
-      const eventsLocal = await loadAllLocalAttendance();
-      const eventIds = Object.keys(eventsLocal);
-
-      if (isUserHasInternet) {
-        const localEventsData = (eventData || []).filter((event) =>
-          eventIds.includes(event.id),
-        );
-        setLocalEvents(localEventsData);
-      } else {
-        const localEventsData = (eventDataOffline || []).filter((event) =>
-          eventIds.includes(event.id),
-        );
-        setLocalEvents(localEventsData);
-      }
+      // Update state: remove uploaded event + placeholders
+      setLocalEvents((prev) =>
+        prev.filter(
+          (event) => event.id !== id && event.id !== "no_id", // remove invalid placeholder
+        ),
+      );
     } catch (error) {
-      console.error("Upload failed", error);
+      console.error("❌ Upload failed", error);
     } finally {
       setIsLoading(false);
     }
@@ -456,7 +448,15 @@ const Profile = () => {
           </View>
         </Modal>
 
-        <Loading text="Please wait..." color="#4F46E5" visible={isLoading} />
+        {/* 🔥 FIXED LOADING OVERLAY */}
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#4F46E5" />
+            <Text style={{ marginTop: 10, color: "#fff" }}>
+              Uploading attendance...
+            </Text>
+          </View>
+        )}
       </SafeAreaView>
     </LinearbackGround>
   );
@@ -547,5 +547,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: "#ccc",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
   },
 });

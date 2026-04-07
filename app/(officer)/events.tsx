@@ -70,15 +70,15 @@ const Events = () => {
       const eventsLocal = localDataEvents.find((item: null) => item !== null);
 
       // set data
-      setEventState(eventsLocal);
-      setAllEvents(eventsLocal);
+      setAllEvents([...eventsLocal].reverse());
+      setEventState([...eventsLocal].reverse());
     };
 
     // online mode event data
     const getEvent = async () => {
       const events = await getAllEvents(studentToken);
-      setAllEvents(events);
-      setEventState(events);
+      setAllEvents([...events].reverse());
+      setEventState([...events].reverse());
     };
 
     // check internet

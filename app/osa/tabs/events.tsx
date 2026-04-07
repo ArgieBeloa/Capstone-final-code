@@ -72,8 +72,10 @@ const Events = () => {
         try {
           setLoading(true);
           const eventsData = await getAllEvents(studentToken);
-          setEvents(eventsData);
-          setAllEvents(eventsData);
+          // setEvents(eventsData);
+          // setAllEvents(eventsData);
+          setAllEvents([...events].reverse());
+          setEvents([...events].reverse());
 
           const titles = eventsData.map((e) => ({
             id: e.id,
