@@ -2,11 +2,11 @@
 // 📦 Event Utilities Interfaces
 // ===============================
 
-// for notification 
+// for notification
 export interface ExpoNotificationPayload {
   tokens: string[]; // List of Expo push tokens
-  title: string;    // Notification title
-  body: string;     // Notification body message
+  title: string; // Notification title
+  body: string; // Notification body message
 }
 
 // 🔹 StudentEvaluationInfo.java
@@ -26,6 +26,7 @@ export interface EventEvaluationDetails {
   studentName: string;
   studentAverageRate: number;
   studentSuggestion: string;
+  course: string;
   studentEvaluationInfos: StudentEvaluationInfo[];
 }
 
@@ -47,9 +48,9 @@ export interface EvaluationQuestion {
 
 // 🔹 EventAgenda.java
 export interface EventAgenda {
-  agendaTime: string;  // e.g. "09:00 AM" or ISO time string
+  agendaTime: string; // e.g. "09:00 AM" or ISO time string
   agendaTitle: string; // e.g. "Opening Remarks"
-  agendaHost: string;  // e.g. "Dr. John Smith"
+  agendaHost: string; // e.g. "Dr. John Smith"
 }
 
 export interface QrGeneratorProps {
@@ -64,3 +65,43 @@ export interface PickedImage {
   fileName?: string;
 }
 
+export function getOverallEvaluationPerformance(
+  evaluations: EventEvaluationDetails[],
+) {
+  if (!evaluations || evaluations.length === 0) {
+    return {
+      totalStudents: 0,
+      overallAverageRate: 0,
+      performance: "No Data",
+    };
+  }
+
+  // combine all student average rates
+  const totalAverage = evaluations.reduce(
+    (sum, student) => sum + student.studentAverageRate,
+    0,
+  );
+
+  const overallAverageRate = totalAverage / evaluations.length;
+
+  // optional performance label
+  let performance = "";
+
+  if (overallAverageRate >= 4.5) {
+    performance = "Excellent";
+  } else if (overallAverageRate >= 3.5) {
+    performance = "Very Good";
+  } else if (overallAverageRate >= 2.5) {
+    performance = "Good";
+  } else if (overallAverageRate >= 1.5) {
+    performance = "Fair";
+  } else {
+    performance = "Poor";
+  }
+
+  return {
+    totalStudents: evaluations.length,
+    overallAverageRate: Number(overallAverageRate.toFixed(2)),
+    performance,
+  };
+}

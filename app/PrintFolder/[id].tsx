@@ -1,4 +1,3 @@
-
 import { useUser } from "@/src/userContext";
 import * as FileSystem from "expo-file-system";
 import * as Print from "expo-print";
@@ -10,11 +9,14 @@ import {
   Alert,
   Text,
   TouchableHighlight,
-  View
+  View,
 } from "react-native";
 
 import { getEventById } from "@/api/events/controller";
-import { EventEvaluationDetails } from "@/api/events/utils";
+import {
+  EventEvaluationDetails,
+  getOverallEvaluationPerformance,
+} from "@/api/events/utils";
 
 const PrintScreen = () => {
   const { studentToken } = useUser();
@@ -24,6 +26,9 @@ const PrintScreen = () => {
   const [eventEvaluationDetails, setEventEvaluationDetails] = useState<
     EventEvaluationDetails[]
   >([]);
+
+  const overallResult = getOverallEvaluationPerformance(eventEvaluationDetails);
+
   const [loading, setLoading] = useState(true);
 
   // Fetch event and store only evaluations
@@ -74,6 +79,7 @@ const PrintScreen = () => {
               (evalItem) => `
                 <div class="evaluation">
                   <h3>${evalItem.studentName}</h3>
+                  <h3>${evalItem.course}</h3>
                   <p><strong>Average Rate:</strong> ${
                     evalItem.studentAverageRate
                   }</p>
@@ -85,12 +91,12 @@ const PrintScreen = () => {
                     ${(evalItem.studentEvaluationInfos || [])
                       .map(
                         (info) =>
-                          `<tr><td>${info.question}</td><td>${info.studentRate}</td></tr>`
+                          `<tr><td>${info.question}</td><td>${info.studentRate}</td></tr>`,
                       )
                       .join("")}
                   </table>
                 </div>
-              `
+              `,
             )
             .join("")}
         </body>
@@ -131,6 +137,14 @@ const PrintScreen = () => {
         Total Evaluations: {eventEvaluationDetails.length}
       </Text>
 
+      <Text style={{ textAlign: "center" }}>
+        Student Overall Rate: {overallResult.overallAverageRate}
+      </Text>
+
+      <Text style={{ textAlign: "center" }}>
+        Performance: {overallResult.performance}
+      </Text>
+
       {/* Display evaluations */}
       <View style={{ marginTop: 20, flex: 1 }}>
         {eventEvaluationDetails.map((evalItem, index) => (
@@ -146,6 +160,7 @@ const PrintScreen = () => {
             <Text style={{ fontWeight: "bold", fontSize: 16 }}>
               {evalItem.studentName}
             </Text>
+            <Text>Course: {evalItem.course ?? "no course"}</Text>
             <Text>⭐ Average Rate: {evalItem.studentAverageRate}</Text>
             <Text>💬 Suggestion: {evalItem.studentSuggestion}</Text>
 

@@ -40,7 +40,7 @@ import {
   addRecentEvaluation,
   deleteUpcomingEvent,
   markEventAsEvaluated,
-  markStudentEvaluated
+  markStudentEvaluated,
 } from "@/api/students/controller";
 import { StudentRecentEvaluation } from "@/api/students/utils";
 
@@ -50,11 +50,11 @@ export default function RatingsScreen() {
   const router = useRouter();
 
   const [evaluationData, setEvaluationData] = useState<EvaluationQuestion[]>(
-    []
+    [],
   );
   const [event, setEvent] = useState<EventModel>();
   const [alreadyEvaluated, setAlreadyEvaluated] = useState(
-    studentData?.studentRecentEvaluations || []
+    studentData?.studentRecentEvaluations || [],
   );
 
   const [studentRate, setStudentRate] = useState<Record<string, number>>({});
@@ -92,13 +92,13 @@ export default function RatingsScreen() {
   // 📌 Upload ratings
   const uploadRatings = async () => {
     const isAlreadyEvaluated = alreadyEvaluated.some(
-      (e: { eventId: string }) => e.eventId === (id as string)
+      (e: { eventId: string }) => e.eventId === (id as string),
     );
 
     if (isAlreadyEvaluated) {
       Alert.alert(
         "✨ Already Evaluated",
-        "You’ve already rated this event. Thank you for your feedback! 🙌"
+        "You’ve already rated this event. Thank you for your feedback! 🙌",
       );
 
       return;
@@ -107,7 +107,7 @@ export default function RatingsScreen() {
     if (evaluationData.length === 0) {
       Alert.alert(
         "No Questions",
-        "No evaluation questions found for this event."
+        "No evaluation questions found for this event.",
       );
       return;
     }
@@ -134,6 +134,7 @@ export default function RatingsScreen() {
         studentName: studentData.studentName ?? "Anonymous",
         studentAverageRate: avgRate,
         studentSuggestion: suggestion ?? "no suggestion",
+        course: studentData.course ?? "No course",
         studentEvaluationInfos,
       };
 
@@ -142,21 +143,21 @@ export default function RatingsScreen() {
       const eventRecords = await addEventEvaluationRecords(
         studentToken,
         id as string,
-        payloadEventRecordsEvaluation
+        payloadEventRecordsEvaluation,
       );
 
       // Update profile data mark evaluated true
       const profileDataEvaluated = await markStudentEvaluated(
         studentToken,
         userId,
-        id as string
+        id as string,
       );
 
       // update student attendance to evaluated true
       const studentAttendanceIsEvaluation = await markEventAsEvaluated(
         studentToken,
         userId,
-        id as string
+        id as string,
       );
 
       const payloadEvaluatedEvent: StudentRecentEvaluation = {
@@ -170,14 +171,14 @@ export default function RatingsScreen() {
       const studentRecentEvaluation = await addRecentEvaluation(
         studentToken,
         userId,
-        payloadEvaluatedEvent
+        payloadEvaluatedEvent,
       );
 
       // delete the event evaluated to student upcoming events
       const deletedUpcomingEvents = await deleteUpcomingEvent(
         studentToken,
         userId,
-        id as string
+        id as string,
       );
 
       // delete the event evaluated to student notification
