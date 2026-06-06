@@ -336,7 +336,7 @@ const Home = () => {
         <View style={styles.container}>
           {/* Header */}
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView>
             {/* Latest Event */}
             <Text style={styles.subTitleText}>Latest Event</Text>
 
@@ -352,7 +352,7 @@ const Home = () => {
             <FlatList
               data={eventState}
               keyExtractor={(item) => item.id}
-              scrollEnabled={false}
+              // scrollEnabled={false}
               renderItem={({ item }) => <RenderAllEvents item={item} />}
               ListEmptyComponent={
                 <Text style={styles.emptyText}>No events to display</Text>
@@ -384,7 +384,7 @@ export default Home;
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
+    flex: 1,
     width: "95%",
     backgroundColor: COLORS.Forth,
     margin: 10,

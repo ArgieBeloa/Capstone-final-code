@@ -1,0 +1,304 @@
+import { useUser } from "@/src/userContext";
+import * as FileSystem from "expo-file-system";
+import * as Print from "expo-print";
+import { useLocalSearchParams } from "expo-router";
+import * as Sharing from "expo-sharing";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Text,
+  TouchableHighlight,
+  View,
+} from "react-native";
+
+import { getEventById } from "@/api/events/controller";
+import {
+  EventEvaluationDetails,
+  getOverallEvaluationPerformance,
+} from "@/api/events/utils";
+
+const PrintScreen = () => {
+  const { studentToken } = useUser();
+  const { id } = useLocalSearchParams();
+
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventEvaluationDetails, setEventEvaluationDetails] = useState<
+    EventEvaluationDetails[]
+  >([]);
+
+  const overallResult = getOverallEvaluationPerformance(eventEvaluationDetails);
+
+  const uniqueEvaluations = [
+    ...new Map(
+      eventEvaluationDetails.map((item) => [item.studentName, item]),
+    ).values(),
+  ];
+
+  const [loading, setLoading] = useState(true);
+
+  // Fetch event and store only evaluations
+  const fetchEventById = async () => {
+    try {
+      const data = await getEventById(studentToken, id as string);
+      console.log("Fetched event:", data);
+
+      setEventTitle(data.eventTitle);
+      setEventEvaluationDetails(data.eventEvaluationDetails);
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEventById();
+  }, [id]);
+
+  const generatePDF = async () => {
+    if (eventEvaluationDetails.length === 0) {
+      Alert.alert("No evaluations", "No evaluation data available.");
+      return;
+    }
+
+    const html = `
+  <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <style>
+        @page {
+          size: A4;
+          margin: 20mm;
+        }
+
+        body {
+          font-family: Arial, sans-serif;
+          padding: 10px;
+        }
+
+        h1,
+        h2 {
+          text-align: center;
+          margin-bottom: 10px;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 20px;
+        }
+
+        th,
+        td {
+          border: 1px solid #333;
+          padding: 8px;
+          font-size: 13px;
+          text-align: left;
+          vertical-align: top;
+        }
+
+        th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+        }
+
+        .rate {
+          text-align: center;
+          width: 120px;
+        }
+
+        .student {
+          width: 200px;
+        }
+
+        .suggestion {
+          width: auto;
+        }
+
+        .footer {
+          margin-top: 15px;
+          font-size: 12px;
+        }
+      </style>
+    </head>
+
+    <body>
+
+      <h1>${eventTitle}</h1>
+      <h2>Student Evaluation Summary</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="student">Student Name</th>
+            <th class="rate">Average Rate</th>
+            <th class="suggestion">Suggestion</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${uniqueEvaluations
+            .map(
+              (evalItem) => `
+                <tr>
+                  <td>${evalItem.studentName}</td>
+                  <td class="rate">${evalItem.studentAverageRate}</td>
+                  <td>${
+                    evalItem.studentSuggestion || "No suggestion provided"
+                  }</td>
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <strong>Total Evaluations:</strong>
+        ${eventEvaluationDetails.length}
+      </div>
+
+    </body>
+  </html>
+  `;
+
+    try {
+      const { uri } = await Print.printToFileAsync({ html });
+
+      const fileUri = `${FileSystem.documentDirectory}${eventTitle}-StudentSummary-${Date.now()}.pdf`;
+
+      await FileSystem.copyAsync({
+        from: uri,
+        to: fileUri,
+      });
+
+      Alert.alert(
+        "PDF Created",
+        "Student evaluation summary generated successfully!",
+      );
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert("PDF saved at", fileUri);
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
+    }
+  };
+
+  if (loading)
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+        <Text>Loading evaluations...</Text>
+      </View>
+    );
+
+  return (
+    <View style={{ marginTop: 20, flex: 1 }}>
+      {/* Touchable print button */}
+      <TouchableHighlight
+        onPress={generatePDF}
+        underlayColor="#0056b3"
+        style={{
+          backgroundColor: "#007bff",
+          paddingVertical: 12,
+          borderRadius: 10,
+          alignItems: "center",
+          marginVertical: 10,
+        }}
+      >
+        <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+          🖨️ Print Evaluation Report
+        </Text>
+      </TouchableHighlight>
+
+      <Text style={{ fontSize: 20, fontWeight: "bold", textAlign: "center" }}>
+        {eventTitle}
+      </Text>
+
+      <Text style={{ marginTop: 10, textAlign: "center" }}>
+        Total Evaluations: {uniqueEvaluations.length}
+      </Text>
+
+      <Text style={{ textAlign: "center" }}>
+        Student Overall Rate: {overallResult.overallAverageRate}
+      </Text>
+
+      {/* Header Row */}
+      <View
+        style={{
+          flexDirection: "row",
+          backgroundColor: "#007bff",
+          padding: 10,
+          borderTopLeftRadius: 8,
+          borderTopRightRadius: 8,
+        }}
+      >
+        <Text
+          style={{
+            flex: 2,
+            color: "#fff",
+            fontWeight: "bold",
+          }}
+        >
+          Student Name
+        </Text>
+
+        <Text
+          style={{
+            flex: 1,
+            color: "#fff",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          Rate
+        </Text>
+
+        <Text
+          style={{
+            flex: 3,
+            color: "#fff",
+            fontWeight: "bold",
+          }}
+        >
+          Suggestion
+        </Text>
+      </View>
+
+      {/* Data Rows */}
+      {uniqueEvaluations.map((evalItem, index) => (
+        <View
+          key={index}
+          style={{
+            flexDirection: "row",
+            padding: 10,
+            borderWidth: 1,
+            borderColor: "#ddd",
+            backgroundColor: index % 2 === 0 ? "#fff" : "#f9f9f9",
+          }}
+        >
+          <Text style={{ flex: 2 }}>{evalItem.studentName}</Text>
+
+          <Text
+            style={{
+              flex: 1,
+              textAlign: "center",
+            }}
+          >
+            {evalItem.studentAverageRate}
+          </Text>
+
+          <Text style={{ flex: 3 }}>
+            {evalItem.studentSuggestion || "No suggestion"}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+export default PrintScreen;
