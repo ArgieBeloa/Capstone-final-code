@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 
+import { Course, Department, DepartmentCourses } from "@/api/students/utils";
+
 import { getEventById } from "@/api/events/controller";
 import {
   EventEvaluationDetails,
@@ -45,6 +47,49 @@ const PrintScreen = () => {
 
       setEventTitle(data.eventTitle);
       setEventEvaluationDetails(data.eventEvaluationDetails);
+
+      const department = Department.CASE;
+      const courses = DepartmentCourses[department];
+
+      let text = `EVENT: ${data.eventTitle} \n${department}\n`;
+
+      const departmentStudents = data.eventEvaluationDetails.filter((e) =>
+        courses.includes(e.course as Course),
+      );
+
+      const totalNumber = [
+        ...new Map(
+          departmentStudents
+            .filter((item) => item.studentName?.trim())
+            .map((item) => [item.studentName.trim(), item]),
+        ).values(),
+      ].length;
+
+      text += `Total: ${totalNumber}\n\n`;
+
+      courses.forEach((course) => {
+        const students = [
+          ...new Map(
+            departmentStudents
+              .filter(
+                (item) => item.course === course && item.studentName?.trim(),
+              )
+              .map((item) => [item.studentName.trim(), item]),
+          ).values(),
+        ];
+
+        if (students.length === 0) return;
+
+        text += `${course}\n`;
+
+        text += students
+          .map((student, index) => `${index + 1}. ${student.studentName}`)
+          .join("\n");
+
+        text += "\n\n";
+      });
+
+      console.log(text);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {
