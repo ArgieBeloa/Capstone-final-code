@@ -7,8 +7,12 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableHighlight,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -19,6 +23,7 @@ import {
   EventEvaluationDetails,
   getOverallEvaluationPerformance,
 } from "@/api/events/utils";
+import { Picker } from "@react-native-picker/picker";
 
 const PrintScreen = () => {
   const { studentToken } = useUser();
@@ -28,6 +33,11 @@ const PrintScreen = () => {
   const [eventEvaluationDetails, setEventEvaluationDetails] = useState<
     EventEvaluationDetails[]
   >([]);
+
+  const [selectedDepartment, setSelectedDepartment] = useState(Department.CET);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [reportText, setReportText] = useState("");
 
   const overallResult = getOverallEvaluationPerformance(eventEvaluationDetails);
 
@@ -47,54 +57,56 @@ const PrintScreen = () => {
 
       setEventTitle(data.eventTitle);
       setEventEvaluationDetails(data.eventEvaluationDetails);
-
-      const department = Department.CASE;
-      const courses = DepartmentCourses[department];
-
-      let text = `EVENT: ${data.eventTitle} \n${department}\n`;
-
-      const departmentStudents = data.eventEvaluationDetails.filter((e) =>
-        courses.includes(e.course as Course),
-      );
-
-      const totalNumber = [
-        ...new Map(
-          departmentStudents
-            .filter((item) => item.studentName?.trim())
-            .map((item) => [item.studentName.trim(), item]),
-        ).values(),
-      ].length;
-
-      text += `Total: ${totalNumber}\n\n`;
-
-      courses.forEach((course) => {
-        const students = [
-          ...new Map(
-            departmentStudents
-              .filter(
-                (item) => item.course === course && item.studentName?.trim(),
-              )
-              .map((item) => [item.studentName.trim(), item]),
-          ).values(),
-        ];
-
-        if (students.length === 0) return;
-
-        text += `${course}\n`;
-
-        text += students
-          .map((student, index) => `${index + 1}. ${student.studentName}`)
-          .join("\n");
-
-        text += "\n\n";
-      });
-
-      console.log(text);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateReport = (department: Department) => {
+    const courses = DepartmentCourses[department];
+
+    const departmentStudents = eventEvaluationDetails.filter((e) =>
+      courses.includes(e.course as Course),
+    );
+
+    const totalNumber = [
+      ...new Map(
+        departmentStudents
+          .filter((item) => item.studentName?.trim())
+          .map((item) => [item.studentName.trim(), item]),
+      ).values(),
+    ].length;
+
+    let text = `${department}\n`;
+    text += `Total: ${totalNumber}\n\n`;
+
+    courses.forEach((course) => {
+      const students = [
+        ...new Map(
+          departmentStudents
+            .filter(
+              (item) => item.course === course && item.studentName?.trim(),
+            )
+            .map((item) => [item.studentName.trim(), item]),
+        ).values(),
+      ];
+
+      text += `${course}\n`;
+      text += `Total: ${students.length}\n`;
+
+      if (students.length > 0) {
+        text += students
+          .map((student, index) => `${index + 1}. ${student.studentName}`)
+          .join("\n");
+      }
+
+      text += "\n\n";
+    });
+
+    setReportText(text);
+    setModalVisible(true);
   };
 
   useEffect(() => {
@@ -272,6 +284,57 @@ const PrintScreen = () => {
         Student Overall Rate: {overallResult.overallAverageRate}
       </Text>
 
+      <View style={styles.container}>
+        <Text style={styles.label}>Select Department</Text>
+
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedDepartment}
+            onValueChange={(itemValue) => setSelectedDepartment(itemValue)}
+            style={styles.picker}
+            dropdownIconColor="#2563eb"
+          >
+            {Object.values(Department).map((department) => (
+              <Picker.Item
+                key={department}
+                label={department}
+                value={department}
+              />
+            ))}
+          </Picker>
+        </View>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => generateReport(selectedDepartment)}
+        >
+          <Text style={styles.buttonText}>View Report</Text>
+        </TouchableOpacity>
+
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Department Report</Text>
+
+              <ScrollView style={styles.reportContainer}>
+                <Text style={styles.reportText}>{reportText}</Text>
+              </ScrollView>
+
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
       {/* Header Row */}
       <View
         style={{
@@ -347,3 +410,102 @@ const PrintScreen = () => {
 };
 
 export default PrintScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+  },
+  picker: {
+    height: 55,
+    color: "#111827",
+  },
+
+  pickerWrapper: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    marginVertical: 10,
+
+    // Android shadow
+    elevation: 2,
+
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+
+  button: {
+    backgroundColor: "#2563eb",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  modalContainer: {
+    width: "100%",
+    maxHeight: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    elevation: 5,
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+
+  reportContainer: {
+    maxHeight: 500,
+  },
+
+  reportText: {
+    fontSize: 14,
+    lineHeight: 24,
+    color: "#333",
+  },
+
+  closeButton: {
+    backgroundColor: "#dc2626",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 15,
+  },
+});
