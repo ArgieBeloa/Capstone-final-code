@@ -197,6 +197,15 @@ const Home = () => {
       }
     }, [latestEventState.eventImageUrl]);
 
+    // Remove duplicated names and no name value
+    const totalNumberEvaluated = [
+      ...new Map(
+        latestEventState.eventEvaluationDetails
+          .filter((item) => item.studentName?.trim())
+          .map((item) => [item.studentName.trim(), item]),
+      ).values(),
+    ].length;
+
     return (
       <TouchableOpacity
         onPress={() =>
@@ -238,7 +247,8 @@ const Home = () => {
             title={"Attended"}
           />
           <LinearProgressBar
-            value={latestEventState.eventEvaluationDetails?.length || 0}
+            value={totalNumberEvaluated || 0}
+            // value={latestEventState.eventEvaluationDetails?.length || 0}
             max={latestEventState.eventAttendances?.length || 0}
             title={"Evaluated"}
           />
@@ -276,6 +286,14 @@ const Home = () => {
         setLoadingImage(false);
       }
     }, [item.eventImageUrl]);
+    // Remove duplicated names and no name value
+    const totalNumberEvaluated = [
+      ...new Map(
+        item.eventEvaluationDetails
+          .filter((item) => item.studentName?.trim())
+          .map((item) => [item.studentName.trim(), item]),
+      ).values(),
+    ].length;
 
     return (
       <TouchableOpacity
@@ -316,7 +334,8 @@ const Home = () => {
             title={"Attended"}
           />
           <LinearProgressBar
-            value={item.eventEvaluationDetails?.length || 0}
+            value={totalNumberEvaluated || 0}
+            // value={item.eventEvaluationDetails?.length || 0}
             max={item.eventAttendances?.length || 0}
             title={"Evaluated"}
           />

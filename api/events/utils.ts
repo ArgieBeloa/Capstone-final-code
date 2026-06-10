@@ -64,6 +64,17 @@ export interface PickedImage {
   type: string;
   fileName?: string;
 }
+export const removeDuplicateStudents = (
+  data: EventEvaluationDetails[],
+): EventEvaluationDetails[] => {
+  const seen = new Set<string>();
+
+  return data.filter(({ studentName }) => {
+    const name = studentName.trim().toLowerCase();
+
+    return name && !seen.has(name) && !!seen.add(name);
+  });
+};
 
 export function getOverallEvaluationPerformance(
   evaluations: EventEvaluationDetails[],

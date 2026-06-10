@@ -55,11 +55,20 @@ const EventViewMore = () => {
         if (!res) return;
 
         const feedback = res.eventEvaluationDetails;
+        // Remove duplicated names and no name value
+        const totalNumberEvaluated = [
+          ...new Map(
+            feedback
+              .filter((item) => item.studentName?.trim())
+              .map((item) => [item.studentName.trim(), item]),
+          ).values(),
+        ].length;
+
         const attendances = res.eventAttendances;
 
         setEventFeedback(feedback);
         setEventAttended(attendances);
-        setNumberOfEvaluated(feedback.length);
+        setNumberOfEvaluated(totalNumberEvaluated);
         setNumberOfStudentAttended(attendances.length);
         setEvent(res);
 
