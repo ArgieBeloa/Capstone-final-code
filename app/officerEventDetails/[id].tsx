@@ -98,6 +98,9 @@ const EventViewMore = () => {
   const handlePrintStudent = async (id: string) => {
     router.push(`../PrintFolderStudent/${id}`);
   };
+  const handlePrintStudentNames = async (id: string) => {
+    router.push(`../PrintFolderStudentNames/${id}`);
+  };
 
   return (
     <LinearBackGround>
@@ -186,6 +189,20 @@ const EventViewMore = () => {
               </Text>
 
               <TouchableOpacity
+                onPress={() => handlePrintStudentNames(id as string)}
+                style={{ padding: 6 }}
+              >
+                <Ionicons
+                  name={
+                    Platform.OS === "web" ? "print-outline" : "document-outline"
+                  }
+                  size={26}
+                  color={COLORS.Primary}
+                />
+                Names
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 onPress={() => handlePrintStudent(id as string)}
                 style={{ padding: 6 }}
               >
@@ -196,7 +213,7 @@ const EventViewMore = () => {
                   size={26}
                   color={COLORS.Primary}
                 />
-                Student
+                Feedback
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -210,6 +227,7 @@ const EventViewMore = () => {
                   size={26}
                   color={COLORS.Primary}
                 />
+                Full Report
               </TouchableOpacity>
             </View>
 

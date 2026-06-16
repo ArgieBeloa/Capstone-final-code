@@ -1,3 +1,4 @@
+
 // ===============================
 // 🧑‍🎓 Student Utilities Interfaces
 // ===============================
@@ -59,6 +60,18 @@ export interface StudentEvaluationDetails {
   studentEvaluationInfos: StudentEvaluationInfo[];
 }
 
+// PRINT STUDENT NAMES
+// export const printStudentNames = async (studentNames: string) => {
+//   const html = `
+//     <html>
+//       <body>
+//         <pre>${studentNames}</pre>
+//       </body>
+//     </html>
+//   `;
+
+//   await Print.printAsync({ html });
+// };
 // ENUM COURSE
 export enum Course {
   DOCTOR_OF_PHILOSOPHY = "Doctor of Philosophy",
@@ -137,3 +150,83 @@ export const DepartmentCourses = {
   ],
   [Department.CME]: [Course.BACHELOR_OF_SCIENCE_IN_MARINE_ENGINEERING],
 };
+
+export function normalizeName(name: String): String {
+  return name
+    .toLocaleLowerCase()
+    .replace(/[.,]/g, "")
+    .replace(/\s+/g, "")
+    .trim();
+}
+export const psychologyStudents = [
+  { studentName: "AMPOYOS, PAULA ISABELLE A." },
+  { studentName: "BILLONES, YVONE GRACE C." },
+  { studentName: "DAIZ, RANEAE BANATE." },
+  { studentName: "DAPILAGA, DISEREE A." },
+  { studentName: "DELA CRUZ, KLEO MAE" },
+  { studentName: "LEONES, NYLLAH FRANCESCA B." },
+  { studentName: "PALMON, ID GEL" },
+  { studentName: "YAP, ZSEIHN ASHLEY L." },
+  { studentName: "VALIENTE, ALLAN JEORGE S." },
+];
+
+export const bsedEnglishStudents = [
+  { studentName: "ALIB, MARY FAITH JOY B." },
+  { studentName: "BANTAY, THARIENE JOYCE F." },
+  { studentName: "BULQUERIN, JESSICA E." },
+  { studentName: "DELANDAO, APRIL JOY" },
+  { studentName: "DEMANDACO, MARIEL B." },
+  { studentName: "MAYO, MECHAELLA P." },
+  { studentName: "OPALEC, MA. MAYLODY A." },
+  { studentName: "BARRES, GLENDELA." },
+];
+
+export const bsedFilipinoStudents = [
+  { studentName: "BILLONES, AMELYN D." },
+  { studentName: "CATALUÑA, ARCHEL KATE G." },
+  { studentName: "DELLAVA, JOYLYN D." },
+  { studentName: "MONTOYA, HANNAH MAE G." },
+  { studentName: "VILLANUEVA, ALEX MIRIAN ANGELIQUE A." },
+  { studentName: "LUTERO, JOHN ALBERT H." },
+];
+
+export const bpedStudents = [
+  { studentName: "CORTEZ, DESIREE L." },
+  { studentName: "GUANZON, JAMAIRE F." },
+  { studentName: "TUNGALA, JANNA A." },
+  { studentName: "CALIMPONG, RAFAEL B." },
+  { studentName: "JARCE, FRANCIS PHILIP A." },
+];
+
+export const civilEngineeringStudents = [
+  { studentName: "BACLI, ABCEDE NICOLE M." },
+  { studentName: "BALORO, VIRLEN ELIJAH" },
+  { studentName: "CAÑEDO, ABEGAIL A." },
+  { studentName: "CORROS, LARIJEAN C." },
+  { studentName: "DELA CRUZ, JANE ROSE D." },
+  { studentName: "FAGAR, VJ GRACE F." },
+  { studentName: "MADRELJOS, JOEYLYN B." },
+  { studentName: "MANABAT, JULIE ANNE C." },
+  { studentName: "NUÑEZ, JOANA MAE B." },
+  { studentName: "VILLARUEL, ELAIZAH D." },
+  { studentName: "AGUILING, JOSE ANGELO" },
+  { studentName: "AGULTO, CYPRIAN JADE L." },
+  { studentName: "ALBAY, JOSEPH VINCENT R." },
+  { studentName: "ANONOY, GENRICK E." },
+  { studentName: "BALLADARES, MARK CHRISTIAN S." },
+  { studentName: "BACTASOLO, CHRISTIAN JERO A." },
+  { studentName: "BESA, RHENEER JOHN B." },
+  { studentName: "BONGANAY, ISAGANI, JR. L." },
+  { studentName: "BRAVO, DANLOYD F." },
+  { studentName: "BULAQUEÑA, TOBEY L." },
+  { studentName: "CORTES, JASPER C." },
+  { studentName: "DEADO, RIX B." },
+  { studentName: "DELA PEÑA, KIAN L." },
+  { studentName: "FELOSOPO, RHOEL JOHN Q." },
+  { studentName: "LAGON, DAREL J." },
+  { studentName: "LARA, EL CHRISTIAN JAY D." },
+  { studentName: "MARTINEZ, MARK STEPHEN" },
+  { studentName: "PATRIARCA, JUAVANILE P." },
+  { studentName: "RIVERA, CLEM DEREK G." },
+  { studentName: "SIAPNO, JR., EDUARDO C." },
+];

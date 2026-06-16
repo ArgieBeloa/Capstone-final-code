@@ -1,4 +1,4 @@
-import { Course, Department, DepartmentCourses } from "@/api/students/utils";
+import { Course } from "@/api/students/utils";
 import { useUser } from "@/src/userContext";
 import * as FileSystem from "expo-file-system";
 import * as Print from "expo-print";
@@ -14,7 +14,7 @@ import {
   Text,
   TouchableHighlight,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import { getEventById } from "@/api/events/controller";
@@ -33,21 +33,18 @@ const PrintScreen = () => {
     EventEvaluationDetails[]
   >([]);
 
-  const [selectedDepartment, setSelectedDepartment] = useState(Department.CET);
+  // const [selectedDepartment, setSelectedDepartment] = useState(Department.CET);
+  const [selectedCourse, setSelectedCouse] = useState(
+    Course.BACHELOR_OF_SCIENCE_IN_INFORMATION_TECHNOLOGY,
+  );
 
   const [modalVisible, setModalVisible] = useState(false);
   const [reportText, setReportText] = useState("");
-  const [studentNames, setPrintStudentNames] = useState<
-    EventEvaluationDetails[]
-  >([]);
+  const [printStudents, setPrintStudents] = useState<EventEvaluationDetails[]>(
+    [],
+  );
 
   const overallResult = getOverallEvaluationPerformance(eventEvaluationDetails);
-
-  const uniqueEvaluations = [
-    ...new Map(
-      eventEvaluationDetails.map((item) => [item.studentName, item]),
-    ).values(),
-  ];
 
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +56,11 @@ const PrintScreen = () => {
 
       setEventTitle(data.eventTitle);
       setEventEvaluationDetails(data.eventEvaluationDetails);
+      const names = data.eventEvaluationDetails.filter(
+        (student) => student.course === selectedCourse,
+      );
+      setPrintStudents(names);
+      console.log(printStudents);
     } catch (err: any) {
       Alert.alert("Error", err.message);
     } finally {
@@ -66,57 +68,44 @@ const PrintScreen = () => {
     }
   };
 
-  const generateReport = (department: Department) => {
-    const courses = DepartmentCourses[department];
+  // const generateReport = (department: Department) => {
+  //   const courses = DepartmentCourses[department];
 
-    const departmentStudents = eventEvaluationDetails.filter((e) =>
-      courses.includes(e.course as Course),
-    );
+  //   const departmentStudents = eventEvaluationDetails.filter((e) =>
+  //     courses.includes(e.course as Course),
+  //   );
 
-    const totalNumber = [
-      ...new Map(
-        departmentStudents
-          .filter((item) => item.studentName?.trim())
-          .map((item) => [item.studentName.trim(), item]),
-      ).values(),
-    ].length;
+  //   setPrintStudents(departmentStudents);
+  //   console.log(printStudents);
 
-    let text = `${department}\n`;
-    text += `Total: ${totalNumber}\n\n`;
+  //   let text = `${department}\n\n`;
 
-    courses.forEach((course) => {
-      const students = [
-        ...new Map(
-          departmentStudents
-            .filter(
-              (item) => item.course === course && item.studentName?.trim(),
-            )
-            .map((item) => [item.studentName.trim(), item]),
-        ).values(),
-      ];
-      setPrintStudentNames(students);
+  //   courses.forEach((course) => {
+  //     const students = [
+  //       ...new Map(
+  //         departmentStudents
+  //           .filter(
+  //             (item) => item.course === course && item.studentName?.trim(),
+  //           )
+  //           .map((item) => [item.studentName.trim(), item]),
+  //       ).values(),
+  //     ];
 
-      text += `${course}\n`;
-      text += `Total: ${students.length}\n`;
+  //     text += `${course}\n`;
+  //     text += `Total: ${students.length}\n`;
 
-      if (students.length > 0) {
-        text += students
-          .map((student, index) => `${index + 1}. ${student.studentName}`)
-          .join("\n");
+  //     if (students.length > 0) {
+  //       text += students
+  //         .map((student, index) => `${index + 1}. ${student.studentName}`)
+  //         .join("\n");
+  //     }
 
-        // set student names
-        const names = students.map(
-          (student, index) => `${index + 1}. ${student.studentName}`,
-        );
-      }
+  //     text += "\n\n";
+  //   });
 
-      text += "\n\n";
-    });
-
-    setReportText(text);
-
-    setModalVisible(true);
-  };
+  //   setReportText(text);
+  //   setModalVisible(true);
+  // };
 
   useEffect(() => {
     fetchEventById();
@@ -153,109 +142,81 @@ const PrintScreen = () => {
     // notEvaluated();
   }, [id]);
 
+  // useEffect(() => {
+  //   const courses = DepartmentCourses[selectedDepartment];
+
+  //   const departmentStudents = eventEvaluationDetails.filter((e) =>
+  //     courses.includes(e.course as Course),
+  //   );
+
+  //   console.log(selectedDepartment);
+
+  //   courses.forEach((course) => {
+  //     const students = [
+  //       ...new Map(
+  //         departmentStudents
+  //           .filter(
+  //             (item) => item.course === course && item.studentName?.trim(),
+  //           )
+  //           .map((item) => [item.studentName.trim(), item]),
+  //       ).values(),
+  //     ];
+  //     console.log(students);
+  //     // setPrintStudents(students);
+  //   });
+  // }, [selectedDepartment]);
+
+  useEffect(() => {
+    const uniqueEvaluations = [
+      ...new Map(
+        eventEvaluationDetails
+          .filter((item) => item.studentName?.trim())
+          .map((item) => [item.studentName.replace(/\s+/g, " ").trim(), item]),
+      ).values(),
+    ];
+    const changeDataNames = uniqueEvaluations.filter(
+      (student) => student.course === selectedCourse,
+    );
+    setPrintStudents(changeDataNames);
+  }, [selectedCourse, eventEvaluationDetails]);
+
   const generatePDF = async () => {
-    if (eventEvaluationDetails.length === 0) {
-      Alert.alert("No evaluations", "No evaluation data available.");
+    if (printStudents.length === 0) {
+      Alert.alert("No students", "No students available.");
       return;
     }
+    console.log("Names ", printStudents);
 
     const html = `
   <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <style>
-        @page {
-          size: A4;
-          margin: 20mm;
-        }
-
-        body {
-          font-family: Arial, sans-serif;
-          padding: 10px;
-        }
-
-        h1,
-        h2 {
-          text-align: center;
-          margin-bottom: 10px;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 20px;
-        }
-
-        th,
-        td {
-          border: 1px solid #333;
-          padding: 8px;
-          font-size: 13px;
-          text-align: left;
-          vertical-align: top;
-        }
-
-        th {
-          background-color: #f2f2f2;
-          font-weight: bold;
-        }
-
-        .rate {
-          text-align: center;
-          width: 120px;
-        }
-
-        .student {
-          width: 200px;
-        }
-
-        .suggestion {
-          width: auto;
-        }
-
-        .footer {
-          margin-top: 15px;
-          font-size: 12px;
-        }
-      </style>
-    </head>
-
     <body>
-
       <h1>${eventTitle}</h1>
-      <h2>Student Evaluation Summary</h2>
+      <h2>${selectedCourse} Students</h2>
 
-      <table>
+      <table border="1" style="width:100%; border-collapse: collapse;">
         <thead>
           <tr>
-            <th class="student">Student Name</th>
-            <th class="rate">Average Rate</th>
-            <th class="suggestion">Suggestion</th>
+            <th>#</th>
+            <th>Student Name</th>
           </tr>
         </thead>
-
         <tbody>
-          ${uniqueEvaluations
+          ${printStudents
             .map(
-              (evalItem) => `
-                <tr>
-                  <td>${evalItem.studentName}</td>
-                  <td class="rate">${evalItem.studentAverageRate}</td>
-                  <td>${
-                    evalItem.studentSuggestion || "No suggestion provided"
-                  }</td>
-                </tr>
-              `,
+              (student, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${student.studentName}</td>
+              </tr>
+            `,
             )
             .join("")}
         </tbody>
       </table>
 
-      <div class="footer">
-        <strong>Total Evaluations:</strong>
-        ${eventEvaluationDetails.length}
-      </div>
-
+      <p>
+        <strong>Total Students:</strong> ${printStudents.length}
+      </p>
     </body>
   </html>
   `;
@@ -263,25 +224,18 @@ const PrintScreen = () => {
     try {
       const { uri } = await Print.printToFileAsync({ html });
 
-      const fileUri = `${FileSystem.documentDirectory}${eventTitle}-StudentSummary-${Date.now()}.pdf`;
+      const fileUri = `${FileSystem.documentDirectory}${selectedCourse}-Students.pdf`;
 
       await FileSystem.copyAsync({
         from: uri,
         to: fileUri,
       });
 
-      Alert.alert(
-        "PDF Created",
-        "Student evaluation summary generated successfully!",
-      );
-
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri);
-      } else {
-        Alert.alert("PDF saved at", fileUri);
       }
-    } catch (err: any) {
-      Alert.alert("Error", err.message);
+    } catch (err) {
+      console.log(err);
     }
   };
 
@@ -295,29 +249,12 @@ const PrintScreen = () => {
 
   return (
     <View style={{ marginTop: 20, flex: 1 }}>
-      {/* Touchable print button */}
-      <TouchableHighlight
-        onPress={generatePDF}
-        underlayColor="#0056b3"
-        style={{
-          backgroundColor: "#007bff",
-          paddingVertical: 12,
-          borderRadius: 10,
-          alignItems: "center",
-          marginVertical: 10,
-        }}
-      >
-        <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
-          🖨️ Print Evaluation Report
-        </Text>
-      </TouchableHighlight>
-
       <Text style={{ fontSize: 20, fontWeight: "bold", textAlign: "center" }}>
         {eventTitle}
       </Text>
 
       <Text style={{ marginTop: 10, textAlign: "center" }}>
-        Total Evaluations: {uniqueEvaluations.length}
+        Total Evaluations: {printStudents.length}
       </Text>
 
       <Text style={{ textAlign: "center" }}>
@@ -325,31 +262,37 @@ const PrintScreen = () => {
       </Text>
 
       <View style={styles.container}>
-        <Text style={styles.label}>Select Department</Text>
+        <Text style={styles.label}>Select Course</Text>
 
         <View style={styles.pickerContainer}>
           <Picker
-            selectedValue={selectedDepartment}
-            onValueChange={(itemValue) => setSelectedDepartment(itemValue)}
+            selectedValue={selectedCourse}
+            onValueChange={(itemValue) => setSelectedCouse(itemValue)}
             style={styles.picker}
             dropdownIconColor="#2563eb"
           >
-            {Object.values(Department).map((department) => (
-              <Picker.Item
-                key={department}
-                label={department}
-                value={department}
-              />
+            {Object.values(Course).map((course) => (
+              <Picker.Item key={course} label={course} value={course} />
             ))}
           </Picker>
         </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => generateReport(selectedDepartment)}
+        {/* Touchable print button */}
+        <TouchableHighlight
+          onPress={() => generatePDF()}
+          underlayColor="#0056b3"
+          style={{
+            backgroundColor: "#007bff",
+            paddingVertical: 12,
+            borderRadius: 10,
+            alignItems: "center",
+            marginVertical: 10,
+          }}
         >
-          <Text style={styles.buttonText}>View Report</Text>
-        </TouchableOpacity>
+          <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+            🖨️ Print names
+          </Text>
+        </TouchableHighlight>
 
         <Modal
           visible={modalVisible}
@@ -394,31 +337,10 @@ const PrintScreen = () => {
         >
           Student Name
         </Text>
-
-        <Text
-          style={{
-            flex: 1,
-            color: "#fff",
-            fontWeight: "bold",
-            textAlign: "center",
-          }}
-        >
-          Rate
-        </Text>
-
-        <Text
-          style={{
-            flex: 3,
-            color: "#fff",
-            fontWeight: "bold",
-          }}
-        >
-          Suggestion
-        </Text>
       </View>
 
       {/* Data Rows */}
-      {uniqueEvaluations.map((evalItem, index) => (
+      {printStudents.map((evalItem, index) => (
         <View
           key={index}
           style={{
@@ -429,19 +351,8 @@ const PrintScreen = () => {
             backgroundColor: index % 2 === 0 ? "#fff" : "#f9f9f9",
           }}
         >
-          <Text style={{ flex: 2 }}>{evalItem.studentName}</Text>
-
-          <Text
-            style={{
-              flex: 1,
-              textAlign: "center",
-            }}
-          >
-            {evalItem.studentAverageRate}
-          </Text>
-
-          <Text style={{ flex: 3 }}>
-            {evalItem.studentSuggestion || "No suggestion"}
+          <Text style={{ flex: 2 }}>
+            {index + 1} {evalItem.studentName}
           </Text>
         </View>
       ))}
