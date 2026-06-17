@@ -44,7 +44,15 @@ const PrintScreen = () => {
   const generateHTML = (department?: string) => {
     if (!event) return "<p>No data available</p>";
 
-    let attendance: EventAttendance[] = [...(event.eventAttendances || [])];
+    const uniqueEvaluations = [
+      ...new Map(
+        event.eventAttendances
+          .filter((item) => item.studentName?.trim())
+          .map((item) => [item.studentName.replace(/\s+/g, " ").trim(), item]),
+      ).values(),
+    ];
+
+    let attendance: EventAttendance[] = [...(uniqueEvaluations || [])];
 
     // Filter by department
     if (department) {

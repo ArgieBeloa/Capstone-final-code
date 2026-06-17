@@ -1,5 +1,5 @@
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -57,13 +57,19 @@ const Events = () => {
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
-  // testing delete event by id
-  useEffect(() => {
-    const testingApi = async () => {
-      // await deleteStudent("697851dcb1b8cc916431a285", studentToken);
-    };
-    testingApi();
-  }, []);
+  // PERFORMANCE
+  const imageCache = useRef<Record<string, string | null>>({});
+
+  // // testing delete event by id
+  // useEffect(() => {
+  //   const testingApi = async () => {
+  //     // await deleteStudent("697851dcb1b8cc916431a285", studentToken);
+  //   };
+  //   testingApi();
+  // }, []);
+  const handleViewDetails = (id: string) => {
+    router.push(`../officerEventDetails/${id}`);
+  };
 
   // ✅ Load all events and student notification tokens (refresh each time you revisit screen)
   useFocusEffect(
@@ -74,8 +80,8 @@ const Events = () => {
           const eventsData = await getAllEvents(studentToken);
           // setEvents(eventsData);
           // setAllEvents(eventsData);
-          setAllEvents([...events].reverse());
-          setEvents([...events].reverse());
+          setAllEvents(eventsData);
+          setEvents(eventsData);
 
           const titles = eventsData.map((e) => ({
             id: e.id,
@@ -178,12 +184,14 @@ const Events = () => {
   // ✅ Navigation
   const handlePrintAttendance = (id: string) =>
     router.push(`../../PrintAttendances/${id}`);
-  const handlePrint = (id: string) => router.push(`../../PrintFolder/${id}`);
+
+  const handlePrint = (id: string) =>
+    router.push(`../../officerEventDetails/${id}`);
 
   const platformIcon = Platform.OS === "web" ? "print" : "save";
 
   // ✅ Render Event Card
-  const RenderEventItem = ({ item }: { item: EventModel }) => {
+  const RenderEventItem = React.memo(({ item }: { item: EventModel }) => {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [loadingImage, setLoadingImage] = useState(true);
 
@@ -193,11 +201,22 @@ const Events = () => {
           setLoadingImage(false);
           return;
         }
+
+        const imageUrl = item.eventImageUrl;
+
         try {
-          const uri = await fetchEventImageById(
-            item.eventImageUrl,
-            studentToken,
-          );
+          // Check cache first
+          const cachedUri = imageCache.current[imageUrl];
+
+          if (cachedUri) {
+            setImageUri(cachedUri);
+            return;
+          }
+
+          // Fetch image only once
+          const uri = await fetchEventImageById(imageUrl, studentToken);
+
+          imageCache.current[imageUrl] = uri;
           setImageUri(uri);
         } catch (error) {
           console.error(`❌ Failed to load image for event ${item.id}:`, error);
@@ -205,20 +224,17 @@ const Events = () => {
           setLoadingImage(false);
         }
       };
+
       loadImage();
-    }, [item.eventImageUrl]);
+    }, [item.eventImageUrl, studentToken]);
 
     return (
       <View style={eventStyles.containerItem}>
-        {/* Presable */}
         <Pressable
-          onLongPress={() =>
-            // handleDeleteEventById(item.id)
-            {
-              setIdDelete(item.id);
-              setShowDeleteModal(true);
-            }
-          }
+          onLongPress={() => {
+            setIdDelete(item.id);
+            setShowDeleteModal(true);
+          }}
           onPress={() => {
             router.push(`../../EventDetails/${item.id}`);
           }}
@@ -227,7 +243,10 @@ const Events = () => {
             <View
               style={[
                 eventStyles.image,
-                { justifyContent: "center", alignItems: "center" },
+                {
+                  justifyContent: "center",
+                  alignItems: "center",
+                },
               ]}
             >
               <ActivityIndicator size="large" color={COLORS.Primary} />
@@ -245,15 +264,35 @@ const Events = () => {
           )}
 
           <View style={{ padding: 10 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18, color: "#222" }}>
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 18,
+                color: "#222",
+              }}
+            >
               {item.eventTitle}
             </Text>
-            <Text style={{ fontSize: 14, color: "#555" }}>
+
+            <Text
+              style={{
+                fontSize: 14,
+                color: "#555",
+              }}
+            >
               {item.eventShortDescription}
             </Text>
-            <Text style={{ fontSize: 12, color: "#777", marginTop: 4 }}>
+
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#777",
+                marginTop: 4,
+              }}
+            >
               {item.eventDate} • {item.eventTimeLength}
             </Text>
+
             <Text style={{ marginTop: 4 }}>
               Posted By: {item.whoPostedName}
             </Text>
@@ -285,8 +324,7 @@ const Events = () => {
         </Pressable>
       </View>
     );
-  };
-
+  });
   return (
     <LinearbackGround>
       <SafeAreaView style={[Styles.safeAreaView, { flex: 1 }]}>
@@ -354,7 +392,6 @@ const Events = () => {
               eventStyles.containerFlatlist,
               { paddingBottom: 100 },
             ]}
-            // showsVerticalScrollIndicator={false}
           />
 
           {/* Announcement Modal */}
