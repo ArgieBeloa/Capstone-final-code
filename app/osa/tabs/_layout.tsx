@@ -10,15 +10,14 @@ export default function OsaTabsLayout() {
         headerTintColor: "#fff",
         tabBarActiveTintColor: COLORS.Primary,
         tabBarInactiveTintColor: "gray",
-         headerShown: false,
+        headerShown: false,
         tabBarIcon: ({ color, size }) => {
           let iconName: any;
 
           if (route.name === "osa") iconName = "home";
           else if (route.name === "events") iconName = "calendar";
           else if (route.name === "students") iconName = "people";
-          else if (route.name === "logout") iconName = "log-out";
-
+          else if (route.name === "approval") iconName = "checkmark-circle";
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -27,8 +26,7 @@ export default function OsaTabsLayout() {
       <Tabs.Screen name="osa" options={{ title: "Home" }} />
       <Tabs.Screen name="events" options={{ title: "Events" }} />
       <Tabs.Screen name="students" options={{ title: "Students" }} />
-      <Tabs.Screen name="logout" options={{ title: "Log out" }} />
-
+      <Tabs.Screen name="approval" options={{ title: "approval" }} />
     </Tabs>
   );
 }

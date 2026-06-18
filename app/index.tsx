@@ -203,11 +203,6 @@ export default function Index() {
 
   const remainingAttempts = 3 - attempts;
 
-  useEffect(() => {
-    const fetchEvents = async () => {};
-    fetchEvents();
-  }, []);
-
   return (
     <LinearGradient
       colors={[COLORS.Secondary, COLORS.Third, COLORS.Forth]}

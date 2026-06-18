@@ -1,12 +1,12 @@
-import { addApprovalEvent } from "@/api/admin/controller";
+import { deleteApprovalEvent, getAdminById } from "@/api/admin/controller";
 import { approvalUpdateEvent } from "@/api/admin/utils";
-import { getEventById } from "@/api/events/controller";
+import { updateEvent } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EvaluationQuestion, EventAgenda } from "@/api/events/utils";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -42,6 +42,7 @@ const EditEvent = () => {
   const [eventEvaluationQuestion, setEventEvaluationQuestion] = useState<
     EvaluationQuestion[]
   >([]);
+  const [approveEvent, setApproveEvent] = useState<approvalUpdateEvent[]>([]);
 
   // AGENDA FUNCTION
   const updateAgenda = (
@@ -118,9 +119,8 @@ const EditEvent = () => {
     setLoading(true);
 
     try {
-      const requestApproval: approvalUpdateEvent = {
+      const updatedEvent: EventModel = {
         ...event,
-        approve: false,
         eventTitle,
         eventShortDescription,
         eventBody,
@@ -134,14 +134,15 @@ const EditEvent = () => {
         },
         eventAgendas: eventAgenda,
         evaluationQuestions: eventEvaluationQuestion,
-      } as approvalUpdateEvent;
+      } as EventModel;
 
-      const res = await addApprovalEvent(
-        requestApproval,
+      const res = await updateEvent(id as string, updatedEvent, studentToken);
+      await deleteApprovalEvent(
         "6a324a76054e165bcb1dae54",
+        id as string,
         studentToken,
       );
-      // console.log(res);
+      console.log(res);
 
       Alert.alert("✅ Event Added");
 
@@ -153,31 +154,69 @@ const EditEvent = () => {
       setLoading(false);
     }
   };
+  useLayoutEffect(() => {
+    getAdminData();
+  }, []);
+
+  // Functions
+  const getAdminData = async () => {
+    try {
+      const adminData = await getAdminById(
+        studentToken,
+        "6a324a76054e165bcb1dae54",
+      );
+
+      setApproveEvent(adminData.approvalUpdateEvents);
+      console.log(adminData.approvalUpdateEvents);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
-    const getEvent = async () => {
-      try {
-        const res = await getEventById(studentToken, id as string);
-        setEvent(res);
-        setEventTitle(res.eventTitle);
-        setEventShortDescription(res.eventShortDescription);
-        setEventBody(res.eventBody);
-        setEventLocation(res.eventLocation);
-        setEventCategory(res.eventCategory);
-        const eventTimeLength = res.eventTimeLength;
-        setEventTime(eventTimeLength);
-        setEventDate(res.eventDate);
-        setOrganizerName(res.eventOrganizer.organizerName);
-        setOrganizerEmail(res.eventOrganizer.organizerEmail);
-        setEventAgenda(res.eventAgendas);
-        setEventEvaluationQuestion(res.evaluationQuestions);
-      } catch (e) {
-        console.error("❌ Error fetching event:", e);
-      }
-    };
+    if (approveEvent.length > 0) {
+      const event = approveEvent.find((event) => event.id === id);
+      setEvent(event);
+      if (!event) return;
 
-    getEvent();
-  }, []);
+      setEventTitle(event.eventTitle);
+      setEventShortDescription(event.eventShortDescription);
+      setEventBody(event.eventBody);
+      setEventLocation(event.eventLocation);
+      setEventCategory(event.eventCategory);
+      setEventTime(event.eventTimeLength);
+      setEventDate(event.eventDate);
+      setOrganizerName(event.eventOrganizer.organizerName);
+      setOrganizerEmail(event.eventOrganizer.organizerEmail);
+      setEventAgenda(event.eventAgendas);
+      setEventEvaluationQuestion(event.evaluationQuestions);
+    }
+  }, [approveEvent, id]);
+
+  // useEffect(() => {
+  //   const getEvent = async () => {
+  //     try {
+  //       const res = await getEventById(studentToken, id as string);
+  //       setEvent(res);
+  //       setEventTitle(res.eventTitle);
+  //       setEventShortDescription(res.eventShortDescription);
+  //       setEventBody(res.eventBody);
+  //       setEventLocation(res.eventLocation);
+  //       setEventCategory(res.eventCategory);
+  //       const eventTimeLength = res.eventTimeLength;
+  //       setEventTime(eventTimeLength);
+  //       setEventDate(res.eventDate);
+  //       setOrganizerName(res.eventOrganizer.organizerName);
+  //       setOrganizerEmail(res.eventOrganizer.organizerEmail);
+  //       setEventAgenda(res.eventAgendas);
+  //       setEventEvaluationQuestion(res.evaluationQuestions);
+  //     } catch (e) {
+  //       console.error("❌ Error fetching event:", e);
+  //     }
+  //   };
+
+  //   getEvent();
+  // }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -261,6 +300,17 @@ const EditEvent = () => {
 
           {/* Event Agenda */}
           <Text style={styles.textInfo}>Agenda</Text>
+          {/* <FlatList
+            data={event?.eventAgendas ?? []}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View>
+                <Text>{item.agendaTime}</Text>
+                <Text>{item.agendaTitle}</Text>
+                <Text>{item.agendaHost}</Text>
+              </View>
+            )}
+          /> */}
           <FlatList
             data={eventAgenda ?? []}
             keyExtractor={(_, index) => index.toString()}
@@ -381,7 +431,7 @@ const EditEvent = () => {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitText}>Request for Update</Text>
+              <Text style={styles.submitText}>Approve Event</Text>
             )}
           </TouchableOpacity>
         </ScrollView>

@@ -381,11 +381,13 @@ const Home = () => {
         </View>
 
         {/* Floating Add Button */}
-        <FloatingButton
-          iconName="plus"
-          onPress={() => router.push("../officerAddEvent/addEvent")}
-          // onPress={() => router.push("../test")}
-        />
+        {studentData.officerCredentials.canAddEvent && (
+          <FloatingButton
+            iconName="plus"
+            onPress={() => router.push("../officerAddEvent/addEvent")}
+            // onPress={() => router.push("../test")}
+          />
+        )}
 
         {/* Loading Modal */}
         <Modal visible={loading} transparent animationType="fade">

@@ -1,12 +1,175 @@
 import axios from "axios";
 import { StudentModel } from "../students/model";
 import { StudentNotification } from "../students/utils";
+import { AdminModel } from "./adminModel";
 import { GLOBAL_URL } from "./url";
+import {
+  approvalUpdateEvent,
+  currentOfficer,
+  evaluationTemplates,
+} from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
 // const BASE_URL = "https://securebackend-ox2e.onrender.com/api/auth";
 
 const BASE_URL = `${GLOBAL_URL}/api/auth`;
+
+// GET Admin data by id
+export async function getAdminById(
+  token: string,
+  id: string,
+): Promise<AdminModel> {
+  const res = await axios.get(`${BASE_URL}/admin/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}
+// POST
+
+// Officer
+export async function addNewOfficer(
+  currentOfficer: currentOfficer | undefined,
+  id: string,
+  token: string,
+): Promise<string> {
+  const res = await axios.post(
+    `${BASE_URL}/admin/addNewOfficer/${id}`,
+    currentOfficer,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  return res.data;
+}
+
+// Approval Event
+export async function addApprovalEvent(
+  approvalUpdateEvents: approvalUpdateEvent,
+  id: string,
+  token: string,
+): Promise<string> {
+  const res = await axios.post(
+    `${BASE_URL}/admin/addApprovalEvent/${id}`,
+    approvalUpdateEvents,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  return res.data;
+}
+
+// Evaluation Template
+// GET TEMPLATE
+export async function getEvaluationTemplate(
+  adminId: string,
+  token: string,
+): Promise<evaluationTemplates[]> {
+  const res = await axios.get(
+    `${BASE_URL}/admin/evaluationTemplates/${adminId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  return res.data;
+}
+
+// ADD evaluation template
+export async function addEvaluationTemplate(
+  newEvaluationTemplate: evaluationTemplates,
+  adminId: string,
+  token: string,
+): Promise<string> {
+  const res = await axios.post(
+    `${BASE_URL}/admin/addEvaluationTemplate/${adminId}`,
+    newEvaluationTemplate,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  return res.data;
+}
+
+// Delete
+// DELETE Approval Event
+export const deleteApprovalEvent = async (
+  adminId: string,
+  eventId: string,
+  token: string,
+): Promise<AdminModel> => {
+  try {
+    const response = await axios.delete<AdminModel>(
+      `${BASE_URL}/admin/${adminId}/eventApproval/${eventId}`,
+      {
+        headers: {
+          Authorization: token.startsWith("Bearer ")
+            ? token
+            : `Bearer ${token}`,
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.log("Delete Approval Event Error:", error?.response?.data || error);
+    throw error;
+  }
+};
+
+// DELETE Current Officer
+export const deleteCurrentOfficer = async (
+  adminId: string,
+  studentId: string,
+  token: string,
+): Promise<AdminModel> => {
+  try {
+    const response = await axios.delete<AdminModel>(
+      `${BASE_URL}/admin/${adminId}/currentOfficer/${studentId}`,
+      {
+        headers: {
+          Authorization: token.startsWith("Bearer ")
+            ? token
+            : `Bearer ${token}`,
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.log(
+      "Delete Current Officer Error:",
+      error?.response?.data || error,
+    );
+    throw error;
+  }
+};
+
+// DELETE Evaluation Template
+export const deleteEvaluationTemplate = async (
+  adminId: string,
+  templateId: string,
+  token: string,
+): Promise<AdminModel> => {
+  try {
+    const response = await axios.delete<AdminModel>(
+      `${BASE_URL}/admin/${adminId}/evaluationTemplate/${templateId}`,
+      {
+        headers: {
+          Authorization: token.startsWith("Bearer ")
+            ? token
+            : `Bearer ${token}`,
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.log(
+      "Delete Evaluation Template Error:",
+      error?.response?.data || error,
+    );
+    throw error;
+  }
+};
 
 /* ===========================================================
    ✅ 1. Register a new student
@@ -130,24 +293,23 @@ export async function sendExpoNotification(
 export async function promoteStudent(
   token: string,
   userId: string,
+  canEditEvent: boolean,
+  canAddEvent: boolean,
 ): Promise<any> {
   try {
     const response = await axios.patch(
-      `${BASE_URL}/promote/${userId}`,
-      {}, // no body needed
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      },
+      `${BASE_URL}/promote/${userId}?canEdit=${canEditEvent}&canAdd=${canAddEvent}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
     );
 
     return response.data;
   } catch (error: any) {
     if (error.response) {
       throw new Error(
-        `Error ${error.response.status}: ${error.response.data.message || error.response.data}`,
+        `Error ${error.response.status}: ${
+          error.response.data.message || error.response.data
+        }`,
       );
     } else if (error.request) {
       throw new Error("No response from server. Please check your connection.");

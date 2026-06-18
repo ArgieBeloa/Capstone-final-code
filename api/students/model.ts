@@ -1,6 +1,11 @@
-import { StudentEventAttended, StudentEventAttendedAndEvaluationDetails, StudentNotification, StudentRecentEvaluation, StudentUpcomingEvents } from "./utils";
-
-
+import {
+  OfficerCredentials,
+  StudentEventAttended,
+  StudentEventAttendedAndEvaluationDetails,
+  StudentNotification,
+  StudentRecentEvaluation,
+  StudentUpcomingEvents,
+} from "./utils";
 
 export interface StudentModel {
   id?: string;
@@ -11,6 +16,7 @@ export interface StudentModel {
 
   // 🧭 Access control
   role: "STUDENT" | "OFFICER" | "ADMIN";
+  officerCredentials: OfficerCredentials;
 
   // 🧑‍🎓 Student info
   studentName: string;

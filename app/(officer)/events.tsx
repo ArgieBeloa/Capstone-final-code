@@ -443,10 +443,13 @@ const Events = () => {
         )}
 
         {/* FLOATING BUTTON */}
-        <FloatingButton
-          iconName="plus"
-          onPress={() => router.push("../officerAddEvent/addEvent")}
-        />
+        {studentData.officerCredentials.canAddEvent && (
+          <FloatingButton
+            iconName="plus"
+            onPress={() => router.push("../officerAddEvent/addEvent")}
+            // onPress={() => router.push("../test")}
+          />
+        )}
       </SafeAreaView>
     </LinearbackGround>
   );

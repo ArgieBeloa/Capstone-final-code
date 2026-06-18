@@ -22,7 +22,7 @@ import Svg, { Circle } from "react-native-svg";
 
 const EventViewMore = () => {
   const router = useRouter();
-  const { studentToken } = useUser();
+  const { studentToken, studentData } = useUser();
   const { id } = useLocalSearchParams();
   const screenWidth = Dimensions.get("window").width;
 
@@ -107,14 +107,16 @@ const EventViewMore = () => {
       <SafeAreaView style={{ flex: 1 }}>
         <View style={[styles.statisticContainer]}>
           {/* Circular Performance Indicator */}
-          <TouchableOpacity
-            onPress={() => {
-              router.push(`../officerEditEvent/${id}`);
-            }}
-            style={styles.editBtn}
-          >
-            <Text style={{ color: COLORS.textColorWhite }}>Edit Event</Text>
-          </TouchableOpacity>
+          {studentData?.officerCredentials?.canEditEvent && (
+            <TouchableOpacity
+              onPress={() => {
+                router.push(`../officerEditEvent/${id}`);
+              }}
+              style={styles.editBtn}
+            >
+              <Ionicons name="create-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          )}
 
           <View style={styles.centerWrapper}>
             <Svg

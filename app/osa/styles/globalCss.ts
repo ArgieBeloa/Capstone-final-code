@@ -1,7 +1,7 @@
 import { COLORS } from "@/constants/ColorCpc";
 import { StyleSheet } from "react-native";
 
-const mobileViewStyles = StyleSheet.create({
+export const mobileViewStyles = StyleSheet.create({
   safeAreaView: {
     flex: 1,
     // backgroundColor: "#f2f2f2",

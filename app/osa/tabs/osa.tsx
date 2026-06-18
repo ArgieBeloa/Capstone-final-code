@@ -1,16 +1,22 @@
 import {
+  addNewOfficer,
+  deleteCurrentOfficer,
   demoteOfficer,
+  getAdminById,
   getAllStudents,
   promoteStudent,
   sendExpoNotification,
 } from "@/api/admin/controller";
+import { currentOfficer, id } from "@/api/admin/utils";
 import { StudentModel } from "@/api/students/model";
+import FloatingButton from "@/components/FloatingButton";
 import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import Mymodal from "@/components/Mymodal";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -37,6 +43,7 @@ interface StudentSuggestionData {
 const OsaScreen: React.FC = () => {
   const officerName = "OSA Officer";
   const { studentToken } = useUser();
+  const router = useRouter();
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
   const [studentSuggestionData, setStudentSuggestionData] = useState<
@@ -52,7 +59,10 @@ const OsaScreen: React.FC = () => {
   const [searchStudentData, setSearchStudentData] = useState<
     StudentModel | undefined
   >();
-  const [currentOfficer, setCurrentOfficer] = useState<StudentModel[]>([]);
+  const [currentOfficer, setCurrentOfficer] = useState<currentOfficer[]>([]);
+  const [canEditEvent, setCanEditEvent] = useState<boolean>(false);
+  const [canAddEvent, setCanAddEvent] = useState<boolean>(false);
+
   const [studentNumber, setStudentNumber] = useState("");
 
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
@@ -69,16 +79,32 @@ const OsaScreen: React.FC = () => {
   const [isPromoted, setIsPromoted] = useState(false);
   const [isDemoteVisible, setIsDemoteVisible] = useState(false);
 
+  // TESTING ADMIN DATA
+  useFocusEffect(
+    React.useCallback(() => {
+      getAdminData();
+    }, [isPromoted, isDemoteVisible]),
+  );
+
+  const getAdminData = async () => {
+    try {
+      const adminData = await getAdminById(studentToken, id);
+      setCurrentOfficer(adminData.currentOfficer);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // 🧠 Load all students on mount
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const students = await getAllStudents(studentToken);
 
-        const onlyOfficers = students.filter(
-          (item: StudentModel) => item.role?.toLowerCase() === "officer",
-        );
-        setCurrentOfficer(onlyOfficers);
+        // const onlyOfficers = students.filter(
+        //   (item: StudentModel) => item.role?.toLowerCase() === "officer",
+        // );
+        // setCurrentOfficer(onlyOfficers);
 
         const studentNameAndId: any = students.map((s: StudentModel) => ({
           id: s.id,
@@ -159,7 +185,22 @@ const OsaScreen: React.FC = () => {
     setPromotionStatus(true);
     setSearchLoading(true);
     try {
-      await promoteStudent(studentToken, searchStudentId);
+      await promoteStudent(
+        studentToken,
+        searchStudentId,
+        canEditEvent,
+        canAddEvent,
+      );
+
+      const newOfficer: currentOfficer = {
+        studentId: searchStudentData?.id || "no id",
+        studentName: searchStudentData?.studentName || "no student Name",
+        studentNumber: searchStudentData?.studentNumber || "No number",
+        canEditEvent: canEditEvent,
+        canAddEvent: canAddEvent,
+      };
+
+      await addNewOfficer(newOfficer, id, studentToken);
 
       setIsPromoted(true);
 
@@ -245,6 +286,7 @@ const OsaScreen: React.FC = () => {
       setLoading(true);
 
       await demoteOfficer(selectedId, studentToken);
+      await deleteCurrentOfficer(id, selectedId, studentToken);
     } catch (error) {
       console.log(error);
     } finally {
@@ -332,6 +374,41 @@ const OsaScreen: React.FC = () => {
                   <Text style={styles.studentNumber}>
                     {searchStudentData.studentNumber}
                   </Text>
+                  {/* can edit event */}
+                  {/* Can Edit Event */}
+                  <TouchableOpacity onPress={() => setCanEditEvent(true)}>
+                    <view style={{ flexDirection: "row" }}>
+                      <Ionicons
+                        name={canEditEvent ? "create" : "create-outline"}
+                        size={24}
+                        color={canEditEvent ? "#10B981" : "#9CA3AF"}
+                      />
+                      <Text>Can edit event</Text>
+                    </view>
+                  </TouchableOpacity>
+
+                  {/* Can Add Event */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setCanAddEvent(true);
+                    }}
+                  >
+                    <view
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Ionicons
+                        name={canAddEvent ? "add-circle" : "add-circle-outline"}
+                        size={24}
+                        color={canAddEvent ? "#10B981" : "#9CA3AF"}
+                      />
+                      <Text>Can add event</Text>
+                    </view>
+                  </TouchableOpacity>
+                  {/* can add event */}
                 </View>
               </TouchableOpacity>
             )}
@@ -367,18 +444,18 @@ const OsaScreen: React.FC = () => {
           <Animated.FlatList
             data={currentOfficer}
             keyExtractor={(item) =>
-              item.id?.toString() || Math.random().toString()
+              item.studentId?.toString() || Math.random().toString()
             }
-            renderItem={({ item }: { item: StudentModel }) => {
+            renderItem={({ item }: { item: currentOfficer }) => {
               const firstLetter =
                 item.studentName?.charAt(0).toUpperCase() || "?";
-              const isOfficer = item.role?.toLowerCase() === "officer";
+
               return (
                 <TouchableOpacity
                   style={styles.officerItem}
                   onLongPress={() => {
                     setIsDemoteVisible(true);
-                    setSelectedId(item.id as string);
+                    setSelectedId(item.studentId as string);
                   }}
                 >
                   <View style={styles.officerAvatar}>
@@ -388,22 +465,23 @@ const OsaScreen: React.FC = () => {
                     <Text style={styles.officerName}>{item.studentName}</Text>
                     <Text style={styles.officerDetails}>
                       {item.studentNumber ?? ""}{" "}
-                      {item.course ? `• ${item.course}` : ""}
                     </Text>
+                    <View style={{ flexDirection: "row" }}>
+                      <Ionicons
+                        name={item.canEditEvent ? "create" : "create-outline"}
+                        size={24}
+                        color={item.canEditEvent ? "#10B981" : "#9CA3AF"}
+                      />
+
+                      <Ionicons
+                        name={
+                          item.canAddEvent ? "add-circle" : "add-circle-outline"
+                        }
+                        size={24}
+                        color={item.canAddEvent ? "#10B981" : "#9CA3AF"}
+                      />
+                    </View>
                   </View>
-                  {isOfficer ? (
-                    <FontAwesome5
-                      name="user-shield"
-                      size={18}
-                      color="#2D9CDB"
-                    />
-                  ) : (
-                    <Ionicons
-                      name="person-circle-outline"
-                      size={22}
-                      color="#7B8A9A"
-                    />
-                  )}
                 </TouchableOpacity>
               );
             }}
@@ -782,6 +860,11 @@ const OsaScreen: React.FC = () => {
             </View>
           </Modal>
         </View>
+        <FloatingButton
+          iconName="plus"
+          onPress={() => router.push("../../officerAddEvent/addEvent")}
+          // onPress={() => router.push("../test")}
+        />
       </SafeAreaView>
     </LinearbackGround>
   );

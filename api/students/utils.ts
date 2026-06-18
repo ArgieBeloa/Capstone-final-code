@@ -1,4 +1,3 @@
-
 // ===============================
 // 🧑‍🎓 Student Utilities Interfaces
 // ===============================
@@ -50,6 +49,10 @@ export interface StudentEventAttendedAndEvaluationDetails {
 export interface StudentEvaluationInfo {
   question: string;
   studentRate: number;
+}
+export interface OfficerCredentials {
+  canEditEvent: boolean;
+  canAddEvent: boolean;
 }
 
 // 🔹 StudentEvaluationDetails.java

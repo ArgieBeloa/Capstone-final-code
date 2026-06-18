@@ -1,6 +1,7 @@
 import {
   addStudentNotificationToAll,
   getAllStudents,
+  getEvaluationTemplate,
   sendExpoNotification,
 } from "@/api/admin/controller";
 import {
@@ -19,7 +20,8 @@ import { ArrowLeft, Calendar, Clock } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PickedImage } from "@/api/events/utils";
+import { evaluationTemplates, id } from "@/api/admin/utils";
+import { EvaluationQuestion, PickedImage } from "@/api/events/utils";
 import {
   ActivityIndicator,
   Alert,
@@ -31,10 +33,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
 
 const AddEventScreen = () => {
-  const { studentToken, studentData} = useUser();
+  const { studentToken, studentData } = useUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [newEventData, setNewEventData] = useState<EventModel | null>(null);
@@ -56,31 +59,34 @@ const AddEventScreen = () => {
     { agendaTitle: string; agendaTime: string; agendaHost: string }[]
   >([]);
   const [evaluationQuestions, setEvaluationQuestions] = useState<
-    { questionId: string; questionText: string }[]
+    EvaluationQuestion[]
   >([
-    {
-      questionId: "1",
-      questionText: "The over-all preparation in the conduct of the activity",
-    },
-    {
-      questionId: "2",
-      questionText:
-        "Alignment of the seminar/conference to VMGO of the college Importance and applicability",
-    },
-    {
-      questionId: "3",
-      questionText: "Venue and Accommodation of the activity",
-    },
-    {
-      questionId: "4",
-      questionText: "Timing/Phasing and Scheduling of the activity",
-    },
-    {
-      questionId: "5",
-      questionText:
-        "Dynamic inter-action among facilitator/s and participants during the activity",
-    },
+    // {
+    //   questionId: "1",
+    //   questionText: "The over-all preparation in the conduct of the activity",
+    // },
+    // {
+    //   questionId: "2",
+    //   questionText:
+    //     "Alignment of the seminar/conference to VMGO of the college Importance and applicability",
+    // },
+    // {
+    //   questionId: "3",
+    //   questionText: "Venue and Accommodation of the activity",
+    // },
+    // {
+    //   questionId: "4",
+    //   questionText: "Timing/Phasing and Scheduling of the activity",
+    // },
+    // {
+    //   questionId: "5",
+    //   questionText:
+    //     "Dynamic inter-action among facilitator/s and participants during the activity",
+    // },
   ]);
+  const [evaluationTemplateState, setEvaluationTemplateState] = useState<
+    evaluationTemplates[]
+  >([]);
 
   const [agendaTitle, setAgendaTitle] = useState("");
   const [agendaTime, setAgendaTime] = useState("");
@@ -90,11 +96,14 @@ const AddEventScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
+  const selectedTemplate = evaluationTemplateState.find(
+    (t) => t.id === selectedTemplateId,
+  );
   const [image, setImage] = useState<PickedImage | null>(null);
 
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
-
 
   const isFormValid =
     eventTitle &&
@@ -140,6 +149,34 @@ const AddEventScreen = () => {
     ]);
     setQuestionText("");
   };
+  useEffect(() => {
+    const getTemplate = async () => {
+      try {
+        const template = await getEvaluationTemplate(
+          id as string,
+          studentToken,
+        );
+
+        setEvaluationTemplateState(template);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getTemplate();
+  }, [id, studentToken]);
+
+  useEffect(() => {
+    setEvaluationQuestions([]);
+    if (!selectedTemplate) return;
+
+    const questions = selectedTemplate.evaluationQuestions.map((item) => ({
+      questionId: item.questionId,
+      questionText: item.questionText,
+    }));
+
+    setEvaluationQuestions(questions);
+  }, [selectedTemplate]);
 
   // --- SUBMIT ---
   const submitEvent = async () => {
@@ -230,7 +267,7 @@ const AddEventScreen = () => {
         };
         await addStudentNotificationToAll(
           payloadStudentNotification,
-          studentToken
+          studentToken,
         );
 
         const students = await getAllStudents(studentToken);
@@ -244,7 +281,7 @@ const AddEventScreen = () => {
         setAllTokens(notificationIds);
         // notify all using expo
         const extactAllTokens: string[] = allTokens.map(
-          (item) => item.notificationId
+          (item) => item.notificationId,
         );
 
         await sendExpoNotification(studentToken, {
@@ -466,7 +503,37 @@ const AddEventScreen = () => {
           ))}
 
           {/* --- Evaluation Questions --- */}
-          <Text style={styles.sectionHeader}>📝 Evaluation Questions</Text>
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <Text style={styles.sectionHeader}>📝 Evaluation Questions</Text>
+            <Picker
+              selectedValue={selectedTemplateId}
+              onValueChange={(value) => setSelectedTemplateId(value)}
+              style={{
+                backgroundColor: "#fff",
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                color: "#000",
+              }}
+            >
+              <Picker.Item
+                label="Select Evaluation Template"
+                value=""
+                enabled={false}
+                color="#999"
+              />
+
+              {evaluationTemplateState.map((template) => (
+                <Picker.Item
+                  key={template.id}
+                  label={template.templateName}
+                  value={template.id}
+                />
+              ))}
+            </Picker>
+          </View>
           <TextInput
             placeholder="Enter question"
             style={styles.input}
