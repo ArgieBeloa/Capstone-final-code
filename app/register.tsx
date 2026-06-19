@@ -123,6 +123,7 @@ const Register = () => {
     studentRecentEvaluations: [],
     studentNotifications: [],
     studentEventAttendedAndEvaluationDetails: [],
+    officerCredentials: { canAddEvent: false, canEditEvent: false },
   };
 
   // ✅ Validate inputs (like HTML required)
