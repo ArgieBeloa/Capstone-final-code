@@ -330,7 +330,10 @@ const Profile = () => {
                       ) : (
                         <Entypo name="cycle" size={24} color="orange" />
                       )}
-                      <Text style={styles.statusText}>Attended</Text>
+                      <Text style={styles.statusText}>
+                        {" "}
+                        {item.attended ? "Attended" : "Pending"}
+                      </Text>
 
                       {item.evaluated ? (
                         <Entypo name="check" size={24} color="green" />
