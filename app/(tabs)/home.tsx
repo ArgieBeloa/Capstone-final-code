@@ -75,6 +75,7 @@ const Home = () => {
   const [searchId, setSearchId] = useState("no id");
   const scrollX = useRef(new Animated.Value(0)).current;
   const [events, setEvent] = useState<EventModel[]>([]);
+  const imageCache = useRef<Record<string, string | null>>({});
 
   const haddleRegisterClick = (id: string) => {
     router.push(`../EventDetails/${id}`);
@@ -204,18 +205,33 @@ const Home = () => {
     );
   };
 
-  const RenderUpcomingEvents = ({ item }: { item: StudentUpcomingEvents }) => {
-    const [imageUri, setImageUri] = useState<string | null>(null);
-    const [loadingImage, setLoadingImage] = useState(true);
+  const RenderUpcomingEvents = React.memo(
+    ({ item }: { item: StudentUpcomingEvents }) => {
+      const [imageUri, setImageUri] = useState<string | null>(null);
+      const [loadingImage, setLoadingImage] = useState(true);
 
-    useEffect(() => {
-      if (isUserHasInternet) {
+      useEffect(() => {
         const loadImage = async () => {
+          if (!item.eventImageUrl) {
+            setLoadingImage(false);
+            return;
+          }
+
+          const imageUrl = item.eventImageUrl;
+
           try {
-            const uri = await fetchEventImageById(
-              item.eventImageUrl!,
-              studentToken,
-            );
+            // Check cache first
+            const cachedUri = imageCache.current[imageUrl];
+
+            if (cachedUri) {
+              setImageUri(cachedUri);
+              return;
+            }
+
+            // Fetch image only once
+            const uri = await fetchEventImageById(imageUrl, studentToken);
+
+            imageCache.current[imageUrl] = uri;
             setImageUri(uri);
           } catch (error) {
             console.error(
@@ -228,58 +244,62 @@ const Home = () => {
         };
 
         loadImage();
-      } else {
-        setLoadingImage(false);
-      }
-    }, [item.eventImageUrl]);
+      }, [item.eventImageUrl, studentToken]);
 
-    return (
-      <TouchableHighlight onPress={() => haddleRegisterClick(item.eventId)}>
-        <ImageBackground
-          source={
-            imageUri
-              ? { uri: imageUri }
-              : getEventImageByLocation(item.eventLocation)
-          }
-          style={[styles.page, { flex: 1 }]}
-          resizeMode="cover"
-        >
-          {/* Loading overlay */}
-          {loadingImage && (
-            <View
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: "rgba(0,0,0,0.2)",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <ActivityIndicator size="large" color="#fff" />
+      return (
+        <TouchableHighlight onPress={() => haddleRegisterClick(item.eventId)}>
+          <ImageBackground
+            source={
+              imageUri
+                ? { uri: imageUri }
+                : getEventImageByLocation(item.eventLocation)
+            }
+            style={[styles.page, { flex: 1 }]}
+            resizeMode="cover"
+          >
+            {/* Loading overlay */}
+            {loadingImage && (
+              <View
+                style={{
+                  ...StyleSheet.absoluteFillObject,
+                  backgroundColor: "rgba(0,0,0,0.2)",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            )}
+            <View style={styles.page}>
+              <Text style={styles.pageTitle}>{item.eventTitle}</Text>
+              <View style={styles.pageInfoRow}>
+                <AntDesign
+                  name="calendar"
+                  size={17}
+                  color={COLORS.textColorWhite}
+                />
+                <Text style={styles.pageConatinerText}>{item.eventDate}</Text>
+                <AntDesign
+                  name="clockcircleo"
+                  size={17}
+                  color={COLORS.textColorWhite}
+                />
+                <Text style={styles.pageConatinerText}>{item.eventTime}</Text>
+                <Entypo
+                  name="location"
+                  size={17}
+                  color={COLORS.textColorWhite}
+                />
+                <Text style={styles.pageConatinerText}>
+                  {item.eventLocation}
+                </Text>
+              </View>
             </View>
-          )}
-          <View style={styles.page}>
-            <Text style={styles.pageTitle}>{item.eventTitle}</Text>
-            <View style={styles.pageInfoRow}>
-              <AntDesign
-                name="calendar"
-                size={17}
-                color={COLORS.textColorWhite}
-              />
-              <Text style={styles.pageConatinerText}>{item.eventDate}</Text>
-              <AntDesign
-                name="clockcircleo"
-                size={17}
-                color={COLORS.textColorWhite}
-              />
-              <Text style={styles.pageConatinerText}>{item.eventTime}</Text>
-              <Entypo name="location" size={17} color={COLORS.textColorWhite} />
-              <Text style={styles.pageConatinerText}>{item.eventLocation}</Text>
-            </View>
-          </View>
-        </ImageBackground>
-      </TouchableHighlight>
-    );
-  };
+          </ImageBackground>
+        </TouchableHighlight>
+      );
+    },
+  );
 
   useEffect(() => {
     const requestNotificationPermission = async () => {

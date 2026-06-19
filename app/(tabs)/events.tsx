@@ -11,7 +11,7 @@ import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { AntDesign, Entypo, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -50,6 +50,8 @@ const Events = () => {
 
   const [allEvents, setAllEvents] = useState<EventModel[]>([]);
   const [eventState, setEventState] = useState<EventModel[]>();
+  const imageCache = useRef<Record<string, string | null>>({});
+
   const [student, setStudent] = useState<StudentModel>();
 
   const [studentNotification, setStudentNotification] = useState<number>(
@@ -207,34 +209,43 @@ const Events = () => {
     );
   };
 
-  const RenderEvents = ({ item }: { item: EventModel }) => {
+  const RenderEvents = React.memo(({ item }: { item: EventModel }) => {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [loadingImage, setLoadingImage] = useState(true);
 
     useEffect(() => {
-      if (isUserHasInternet) {
-        const loadImage = async () => {
-          try {
-            const uri = await fetchEventImageById(
-              item.eventImageUrl!,
-              studentToken,
-            );
-            setImageUri(uri);
-          } catch (error) {
-            console.error(
-              `❌ Failed to load image for event ${item.id}:`,
-              error,
-            );
-          } finally {
-            setLoadingImage(false);
-          }
-        };
+      const loadImage = async () => {
+        if (!item.eventImageUrl) {
+          setLoadingImage(false);
+          return;
+        }
 
-        loadImage();
-      } else {
-        setLoadingImage(false);
-      }
-    }, [item.eventImageUrl]);
+        const imageUrl = item.eventImageUrl;
+
+        try {
+          // Check cache first
+          const cachedUri = imageCache.current[imageUrl];
+
+          if (cachedUri) {
+            setImageUri(cachedUri);
+            return;
+          }
+
+          // Fetch image only once
+          const uri = await fetchEventImageById(imageUrl, studentToken);
+
+          imageCache.current[imageUrl] = uri;
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl, studentToken]);
+
     return (
       <TouchableHighlight onPress={() => haddleViewDetails(item.id)}>
         <View style={styles.eventFlatListContainer}>
@@ -297,7 +308,7 @@ const Events = () => {
         </View>
       </TouchableHighlight>
     );
-  };
+  });
 
   return (
     <LinearbackGround>

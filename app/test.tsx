@@ -1,8 +1,7 @@
-import React from "react";
+import { getEventImageUrl } from "@/api/events/controller";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-
 
 /*
  1. create a file that handle qr generate for student attendance
@@ -14,6 +13,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 */
 const test = () => {
+  const [imageState, setImageState] = useState();
+
+  useEffect(() => {
+    const getEventImage = async () => {
+      try {
+        const image = await getEventImageUrl("69d319b84a055f6c2a57bd69");
+
+        // setImageState(image )
+        console.log(image);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getEventImage();
+  }, []);
   return (
     <SafeAreaView>
       <View>

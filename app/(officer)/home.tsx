@@ -5,7 +5,7 @@ import LinearProgressBar from "@/components/LinearProgressBar";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -43,6 +43,7 @@ const Home = () => {
   const [eventState, setEventState] = useState<EventModel[]>([]);
   const [allTokens, setAllTokens] = useState<{ notificationId: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const imageCache = useRef<Record<string, string | null>>({});
 
   // useFocusEffect(
   //   useCallback(() => {
@@ -163,23 +164,33 @@ const Home = () => {
       setLoading(false);
     }
   };
-  const RenderLatestEvent = ({
-    latestEventState,
-  }: {
-    latestEventState: EventModel;
-  }) => {
-    const [imageUri, setImageUri] = useState<string | null>(null);
-    const [loadingImage, setLoadingImage] = useState(true);
+  const RenderLatestEvent = React.memo(
+    ({ latestEventState }: { latestEventState: EventModel }) => {
+      const [imageUri, setImageUri] = useState<string | null>(null);
+      const [loadingImage, setLoadingImage] = useState(true);
 
-    useEffect(() => {
-      if (isUserHasInternet) {
+      useEffect(() => {
         const loadImage = async () => {
-          console.log(latestEventState.eventImageUrl);
+          if (!latestEventState.eventImageUrl) {
+            setLoadingImage(false);
+            return;
+          }
+
+          const imageUrl = latestEventState.eventImageUrl;
+
           try {
-            const uri = await fetchEventImageById(
-              latestEventState.eventImageUrl!,
-              studentToken,
-            );
+            // Check cache first
+            const cachedUri = imageCache.current[imageUrl];
+
+            if (cachedUri) {
+              setImageUri(cachedUri);
+              return;
+            }
+
+            // Fetch image only once
+            const uri = await fetchEventImageById(imageUrl, studentToken);
+
+            imageCache.current[imageUrl] = uri;
             setImageUri(uri);
           } catch (error) {
             console.error(
@@ -192,100 +203,105 @@ const Home = () => {
         };
 
         loadImage();
-      } else {
-        setLoadingImage(false);
-      }
-    }, [latestEventState.eventImageUrl]);
+      }, [latestEventState.eventImageUrl, studentToken]);
 
-    // Remove duplicated names and no name value
-    const totalNumberEvaluated = [
-      ...new Map(
-        latestEventState.eventEvaluationDetails
-          .filter((item) => item.studentName?.trim())
-          .map((item) => [item.studentName.trim(), item]),
-      ).values(),
-    ].length;
+      // Remove duplicated names and no name value
+      const totalNumberEvaluated = [
+        ...new Map(
+          latestEventState.eventEvaluationDetails
+            .filter((item) => item.studentName?.trim())
+            .map((item) => [item.studentName.trim(), item]),
+        ).values(),
+      ].length;
 
-    return (
-      <TouchableOpacity
-        onPress={() =>
-          router.push(`../officerEventDetails/${latestEventState.id}`)
-        }
-        style={styles.card}
-      >
-        <Image
-          source={
-            imageUri
-              ? { uri: imageUri }
-              : getEventImageByLocation(latestEventState.eventLocation)
+      return (
+        <TouchableOpacity
+          onPress={() =>
+            router.push(`../officerEventDetails/${latestEventState.id}`)
           }
-          resizeMode="cover"
-          style={styles.eventImage}
-        />
-        {/* Loading overlay */}
-        {loadingImage && (
-          <View
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              backgroundColor: "rgba(0,0,0,0.2)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <ActivityIndicator size="large" color="#fff" />
+          style={styles.card}
+        >
+          <Image
+            source={
+              imageUri
+                ? { uri: imageUri }
+                : getEventImageByLocation(latestEventState.eventLocation)
+            }
+            resizeMode="cover"
+            style={styles.eventImage}
+          />
+          {/* Loading overlay */}
+          {loadingImage && (
+            <View
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: "rgba(0,0,0,0.2)",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          )}
+          <View style={styles.eventInfo}>
+            <Text style={styles.title}>{latestEventState.eventTitle}</Text>
+            <Text style={styles.info}>{latestEventState.eventDate}</Text>
+            <Text style={styles.info}>{latestEventState.eventTime}</Text>
+            <Text style={styles.info}>{latestEventState.eventTimeLength}</Text>
+
+            <LinearProgressBar
+              value={latestEventState.eventAttendances?.length || 0}
+              max={latestEventState.allStudentAttending}
+              title={"Attended"}
+            />
+            <LinearProgressBar
+              value={totalNumberEvaluated || 0}
+              // value={latestEventState.eventEvaluationDetails?.length || 0}
+              max={latestEventState.eventAttendances?.length || 0}
+              title={"Evaluated"}
+            />
           </View>
-        )}
-        <View style={styles.eventInfo}>
-          <Text style={styles.title}>{latestEventState.eventTitle}</Text>
-          <Text style={styles.info}>{latestEventState.eventDate}</Text>
-          <Text style={styles.info}>{latestEventState.eventTime}</Text>
-          <Text style={styles.info}>{latestEventState.eventTimeLength}</Text>
+        </TouchableOpacity>
+      );
+    },
+  );
 
-          <LinearProgressBar
-            value={latestEventState.eventAttendances?.length || 0}
-            max={latestEventState.allStudentAttending}
-            title={"Attended"}
-          />
-          <LinearProgressBar
-            value={totalNumberEvaluated || 0}
-            // value={latestEventState.eventEvaluationDetails?.length || 0}
-            max={latestEventState.eventAttendances?.length || 0}
-            title={"Evaluated"}
-          />
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const RenderAllEvents = ({ item }: { item: EventModel }) => {
+  const RenderAllEvents = React.memo(({ item }: { item: EventModel }) => {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [loadingImage, setLoadingImage] = useState(true);
 
     useEffect(() => {
-      if (isUserHasInternet) {
-        const loadImage = async () => {
-          console.log(item.eventImageUrl);
-          try {
-            const uri = await fetchEventImageById(
-              item.eventImageUrl!,
-              studentToken,
-            );
-            setImageUri(uri);
-          } catch (error) {
-            console.error(
-              `❌ Failed to load image for event ${item.id}:`,
-              error,
-            );
-          } finally {
-            setLoadingImage(false);
-          }
-        };
+      const loadImage = async () => {
+        if (!item.eventImageUrl) {
+          setLoadingImage(false);
+          return;
+        }
 
-        loadImage();
-      } else {
-        setLoadingImage(false);
-      }
-    }, [item.eventImageUrl]);
+        const imageUrl = item.eventImageUrl;
+
+        try {
+          // Check cache first
+          const cachedUri = imageCache.current[imageUrl];
+
+          if (cachedUri) {
+            setImageUri(cachedUri);
+            return;
+          }
+
+          // Fetch image only once
+          const uri = await fetchEventImageById(imageUrl, studentToken);
+
+          imageCache.current[imageUrl] = uri;
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl, studentToken]);
     // Remove duplicated names and no name value
     const totalNumberEvaluated = [
       ...new Map(
@@ -342,7 +358,7 @@ const Home = () => {
         </View>
       </TouchableOpacity>
     );
-  };
+  });
 
   return (
     <LinearbackGround>

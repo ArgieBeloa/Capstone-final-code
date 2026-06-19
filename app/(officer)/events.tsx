@@ -14,7 +14,7 @@ import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { AntDesign, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -55,6 +55,7 @@ const Events = () => {
   const [searchSuggestion, setSearchSuggestion] = useState<EventModel[]>([]);
 
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const imageCache = useRef<Record<string, string | null>>({});
 
   const navigationTitle = ["All", "Technology", "Academic", "Health", "Others"];
   // const dateString = new Date(Date.now()).toString();
@@ -242,35 +243,42 @@ const Events = () => {
 
   */
 
-  const RenderEventItem = ({ item }: { item: EventModel }) => {
+  const RenderEventItem = React.memo(({ item }: { item: EventModel }) => {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [loadingImage, setLoadingImage] = useState(true);
 
     useEffect(() => {
-      if (isUserHasInternet) {
-        const loadImage = async () => {
-          console.log(item.eventImageUrl);
-          try {
-            const uri = await fetchEventImageById(
-              item.eventImageUrl!,
-              studentToken,
-            );
-            setImageUri(uri);
-          } catch (error) {
-            console.error(
-              `❌ Failed to load image for event ${item.id}:`,
-              error,
-            );
-          } finally {
-            setLoadingImage(false);
-          }
-        };
+      const loadImage = async () => {
+        if (!item.eventImageUrl) {
+          setLoadingImage(false);
+          return;
+        }
 
-        loadImage();
-      } else {
-        setLoadingImage(false);
-      }
-    }, [item.eventImageUrl]);
+        const imageUrl = item.eventImageUrl;
+
+        try {
+          // Check cache first
+          const cachedUri = imageCache.current[imageUrl];
+
+          if (cachedUri) {
+            setImageUri(cachedUri);
+            return;
+          }
+
+          // Fetch image only once
+          const uri = await fetchEventImageById(imageUrl, studentToken);
+
+          imageCache.current[imageUrl] = uri;
+          setImageUri(uri);
+        } catch (error) {
+          console.error(`❌ Failed to load image for event ${item.id}:`, error);
+        } finally {
+          setLoadingImage(false);
+        }
+      };
+
+      loadImage();
+    }, [item.eventImageUrl, studentToken]);
 
     return (
       <TouchableHighlight
@@ -347,7 +355,7 @@ const Events = () => {
         </View>
       </TouchableHighlight>
     );
-  };
+  });
 
   return (
     <LinearbackGround>
