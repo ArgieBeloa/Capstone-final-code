@@ -352,7 +352,7 @@ const PrintScreen = () => {
           }}
         >
           <Text style={{ flex: 2 }}>
-            {index + 1} {evalItem.studentName}
+            {index + 1}. {evalItem.studentName}
           </Text>
         </View>
       ))}

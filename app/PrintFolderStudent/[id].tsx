@@ -14,7 +14,7 @@ import {
   Text,
   TouchableHighlight,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import { getEventById } from "@/api/events/controller";
@@ -429,7 +429,9 @@ const PrintScreen = () => {
             backgroundColor: index % 2 === 0 ? "#fff" : "#f9f9f9",
           }}
         >
-          <Text style={{ flex: 2 }}>{evalItem.studentName}</Text>
+          <Text style={{ flex: 2 }}>
+            {index + 1}. {evalItem.studentName}
+          </Text>
 
           <Text
             style={{

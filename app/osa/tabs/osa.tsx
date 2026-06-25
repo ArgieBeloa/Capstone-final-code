@@ -376,7 +376,9 @@ const OsaScreen: React.FC = () => {
                   </Text>
                   {/* can edit event */}
                   {/* Can Edit Event */}
-                  <TouchableOpacity onPress={() => setCanEditEvent(true)}>
+                  <TouchableOpacity
+                    onPress={() => setCanEditEvent((prev) => !prev)}
+                  >
                     <view style={{ flexDirection: "row" }}>
                       <Ionicons
                         name={canEditEvent ? "create" : "create-outline"}
@@ -389,9 +391,7 @@ const OsaScreen: React.FC = () => {
 
                   {/* Can Add Event */}
                   <TouchableOpacity
-                    onPress={() => {
-                      setCanAddEvent(true);
-                    }}
+                    onPress={() => setCanAddEvent((prev) => !prev)}
                   >
                     <view
                       style={{
