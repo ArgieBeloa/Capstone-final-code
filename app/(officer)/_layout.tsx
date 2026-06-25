@@ -84,6 +84,17 @@ const Layout = () => {
           },
         }}
       />
+
+      <Tabs.Screen
+        name="students"
+        options={{
+          title: "Students",
+          tabBarIcon: ({ color, size, focused }) => {
+            const iconName = focused ? "school" : "school-outline";
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+        }}
+      />
     </Tabs>
   );
 };

@@ -65,7 +65,7 @@ const Students = () => {
       };
       loadStudents();
       animateList();
-    }, [studentToken])
+    }, [studentToken]),
   );
 
   // 🔹 Filter logic for dropdown
@@ -78,11 +78,14 @@ const Students = () => {
 
     const lower = searchText.toLowerCase();
     const filtered = studentsData.filter((student) =>
-      student.studentName.toLowerCase().includes(lower)
+      student.studentName.toLowerCase().includes(lower),
     );
 
     // ✅ Only show dropdown if text doesn’t exactly match a student
-    if (filtered.length > 0 && !filtered.some((s) => s.studentName === searchText)) {
+    if (
+      filtered.length > 0 &&
+      !filtered.some((s) => s.studentName === searchText)
+    ) {
       setFilteredStudents(filtered);
       setShowResults(true);
     } else {
@@ -105,7 +108,7 @@ const Students = () => {
       (s) =>
         s.studentName.toLowerCase() === lower ||
         s.studentNumber.toLowerCase() === lower ||
-        s.id?.toLowerCase() === lower
+        s.id?.toLowerCase() === lower,
     );
 
     if (match.length > 0) {
@@ -126,7 +129,7 @@ const Students = () => {
   const getColorIcon = (student: StudentModel): string => {
     const attended = student.studentEventAttended.length;
     const evaluatedCount = student.studentEventAttended.filter(
-      (e) => e.evaluated
+      (e) => e.evaluated,
     ).length;
 
     if (numberOfEvents === 0) return "gray";

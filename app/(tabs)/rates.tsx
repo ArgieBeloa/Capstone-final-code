@@ -24,7 +24,7 @@ const Rates = () => {
 
   const [studentAttendentState, setStudentAttendedState] = useState<
     StudentEventAttended[]
-  >([]);
+  >(studentData.studentEventAttended);
 
   const router = useRouter();
 
