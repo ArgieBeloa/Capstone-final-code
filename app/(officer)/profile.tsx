@@ -176,7 +176,11 @@ const Profile = () => {
   };
 
   // Upload local attendance to cloud
-  const handleAttendanceLocal = async (id: string, eventTitle: string) => {
+  const handleAttendanceLocal = async (
+    id: string,
+    eventTitle: string,
+    evaluationEnd: string,
+  ) => {
     if (isLoading) return; // prevent double click
     setIsLoading(true);
 
@@ -203,6 +207,7 @@ const Profile = () => {
             eventId: id,
             eventTitle,
             studentDateAttended: item.dateScanned,
+            evaluationTime: evaluationEnd,
             evaluated: false,
           });
 
@@ -413,7 +418,13 @@ const Profile = () => {
             renderItem={({ item }) => (
               <EventCard
                 event={item}
-                onPrint={() => handleAttendanceLocal(item.id, item.eventTitle)}
+                onPrint={() =>
+                  handleAttendanceLocal(
+                    item.id,
+                    item.eventTitle,
+                    item.evaluationEnd,
+                  )
+                }
                 uploadBtn
               />
             )}

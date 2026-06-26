@@ -75,7 +75,10 @@ const Rates = () => {
                   return (
                     <TouchableHighlight
                       onPress={() => haddleEvaluationPage(item.eventId)}
-                      disabled={item.evaluated}
+                      disabled={
+                        item.evaluated ||
+                        new Date() > new Date(item.evaluationTime)
+                      }
                     >
                       <Animated.View
                         entering={FadeInUp.duration(500)}
@@ -105,9 +108,28 @@ const Rates = () => {
                             </View>
                           ) : (
                             <View style={{ alignItems: "center" }}>
-                              <Entypo name="warning" size={22} color="red" />
-                              <Text style={{ fontSize: 10, fontWeight: "500" }}>
-                                Required
+                              <Entypo
+                                name="warning"
+                                size={22}
+                                color={
+                                  new Date() > new Date(item.evaluationTime)
+                                    ? "red"
+                                    : "orange"
+                                }
+                              />
+                              <Text
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: "500",
+                                  color:
+                                    new Date() > new Date(item.evaluationTime)
+                                      ? "red"
+                                      : "orange",
+                                }}
+                              >
+                                {new Date() > new Date(item.evaluationTime)
+                                  ? "Expired"
+                                  : "Required"}
                               </Text>
                             </View>
                           )}

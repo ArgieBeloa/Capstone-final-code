@@ -565,7 +565,7 @@ const Home = () => {
         {/* Upcoming Events */}
         <Text style={styles.eventTextTitle}>Upcoming events</Text>
         <Animated.FlatList
-          data={events}
+          data={[...events].reverse()}
           contentContainerStyle={{ marginHorizontal: 10 }}
           renderItem={({ item }: { item: EventModel }) => (
             <TouchableHighlight onPress={() => haddleRegisterClick(item.id)}>

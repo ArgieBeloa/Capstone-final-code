@@ -3,7 +3,7 @@ import {
   EventAgenda,
   EventAttendance,
   EventEvaluationDetails,
-  EventOrganizer
+  EventOrganizer,
 } from "./utils";
 
 // ===============================
@@ -23,6 +23,8 @@ export interface EventModel {
   eventDate: string; // e.g., "2025-11-15"
   eventTime: string; // e.g., "09:00 AM"
   eventTimeLength: string; // e.g., "2 hours"
+  evaluationStart: string;
+  evaluationEnd: string;
   eventLocation: string;
   eventCategory: string;
 
@@ -36,6 +38,6 @@ export interface EventModel {
   eventEvaluationDetails: EventEvaluationDetails[];
 
   // 🖼️ Image fields
-  eventImageId?: string;     // MongoDB ObjectId of image in GridFS
-  eventImageUrl?: string;    // Public URL from backend (e.g. https://.../api/events/image/{id})
+  eventImageId?: string; // MongoDB ObjectId of image in GridFS
+  eventImageUrl?: string; // Public URL from backend (e.g. https://.../api/events/image/{id})
 }

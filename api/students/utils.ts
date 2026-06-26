@@ -19,6 +19,7 @@ export interface StudentEventAttended {
   eventTitle: string;
   studentDateAttended: string; // ISO date string
   evaluated: boolean;
+  evaluationTime: string;
 }
 
 // 🔹 StudentRecentEvaluation.java

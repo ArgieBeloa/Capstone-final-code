@@ -22,7 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 // Icons & Components
 import Loading from "@/components/Loading";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
 // Types
 import {
@@ -61,6 +61,8 @@ export default function RatingsScreen() {
   const [suggestion, setSuggestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // ⭐ Render stars
   const renderStars = (questionId: string) => {
@@ -189,9 +191,12 @@ export default function RatingsScreen() {
       // );
 
       setSuccessModalVisible(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Failed to submit evaluation:", error);
       Alert.alert("Error", "Failed to submit evaluation. Please try again.");
+      setErrorMessage(error.message || "Failed to submit evaluation.");
+
+      setErrorModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -232,6 +237,34 @@ export default function RatingsScreen() {
     >
       <LinearbackGround>
         <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.infoBox}>
+            <Text style={styles.label}>Rating Guide</Text>
+
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color={COLORS.Primary} />
+              <Text style={styles.ratingText}> 1 Star = Poor</Text>
+            </View>
+
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color={COLORS.Primary} />
+              <Text style={styles.ratingText}> 2 Stars = Fair</Text>
+            </View>
+
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color={COLORS.Primary} />
+              <Text style={styles.ratingText}> 3 Stars = Good</Text>
+            </View>
+
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color={COLORS.Primary} />
+              <Text style={styles.ratingText}> 4 Stars = Very Good</Text>
+            </View>
+
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={16} color={COLORS.Primary} />
+              <Text style={styles.ratingText}> 5 Stars = Excellent</Text>
+            </View>
+          </View>
           <Animated.FlatList
             data={evaluationData}
             keyExtractor={(item) => item.questionId}
@@ -276,6 +309,53 @@ export default function RatingsScreen() {
                 >
                   <Text style={styles.buttonText}>Go to Home</Text>
                 </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={errorModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setErrorModalVisible(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <View
+                style={{
+                  width: "80%",
+                  backgroundColor: "#fff",
+                  padding: 20,
+                  borderRadius: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    marginBottom: 10,
+                  }}
+                >
+                  Error
+                </Text>
+
+                <Text>{errorMessage}</Text>
+
+                <TouchableOpacity
+                  onPress={() => setErrorModalVisible(false)}
+                  style={{
+                    marginTop: 20,
+                    alignSelf: "flex-end",
+                  }}
+                >
+                  <Text style={{ color: "red", fontWeight: "bold" }}>OK</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
@@ -344,4 +424,26 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   modalText: { fontSize: 14, textAlign: "center" },
+  infoBox: {
+    backgroundColor: "#fff",
+    padding: 15,
+    margin: 10,
+    borderRadius: 10,
+    marginVertical: 10,
+    elevation: 2,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  ratingText: {
+    fontSize: 14,
+    marginLeft: 6,
+  },
 });

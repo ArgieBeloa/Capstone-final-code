@@ -16,7 +16,7 @@ import { useUser } from "@/src/userContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Calendar, Clock } from "lucide-react-native";
+import { ArrowLeft, Clock } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -92,11 +92,16 @@ const AddEventScreen = () => {
   const [agendaTime, setAgendaTime] = useState("");
   const [agendaHost, setAgendaHost] = useState("");
   const [questionText, setQuestionText] = useState("");
+  const [evaluationStart, setEvaluationStart] = useState<Date | null>(null);
+  const [evaluationEnd, setEvaluationEnd] = useState<Date | null>(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [showEvaluationStartPicker, setShowEvaluationStartPicker] =
+    useState(false);
+  const [showEvaluationEndPicker, setShowEvaluationEndPicker] = useState(false);
 
   const selectedTemplate = evaluationTemplateState.find(
     (t) => t.id === selectedTemplateId,
@@ -112,6 +117,8 @@ const AddEventScreen = () => {
     eventDate &&
     eventStartTime &&
     eventEndTime &&
+    evaluationStart &&
+    evaluationEnd &&
     eventLocation &&
     eventCategory &&
     organizerName &&
@@ -201,6 +208,8 @@ const AddEventScreen = () => {
         allStudentAttending: 0,
         eventDate: formattedDate,
         eventTime: formattedStart,
+        evaluationStart: evaluationStart?.toISOString(),
+        evaluationEnd: evaluationEnd?.toISOString(),
         eventLocation,
         eventCategory,
         eventTimeLength: `${formattedStart} - ${formattedEnd}`,
@@ -346,27 +355,71 @@ const AddEventScreen = () => {
           {/* Date Picker */}
           <TouchableOpacity
             style={styles.rowInput}
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowDatePicker(true);
+              }
+            }}
           >
-            <Calendar color={COLORS.Primary} />
+            <Clock color={COLORS.Primary} />
             <Text style={styles.rowText}>
               {eventDate
-                ? eventDate.toISOString().split("T")[0]
-                : "Pick Event Date"}
+                ? `Event date: ${eventDate.toLocaleString()}`
+                : "Pick Date"}
             </Text>
           </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              mode="date"
-              value={eventDate || new Date()}
-              onChange={handleDateChange}
-            />
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="datetime-local"
+                value={
+                  eventDate
+                    ? new Date(
+                        eventDate.getTime() -
+                          eventDate.getTimezoneOffset() * 60000,
+                      )
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setEventDate(new Date(e.target.value));
+                  }
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showDatePicker && (
+              <DateTimePicker
+                mode="datetime"
+                value={eventDate || new Date()}
+                display="default"
+                onChange={(_, date) => {
+                  setShowDatePicker(false);
+                  if (date) {
+                    setEventDate(date);
+                  }
+                }}
+              />
+            )
           )}
 
           {/* Start Time */}
           <TouchableOpacity
             style={styles.rowInput}
-            onPress={() => setShowStartTimePicker(true)}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowStartTimePicker(true);
+              }
+            }}
           >
             <Clock color={COLORS.Primary} />
             <Text style={styles.rowText}>
@@ -378,18 +431,60 @@ const AddEventScreen = () => {
                 : "Pick Start Time"}
             </Text>
           </TouchableOpacity>
-          {showStartTimePicker && (
-            <DateTimePicker
-              mode="time"
-              value={eventStartTime || new Date()}
-              onChange={handleStartTimeChange}
-            />
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="time"
+                value={
+                  eventStartTime
+                    ? eventStartTime.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })
+                    : ""
+                }
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value
+                    .split(":")
+                    .map(Number);
+
+                  const date = eventStartTime || new Date();
+                  date.setHours(hours);
+                  date.setMinutes(minutes);
+                  date.setSeconds(0);
+                  date.setMilliseconds(0);
+
+                  setEventStartTime(new Date(date));
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showStartTimePicker && (
+              <DateTimePicker
+                mode="time"
+                value={eventStartTime || new Date()}
+                display="default"
+                onChange={handleStartTimeChange}
+              />
+            )
           )}
 
           {/* End Time */}
           <TouchableOpacity
             style={styles.rowInput}
-            onPress={() => setShowEndTimePicker(true)}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowEndTimePicker(true);
+              }
+            }}
           >
             <Clock color={COLORS.Primary} />
             <Text style={styles.rowText}>
@@ -401,14 +496,172 @@ const AddEventScreen = () => {
                 : "Pick End Time"}
             </Text>
           </TouchableOpacity>
-          {showEndTimePicker && (
-            <DateTimePicker
-              mode="time"
-              value={eventEndTime || new Date()}
-              onChange={handleEndTimeChange}
-            />
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="time"
+                value={
+                  eventEndTime
+                    ? eventEndTime.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })
+                    : ""
+                }
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value
+                    .split(":")
+                    .map(Number);
+
+                  const date = eventEndTime || new Date();
+                  date.setHours(hours);
+                  date.setMinutes(minutes);
+                  date.setSeconds(0);
+                  date.setMilliseconds(0);
+
+                  setEventEndTime(new Date(date));
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showEndTimePicker && (
+              <DateTimePicker
+                mode="time"
+                display="default"
+                value={eventEndTime || new Date()}
+                onChange={handleEndTimeChange}
+              />
+            )
           )}
 
+          {/* Evaluation Start */}
+          <TouchableOpacity
+            style={styles.rowInput}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowEvaluationStartPicker(true);
+              }
+            }}
+          >
+            <Clock color={COLORS.Primary} />
+            <Text style={styles.rowText}>
+              {evaluationStart
+                ? `Evaluation Starts: ${evaluationStart.toLocaleString()}`
+                : "Pick Evaluation Start"}
+            </Text>
+          </TouchableOpacity>
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="datetime-local"
+                value={
+                  evaluationStart
+                    ? new Date(
+                        evaluationStart.getTime() -
+                          evaluationStart.getTimezoneOffset() * 60000,
+                      )
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setEvaluationStart(new Date(e.target.value));
+                  }
+                }}
+                style={{
+                  // width: "100%",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showEvaluationStartPicker && (
+              <DateTimePicker
+                mode="datetime"
+                value={evaluationStart || new Date()}
+                display="default"
+                onChange={(_, date) => {
+                  setShowEvaluationStartPicker(false);
+                  if (date) {
+                    setEvaluationStart(date);
+                  }
+                }}
+              />
+            )
+          )}
+
+          {/* Evaluation End */}
+          <TouchableOpacity
+            style={styles.rowInput}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowEvaluationEndPicker(true);
+              }
+            }}
+          >
+            <Clock color={COLORS.Primary} />
+            <Text style={styles.rowText}>
+              {evaluationEnd
+                ? `Evaluation Ends: ${evaluationEnd.toLocaleString()}`
+                : "Pick Evaluation End"}
+            </Text>
+          </TouchableOpacity>
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="datetime-local"
+                value={
+                  evaluationEnd
+                    ? new Date(
+                        evaluationEnd.getTime() -
+                          evaluationEnd.getTimezoneOffset() * 60000,
+                      )
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setEvaluationEnd(new Date(e.target.value));
+                  }
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showEvaluationEndPicker && (
+              <DateTimePicker
+                mode="datetime"
+                value={evaluationEnd || new Date()}
+                display="default"
+                onChange={(_, date) => {
+                  setShowEvaluationEndPicker(false);
+                  if (date) {
+                    setEvaluationEnd(date);
+                  }
+                }}
+              />
+            )
+          )}
           {/* Other Inputs */}
           <Picker
             selectedValue={eventLocation}
