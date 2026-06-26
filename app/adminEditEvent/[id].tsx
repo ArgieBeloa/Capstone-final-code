@@ -3,9 +3,12 @@ import { approvalUpdateEvent } from "@/api/admin/utils";
 import { updateEvent } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EvaluationQuestion, EventAgenda } from "@/api/events/utils";
+import DateTemplate from "@/components/DateTemplate";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Clock } from "lucide-react-native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -33,7 +36,9 @@ const EditEvent = () => {
   const [eventShortDescription, setEventShortDescription] = useState("");
   const [eventBody, setEventBody] = useState("");
   const [eventTime, setEventTime] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [eventDate, setEventDate] = useState<Date>();
+  const [evaluationStart, setEvaluationStart] = useState<Date | null>();
+  const [evaluationEnd, setEvaluationEnd] = useState<Date | null>();
   const [eventLocation, setEventLocation] = useState("");
   const [eventCategory, setEventCategory] = useState("");
   const [organizerName, setOrganizerName] = useState("");
@@ -44,6 +49,11 @@ const EditEvent = () => {
   >([]);
   const [approveEvent, setApproveEvent] = useState<approvalUpdateEvent[]>([]);
 
+  // Modal show
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEvaluationStartPicker, setShowEvaluationStartPicker] =
+    useState(false);
+  const [showEvaluationEndPicker, setShowEvaluationEndPicker] = useState(false);
   // AGENDA FUNCTION
   const updateAgenda = (
     index: number,
@@ -128,13 +138,15 @@ const EditEvent = () => {
         eventCategory,
         eventTimeLength: eventTime,
         eventDate,
+        evaluationStart,
+        evaluationEnd,
         eventOrganizer: {
           organizerName,
           organizerEmail,
         },
         eventAgendas: eventAgenda,
         evaluationQuestions: eventEvaluationQuestion,
-      } as EventModel;
+      } as unknown as EventModel;
 
       const res = await updateEvent(id as string, updatedEvent, studentToken);
       await deleteApprovalEvent(
@@ -177,7 +189,11 @@ const EditEvent = () => {
     if (approveEvent.length > 0) {
       const event = approveEvent.find((event) => event.id === id);
       setEvent(event);
+
       if (!event) return;
+      const evaluationStart = event.evaluationStart
+        ? new Date(event.evaluationStart)
+        : null;
 
       setEventTitle(event.eventTitle);
       setEventShortDescription(event.eventShortDescription);
@@ -185,7 +201,12 @@ const EditEvent = () => {
       setEventLocation(event.eventLocation);
       setEventCategory(event.eventCategory);
       setEventTime(event.eventTimeLength);
-      setEventDate(event.eventDate);
+      setEventDate(event.eventDate ? new Date(event.eventDate) : undefined);
+      setEvaluationStart(
+        evaluationStart && !isNaN(evaluationStart.getTime())
+          ? evaluationStart
+          : null,
+      );
       setOrganizerName(event.eventOrganizer.organizerName);
       setOrganizerEmail(event.eventOrganizer.organizerEmail);
       setEventAgenda(event.eventAgendas);
@@ -268,12 +289,88 @@ const EditEvent = () => {
 
           {/* event date*/}
           <Text style={styles.textInfo}>Event Date</Text>
-          <TextInput
+          {/* <TextInput
             style={styles.input}
             value={eventDate}
             onChangeText={setEventDate}
+          /> */}
+          <TouchableOpacity
+            style={styles.rowInput}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowDatePicker(true);
+              }
+            }}
+          >
+            <Clock color={COLORS.Primary} />
+            <Text style={styles.rowText}>
+              {eventDate
+                ? `Event date: ${eventDate.toLocaleString()}`
+                : "Pick Date"}
+            </Text>
+          </TouchableOpacity>
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="datetime-local"
+                value={
+                  eventDate
+                    ? new Date(
+                        eventDate.getTime() -
+                          eventDate.getTimezoneOffset() * 60000,
+                      )
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setEventDate(new Date(e.target.value));
+                  }
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showDatePicker && (
+              <DateTimePicker
+                mode="datetime"
+                value={eventDate || new Date()}
+                display="default"
+                onChange={(_, date) => {
+                  setShowDatePicker(false);
+                  if (date) {
+                    setEventDate(date);
+                  }
+                }}
+              />
+            )
+          )}
+
+          {/* Evaluation Start */}
+          <Text style={styles.textInfo}>Evaluation start</Text>
+          <DateTemplate
+            label="Evaluation Start"
+            dateState={evaluationStart ?? null}
+            setDateState={setEvaluationStart}
+            show={showEvaluationStartPicker}
+            setShow={setShowEvaluationStartPicker}
           />
 
+          {/* Evaluation End */}
+          <DateTemplate
+            label="Evaluation End"
+            dateState={evaluationEnd ?? null}
+            setDateState={setEvaluationEnd}
+            show={showEvaluationEndPicker}
+            setShow={setShowEvaluationEndPicker}
+          />
           {/* event category */}
           <Text style={styles.textInfo}>Event Category</Text>
           <TextInput
