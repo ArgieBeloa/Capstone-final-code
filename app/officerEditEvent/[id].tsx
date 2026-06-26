@@ -324,6 +324,8 @@ const EditEvent = () => {
           />
 
           {/* Evaluation End */}
+          <Text style={styles.textInfo}>Evaluation End</Text>
+
           <DateTemplate
             label="Evaluation End"
             dateState={evaluationEnd ?? null}

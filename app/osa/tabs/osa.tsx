@@ -1,3 +1,4 @@
+import { AdminModel } from "@/api/admin/adminModel";
 import {
   addNewOfficer,
   deleteCurrentOfficer,
@@ -60,6 +61,8 @@ const OsaScreen: React.FC = () => {
     StudentModel | undefined
   >();
   const [currentOfficer, setCurrentOfficer] = useState<currentOfficer[]>([]);
+  const [adminData, setAdminData] = useState<AdminModel>();
+
   const [canEditEvent, setCanEditEvent] = useState<boolean>(false);
   const [canAddEvent, setCanAddEvent] = useState<boolean>(false);
 
@@ -89,6 +92,7 @@ const OsaScreen: React.FC = () => {
   const getAdminData = async () => {
     try {
       const adminData = await getAdminById(studentToken, id);
+      setAdminData(adminData);
       setCurrentOfficer(adminData.currentOfficer);
     } catch (error) {
       console.log(error);
@@ -439,6 +443,10 @@ const OsaScreen: React.FC = () => {
           )}
 
           {/* Officer List */}
+          <Text
+            style={styles.adminText}
+          >{`Good Day ${adminData?.adminName}`}</Text>
+
           <Text style={styles.currentOfficerText}>Current Officers</Text>
 
           <Animated.FlatList
@@ -1023,4 +1031,10 @@ const styles = StyleSheet.create({
   officerAvatarText: { color: "#fff", fontSize: 20, fontWeight: "700" },
   officerName: { color: "#222", fontSize: 16, fontWeight: "600" },
   officerDetails: { color: "#7B8A9A", fontSize: 13, marginTop: 2 },
+  adminText: {
+    marginLeft: 10,
+    color: "#000000",
+    fontSize: 20,
+    fontWeight: "700",
+  },
 });

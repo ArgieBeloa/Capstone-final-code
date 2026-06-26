@@ -35,9 +35,8 @@ import {
 } from "@/api/local/local";
 import { getOfflineEvents } from "@/api/local/userOffline";
 import {
-  addEventAttendance,
   deleteStudentNotification,
-  markStudentAttended,
+  markStudentAttended
 } from "@/api/students/controller";
 
 // Type for local attendance
@@ -158,6 +157,8 @@ const Profile = () => {
         );
 
         setLocalEvents(localEventsData);
+        //
+        // localEventsData.forEach((e) => console.log(e));
       };
 
       reloadLocalEvents();
@@ -203,13 +204,14 @@ const Profile = () => {
             dateScanned: item.dateScanned,
           });
 
-          await addEventAttendance(studentToken, item.studentId, {
-            eventId: id,
-            eventTitle,
-            studentDateAttended: item.dateScanned,
-            evaluationTime: evaluationEnd,
-            evaluated: false,
-          });
+          // await addEventAttendance(studentToken, item.studentId, {
+          //   eventId: id,
+          //   eventTitle,
+          //   studentDateAttended: item.dateScanned,
+          //   evaluationTime: item,
+          //   evaluated: false,
+          // });
+          console.log("Item ", item);
 
           await markStudentAttended(studentToken, item.studentId, id);
 
@@ -415,19 +417,21 @@ const Profile = () => {
           <FlatList
             data={localEvents}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <EventCard
-                event={item}
-                onPrint={() =>
-                  handleAttendanceLocal(
-                    item.id,
-                    item.eventTitle,
-                    item.evaluationEnd,
-                  )
-                }
-                uploadBtn
-              />
-            )}
+            renderItem={({ item }) => {
+              return (
+                <EventCard
+                  event={item}
+                  onPrint={() => {
+                    handleAttendanceLocal(
+                      item.id,
+                      item.eventTitle,
+                      item.evaluationEnd,
+                    );
+                  }}
+                  uploadBtn
+                />
+              );
+            }}
             ListEmptyComponent={
               <Text style={styles.emptyText}>No local attendance yet.</Text>
             }

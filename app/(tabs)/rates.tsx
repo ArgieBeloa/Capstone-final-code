@@ -72,6 +72,8 @@ const Rates = () => {
                 keyExtractor={(item) => item.eventId}
                 contentContainerStyle={{ marginHorizontal: 10 }}
                 renderItem={({ item }) => {
+                  console.log(item.evaluationTime);
+
                   return (
                     <TouchableHighlight
                       onPress={() => haddleEvaluationPage(item.eventId)}

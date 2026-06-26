@@ -18,6 +18,7 @@ import {
 // ✅ IMPORT FROM local.ts (single source of truth)
 import { EventAttendance } from "@/api/events/utils";
 import { addStudent } from "@/api/local/local";
+import { addEventAttendance } from "@/api/students/controller";
 import { useLocalSearchParams } from "expo-router";
 
 export default function OfficerScanner() {
@@ -31,9 +32,10 @@ export default function OfficerScanner() {
   const [modalMessage, setModalMessage] = useState("");
 
   const [permission, requestPermission] = useCameraPermissions();
-  const { studentData } = useUser();
+  const { studentData, studentToken, eventData } = useUser();
 
   const student: StudentModel = studentData;
+  const event = eventData.find((e) => e.id === (id as string));
 
   // 🔄 App foreground/background handler
   useEffect(() => {
@@ -102,8 +104,23 @@ export default function OfficerScanner() {
       console.log("💾 Saving to local storage...");
       await addStudent(id as string, studentQRGenerated);
 
+      // try to upload student
+      const student = await addEventAttendance(
+        studentToken,
+        parsedQR.studentId,
+        {
+          eventId: id as string,
+          eventTitle: event?.eventTitle || "",
+          studentDateAttended: parsedQR.dateScanned,
+          evaluated: false,
+          evaluationTime: event?.evaluationEnd || "",
+        },
+      );
+
+      console.log("Added success ", student);
+
       setModalMessage(
-        `Name: ${studentQRGenerated.studentName}\nDepartment: ${studentQRGenerated.studentName}`,
+        `Name: ${studentQRGenerated.studentName}\nDepartment: ${studentQRGenerated.department}`,
       );
     } catch (error: any) {
       console.error("❌ QR Scan Error:", error.message);

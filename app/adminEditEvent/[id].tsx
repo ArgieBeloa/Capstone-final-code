@@ -194,6 +194,9 @@ const EditEvent = () => {
       const evaluationStart = event.evaluationStart
         ? new Date(event.evaluationStart)
         : null;
+      const evaluationEndVariable = event.evaluationEnd
+        ? new Date(event.evaluationEnd)
+        : null;
 
       setEventTitle(event.eventTitle);
       setEventShortDescription(event.eventShortDescription);
@@ -207,8 +210,11 @@ const EditEvent = () => {
           ? evaluationStart
           : null,
       );
+
       setEvaluationEnd(
-        evaluationEnd && !isNaN(evaluationEnd.getTime()) ? evaluationEnd : null,
+        evaluationEndVariable && !isNaN(evaluationEndVariable.getTime())
+          ? evaluationEndVariable
+          : null,
       );
       setOrganizerName(event.eventOrganizer.organizerName);
       setOrganizerEmail(event.eventOrganizer.organizerEmail);
@@ -367,6 +373,7 @@ const EditEvent = () => {
           />
 
           {/* Evaluation End */}
+          <Text style={styles.textInfo}>Evaluation End</Text>
           <DateTemplate
             label="Evaluation End"
             dateState={evaluationEnd ?? null}
