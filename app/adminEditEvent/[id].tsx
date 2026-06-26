@@ -207,6 +207,9 @@ const EditEvent = () => {
           ? evaluationStart
           : null,
       );
+      setEvaluationEnd(
+        evaluationEnd && !isNaN(evaluationEnd.getTime()) ? evaluationEnd : null,
+      );
       setOrganizerName(event.eventOrganizer.organizerName);
       setOrganizerEmail(event.eventOrganizer.organizerEmail);
       setEventAgenda(event.eventAgendas);

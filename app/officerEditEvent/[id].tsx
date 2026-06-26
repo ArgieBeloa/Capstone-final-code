@@ -181,7 +181,12 @@ const EditEvent = () => {
         const eventTimeLength = res.eventTimeLength;
         setEventTime(eventTimeLength);
         setEventDate(res.eventDate ? new Date(res.eventDate) : undefined);
-
+        setEvaluationStart(
+          res.evaluationStart ? new Date(res.evaluationStart) : undefined,
+        );
+        setEvaluationEnd(
+          res.evaluationEnd ? new Date(res.evaluationEnd) : undefined,
+        );
         setOrganizerName(res.eventOrganizer.organizerName);
         setOrganizerEmail(res.eventOrganizer.organizerEmail);
         setEventAgenda(res.eventAgendas);
