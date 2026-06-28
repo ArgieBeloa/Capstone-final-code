@@ -3,7 +3,7 @@ import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import ViewPanel from "@/components/ViewPanel";
 import { COLORS } from "@/constants/ColorCpc";
-import { Entypo, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -22,6 +22,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { registerForPushNotificationsAsync } from "../src/pushToken";
 // import { Student } from "./Oop/Types";
 import { StudentModel } from "@/api/students/model";
+import { Course } from "@/api/students/utils";
+import { Picker } from "@react-native-picker/picker";
 
 const Register = () => {
   const [fullname, setFullname] = useState("");
@@ -36,6 +38,9 @@ const Register = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState(
+    Course.BACHELOR_OF_SCIENCE_IN_INFORMATION_TECHNOLOGY,
+  );
 
   // 🔴 Add validation state
   const [errors, setErrors] = useState<{
@@ -115,7 +120,7 @@ const Register = () => {
     studentNumber: username,
     role: "STUDENT",
     studentPassword: password,
-    course: course,
+    course: selectedCourse,
     department: department,
     notificationId: expoPushToken || "no token",
     studentUpcomingEvents: [],
@@ -206,7 +211,7 @@ const Register = () => {
             )}
 
             {/* COURSE */}
-            <Text style={styles.text}>Course</Text>
+            {/* <Text style={styles.text}>Course</Text>
             <View style={styles.container}>
               <Entypo name="graduation-cap" size={20} color="black" />
               <TextInput
@@ -222,7 +227,24 @@ const Register = () => {
             </View>
             {errors.course && (
               <Text style={styles.errorText}>{errors.course}</Text>
-            )}
+            )} */}
+
+            <View style={styles.containerpicker}>
+              <Text style={styles.label}>Select Course</Text>
+
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedCourse}
+                  onValueChange={(itemValue) => setSelectedCourse(itemValue)}
+                  style={styles.picker}
+                  dropdownIconColor="#2563eb"
+                >
+                  {Object.values(Course).map((course) => (
+                    <Picker.Item key={course} label={course} value={course} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
 
             {/* STUDENT NUMBER */}
             <Text style={styles.text}>Student Number</Text>
@@ -375,6 +397,49 @@ export default Register;
 
 const styles = StyleSheet.create({
   safeAreaView: { flex: 1 },
+  picker: {
+    height: 55,
+
+    color: "#111827",
+  },
+
+  pickerWrapper: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    marginVertical: 10,
+
+    // Android shadow
+    elevation: 2,
+
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    marginBottom: 16,
+  },
+  containerpicker: {
+    paddingVertical: 5,
+  },
+
   viewContainer: {
     width: "95%",
     maxWidth: 1000,
