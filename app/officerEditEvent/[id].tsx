@@ -4,6 +4,7 @@ import { getEventById } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EvaluationQuestion, EventAgenda } from "@/api/events/utils";
 import DateTemplate from "@/components/DateTemplate";
+import TimeTemplate from "@/components/TimeTemplate";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -36,7 +37,7 @@ const EditEvent = () => {
   const [eventTitle, setEventTitle] = useState("");
   const [eventShortDescription, setEventShortDescription] = useState("");
   const [eventBody, setEventBody] = useState("");
-  const [eventTime, setEventTime] = useState("");
+  const [eventTime, setEventTime] = useState<Date | undefined>();
   const [eventDate, setEventDate] = useState<Date>();
   const [evaluationStart, setEvaluationStart] = useState<Date | null>();
   const [evaluationEnd, setEvaluationEnd] = useState<Date | null>();
@@ -54,6 +55,7 @@ const EditEvent = () => {
   const [showEvaluationStartPicker, setShowEvaluationStartPicker] =
     useState(false);
   const [showEvaluationEndPicker, setShowEvaluationEndPicker] = useState(false);
+  const [showTimeModal, setShowTimeModal] = useState(false);
 
   // AGENDA FUNCTION
   const updateAgenda = (
@@ -87,6 +89,23 @@ const EditEvent = () => {
   };
 
   // Evalution FUNCTION
+  const parseTime = (time: string): Date | undefined => {
+    if (!time) return undefined;
+
+    const [clock, period] = time.split(" ");
+    const [hourStr, minuteStr] = clock.split(":");
+
+    let hours = Number(hourStr);
+    const minutes = Number(minuteStr);
+
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+
+    return date;
+  };
   const updateEvaluationQuestion = (
     index: number,
     field: keyof EvaluationQuestion,
@@ -138,7 +157,7 @@ const EditEvent = () => {
         eventBody,
         eventLocation,
         eventCategory,
-        eventTimeLength: eventTime,
+        eventTime: eventTime,
         eventDate,
         evaluationStart,
         evaluationEnd,
@@ -172,15 +191,15 @@ const EditEvent = () => {
     const getEvent = async () => {
       try {
         const res = await getEventById(studentToken, id as string);
+
         setEvent(res);
         setEventTitle(res.eventTitle);
         setEventShortDescription(res.eventShortDescription);
         setEventBody(res.eventBody);
         setEventLocation(res.eventLocation);
         setEventCategory(res.eventCategory);
-        const eventTimeLength = res.eventTimeLength;
-        setEventTime(eventTimeLength);
-        setEventDate(res.eventDate ? new Date(res.eventDate) : undefined);
+        setEventTime(res.eventTime ? new Date(res.eventTime) : undefined);
+        setEventTime(new Date(res.eventTime));
         setEvaluationStart(
           res.evaluationStart ? new Date(res.evaluationStart) : undefined,
         );
@@ -241,10 +260,17 @@ const EditEvent = () => {
 
           {/* event Time */}
           <Text style={styles.textInfo}>Event Time</Text>
-          <TextInput
+          {/* <TextInput
             style={styles.input}
             value={eventTime}
             onChangeText={setEventTime}
+          /> */}
+          <TimeTemplate
+            label="Event Time"
+            time={eventTime}
+            setTime={setEventTime}
+            showModal={showTimeModal}
+            setShowModal={setShowTimeModal}
           />
 
           {/* event date*/}
