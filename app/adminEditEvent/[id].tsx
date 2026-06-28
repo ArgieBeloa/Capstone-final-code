@@ -37,6 +37,8 @@ const EditEvent = () => {
   const [eventShortDescription, setEventShortDescription] = useState("");
   const [eventBody, setEventBody] = useState("");
   const [eventTime, setEventTime] = useState<Date | undefined>();
+  const [eventTimeEnd, setEventTimeEnd] = useState<Date | undefined>();
+
   const [eventDate, setEventDate] = useState<Date>();
   const [evaluationStart, setEvaluationStart] = useState<Date | null>();
   const [evaluationEnd, setEvaluationEnd] = useState<Date | null>();
@@ -56,6 +58,7 @@ const EditEvent = () => {
     useState(false);
   const [showEvaluationEndPicker, setShowEvaluationEndPicker] = useState(false);
   const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showTimeEndModal, setShowTimeEndModal] = useState(false);
 
   // AGENDA FUNCTION
   const updateAgenda = (
@@ -161,6 +164,12 @@ const EditEvent = () => {
       hour12: true,
     });
 
+    const eventLength = eventTimeEnd?.toLocaleTimeString("en-PH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
     try {
       const updatedEvent: EventModel = {
         ...event,
@@ -171,6 +180,7 @@ const EditEvent = () => {
         eventCategory,
         eventTime: timeString,
         eventDate: dateString,
+        eventTimeLength: `${timeString} - ${eventLength}`,
         evaluationStart,
         evaluationEnd,
         eventOrganizer: {
@@ -204,6 +214,34 @@ const EditEvent = () => {
   }, []);
 
   // Functions
+  const parseDate = (dateString: string): Date | undefined => {
+    if (!dateString) return undefined;
+
+    const date = new Date(dateString);
+
+    return isNaN(date.getTime()) ? undefined : date;
+  };
+
+  const parseTime = (time: string): Date => {
+    const [clock, modifier] = time.trim().split(" ");
+    const [hour, minute] = clock.split(":").map(Number);
+
+    let hours = hour;
+
+    if (modifier === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (modifier === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    const date = new Date();
+    date.setHours(hours, minute, 0, 0);
+
+    return date;
+  };
+
   const getAdminData = async () => {
     try {
       const adminData = await getAdminById(
@@ -231,15 +269,16 @@ const EditEvent = () => {
       const evaluationEndVariable = event.evaluationEnd
         ? new Date(event.evaluationEnd)
         : null;
+      const [start, end] = event.eventTimeLength.split(" - ");
 
       setEventTitle(event.eventTitle);
       setEventShortDescription(event.eventShortDescription);
       setEventBody(event.eventBody);
       setEventLocation(event.eventLocation);
       setEventCategory(event.eventCategory);
-      setEventTime(new Date(event.eventTime));
-
-      setEventDate(event.eventDate ? new Date(event.eventDate) : undefined);
+      setEventTime(parseTime(event.eventTime));
+      setEventTimeEnd(parseTime(end));
+      setEventDate(parseDate(event.eventDate));
       setEvaluationStart(
         evaluationStart && !isNaN(evaluationStart.getTime())
           ? evaluationStart
@@ -324,18 +363,28 @@ const EditEvent = () => {
           />
 
           {/* event Time */}
-          <Text style={styles.textInfo}>Event Time</Text>
+          <Text style={styles.textInfo}>Event Time Start</Text>
           {/* <TextInput
             style={styles.input}
             value={eventTime}
             onChangeText={setEventTime}
           /> */}
           <TimeTemplate
-            label="Event Time"
+            label="Event Time Start"
             time={eventTime}
             setTime={setEventTime}
             showModal={showTimeModal}
             setShowModal={setShowTimeModal}
+          />
+
+          {/* event Time End*/}
+          <Text style={styles.textInfo}>Event Time End</Text>
+          <TimeTemplate
+            label="Event Time End"
+            time={eventTimeEnd}
+            setTime={setEventTimeEnd}
+            showModal={showTimeEndModal}
+            setShowModal={setShowTimeEndModal}
           />
 
           {/* event date*/}

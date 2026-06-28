@@ -4,7 +4,6 @@ import { getEventById } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EvaluationQuestion, EventAgenda } from "@/api/events/utils";
 import DateTemplate from "@/components/DateTemplate";
-import TimeTemplate from "@/components/TimeTemplate";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -37,7 +36,8 @@ const EditEvent = () => {
   const [eventTitle, setEventTitle] = useState("");
   const [eventShortDescription, setEventShortDescription] = useState("");
   const [eventBody, setEventBody] = useState("");
-  const [eventTime, setEventTime] = useState<Date | undefined>();
+  const [eventTime, setEventTime] = useState<Date>();
+  const [eventTimeEnd, setEventTimeEnd] = useState<Date>();
   const [eventDate, setEventDate] = useState<Date>();
   const [evaluationStart, setEvaluationStart] = useState<Date | null>();
   const [evaluationEnd, setEvaluationEnd] = useState<Date | null>();
@@ -52,10 +52,12 @@ const EditEvent = () => {
 
   // Modal show
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [showEvaluationStartPicker, setShowEvaluationStartPicker] =
     useState(false);
   const [showEvaluationEndPicker, setShowEvaluationEndPicker] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
 
   // AGENDA FUNCTION
   const updateAgenda = (
@@ -71,6 +73,42 @@ const EditEvent = () => {
     };
 
     setEventAgenda(updatedAgenda);
+  };
+
+  const handleStartTimeChange = (_: any, selected?: Date) => {
+    setShowStartTimePicker(false);
+    if (selected) setEventTime(selected);
+  };
+  const handleEndTimeChange = (_: any, selected?: Date) => {
+    setShowEndTimePicker(false);
+    if (selected) setEventTimeEnd(selected);
+  };
+  const parseDate = (dateString: string): Date | undefined => {
+    if (!dateString) return undefined;
+
+    const date = new Date(dateString);
+
+    return isNaN(date.getTime()) ? undefined : date;
+  };
+
+  const parseTime = (time: string): Date => {
+    const [clock, modifier] = time.trim().split(" ");
+    const [hour, minute] = clock.split(":").map(Number);
+
+    let hours = hour;
+
+    if (modifier === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (modifier === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    const date = new Date();
+    date.setHours(hours, minute, 0, 0);
+
+    return date;
   };
 
   const addAgenda = () => {
@@ -89,23 +127,7 @@ const EditEvent = () => {
   };
 
   // Evalution FUNCTION
-  const parseTime = (time: string): Date | undefined => {
-    if (!time) return undefined;
 
-    const [clock, period] = time.split(" ");
-    const [hourStr, minuteStr] = clock.split(":");
-
-    let hours = Number(hourStr);
-    const minutes = Number(minuteStr);
-
-    if (period === "PM" && hours !== 12) hours += 12;
-    if (period === "AM" && hours === 12) hours = 0;
-
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-
-    return date;
-  };
   const updateEvaluationQuestion = (
     index: number,
     field: keyof EvaluationQuestion,
@@ -148,6 +170,24 @@ const EditEvent = () => {
 
     setLoading(true);
 
+    // eventTimeLength: `${formattedStart} - ${formattedEnd}`,
+
+    const dateString = eventDate?.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Manila",
+    });
+
+    const timeString = eventTime?.toLocaleTimeString("en-PH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const eventLength = eventTimeEnd?.toLocaleTimeString("en-PH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
     try {
       const requestApproval: approvalUpdateEvent = {
         ...event,
@@ -157,8 +197,9 @@ const EditEvent = () => {
         eventBody,
         eventLocation,
         eventCategory,
-        eventTime: eventTime,
-        eventDate,
+        eventTime: timeString,
+        eventDate: dateString,
+        eventTimeLength: `${timeString} - ${eventLength}`,
         evaluationStart,
         evaluationEnd,
         eventOrganizer: {
@@ -192,14 +233,18 @@ const EditEvent = () => {
       try {
         const res = await getEventById(studentToken, id as string);
 
+        const [start, end] = res.eventTimeLength.split(" - ");
+
         setEvent(res);
         setEventTitle(res.eventTitle);
         setEventShortDescription(res.eventShortDescription);
         setEventBody(res.eventBody);
         setEventLocation(res.eventLocation);
         setEventCategory(res.eventCategory);
-        setEventTime(res.eventTime ? new Date(res.eventTime) : undefined);
-        setEventTime(new Date(res.eventTime));
+        (setEventTime(parseTime(res.eventTime)),
+          setEventTimeEnd(parseTime(end)));
+        setEventDate(parseDate(res.eventDate));
+
         setEvaluationStart(
           res.evaluationStart ? new Date(res.evaluationStart) : undefined,
         );
@@ -259,19 +304,136 @@ const EditEvent = () => {
           />
 
           {/* event Time */}
-          <Text style={styles.textInfo}>Event Time</Text>
-          {/* <TextInput
-            style={styles.input}
-            value={eventTime}
-            onChangeText={setEventTime}
-          /> */}
-          <TimeTemplate
-            label="Event Time"
-            time={eventTime}
-            setTime={setEventTime}
-            showModal={showTimeModal}
-            setShowModal={setShowTimeModal}
-          />
+
+          {/* Start Time */}
+          <TouchableOpacity
+            style={styles.rowInput}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowStartTimePicker(true);
+              }
+            }}
+          >
+            <Clock color={COLORS.Primary} />
+            <Text style={styles.rowText}>
+              {eventTime
+                ? `Start: ${eventTime.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}`
+                : "Pick Start Time"}
+            </Text>
+          </TouchableOpacity>
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="time"
+                value={
+                  eventTime
+                    ? eventTime.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })
+                    : ""
+                }
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value
+                    .split(":")
+                    .map(Number);
+
+                  const date = eventTime || new Date();
+                  date.setHours(hours);
+                  date.setMinutes(minutes);
+                  date.setSeconds(0);
+                  date.setMilliseconds(0);
+
+                  setEventTime(new Date(date));
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showStartTimePicker && (
+              <DateTimePicker
+                mode="time"
+                value={eventTime || new Date()}
+                display="default"
+                onChange={handleStartTimeChange}
+              />
+            )
+          )}
+
+          {/* End Time */}
+          <TouchableOpacity
+            style={styles.rowInput}
+            onPress={() => {
+              if (Platform.OS !== "web") {
+                setShowEndTimePicker(true);
+              }
+            }}
+          >
+            <Clock color={COLORS.Primary} />
+            <Text style={styles.rowText}>
+              {eventTimeEnd
+                ? `End: ${eventTimeEnd.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}`
+                : "Pick End Time"}
+            </Text>
+          </TouchableOpacity>
+
+          {Platform.OS === "web" ? (
+            <View style={{ marginVertical: 6 }}>
+              <input
+                type="time"
+                value={
+                  eventTimeEnd
+                    ? eventTimeEnd.toLocaleTimeString("en-GB", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })
+                    : ""
+                }
+                onChange={(e) => {
+                  const [hours, minutes] = e.target.value
+                    .split(":")
+                    .map(Number);
+
+                  const date = eventTimeEnd || new Date();
+                  date.setHours(hours);
+                  date.setMinutes(minutes);
+                  date.setSeconds(0);
+                  date.setMilliseconds(0);
+
+                  new Date(date);
+                }}
+                style={{
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid #ccc",
+                  fontSize: "16px",
+                }}
+              />
+            </View>
+          ) : (
+            showEndTimePicker && (
+              <DateTimePicker
+                mode="time"
+                display="default"
+                value={eventTimeEnd || new Date()}
+                onChange={handleEndTimeChange}
+              />
+            )
+          )}
 
           {/* event date*/}
           <Text style={styles.textInfo}>Event Date</Text>

@@ -190,14 +190,30 @@ const AddEventScreen = () => {
     if (!isFormValid) return Alert.alert("Error", "Please fill all fields.");
     setLoading(true);
     try {
-      const formattedDate = eventDate?.toISOString().split("T")[0] || "";
-      const formattedStart = eventStartTime?.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
+      // const formattedDate = eventDate?.toISOString().split("T")[0] || "";
+      // const formattedStart = eventStartTime?.toLocaleTimeString([], {
+      //   hour: "2-digit",
+      //   minute: "2-digit",
+      // });
+      // const formattedEnd = eventEndTime?.toLocaleTimeString([], {
+      //   hour: "2-digit",
+      //   minute: "2-digit",
+      // });
+
+      const dateString = eventDate?.toLocaleDateString("en-CA", {
+        timeZone: "Asia/Manila",
       });
-      const formattedEnd = eventEndTime?.toLocaleTimeString([], {
+
+      const timeString = eventStartTime?.toLocaleTimeString("en-PH", {
         hour: "2-digit",
         minute: "2-digit",
+        hour12: true,
+      });
+
+      const eventLength = eventEndTime?.toLocaleTimeString("en-PH", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
 
       const newEvent: any = {
@@ -206,13 +222,13 @@ const AddEventScreen = () => {
         eventShortDescription,
         eventBody,
         allStudentAttending: 0,
-        eventDate: formattedDate,
-        eventTime: formattedStart,
+        eventDate: dateString,
+        eventTime: timeString,
         evaluationStart: evaluationStart?.toISOString(),
         evaluationEnd: evaluationEnd?.toISOString(),
         eventLocation,
         eventCategory,
-        eventTimeLength: `${formattedStart} - ${formattedEnd}`,
+        eventTimeLength: `${timeString} - ${eventLength}`,
         eventOrganizer: { organizerName, organizerEmail },
         eventAttendances: [],
         eventAgendas,
