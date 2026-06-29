@@ -8,28 +8,28 @@ import LinearProgressBar from "@/components/LinearProgressBar";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import {
-    Entypo,
-    FontAwesome5,
-    Ionicons,
-    MaterialIcons,
+  Entypo,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Animated2 from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Students = () => {
-  const { studentToken } = useUser();
+  const { studentToken, eventData } = useUser();
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
@@ -42,6 +42,7 @@ const Students = () => {
   const [selectedStudent, setSelectedStudent] = useState<
     StudentEventAttendedAndEvaluationDetails[]
   >([]);
+  const [student, setStudent] = useState<StudentModel>();
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -51,7 +52,7 @@ const Students = () => {
 
     // }
     setSelectedStudent(student?.studentEventAttendedAndEvaluationDetails || []);
-
+    setStudent(student);
     setModalVisible(true);
   };
 
@@ -312,6 +313,41 @@ const Students = () => {
               <Text style={styles.sectionTitle}>
                 Event Attended & Evaluated
               </Text>
+              <View style={{ flexDirection: "column", marginVertical: 10 }}>
+                <Text
+                  style={styles.sectionTitle}
+                >{`Event Attended ${student?.studentEventAttended.length}/${eventData.length}`}</Text>
+                <Text style={styles.sectionTitle}>{`Event Evaluated ${
+                  student?.studentEventAttended.filter(
+                    (event) => event.evaluated === true,
+                  ).length
+                }/${eventData.length}`}</Text>
+                {/* <Text style={styles.sectionTitle}>Overall Percentage</Text> */}
+                <Text style={styles.sectionTitle}>
+                  {`Attendance: ${
+                    (student?.studentEventAttended?.length ?? 0) !== 0
+                      ? `${Math.round(
+                          ((student?.studentEventAttended?.length ?? 0) /
+                            eventData.length) *
+                            100,
+                        )}%`
+                      : "0%"
+                  }`}
+                </Text>
+                <Text style={styles.sectionTitle}>
+                  {`Evaluated: ${
+                    (student?.studentEventAttended?.length ?? 0) !== 0
+                      ? `${Math.round(
+                          ((student?.studentEventAttended.filter(
+                            (event) => event.evaluated === true,
+                          ).length ?? 0) /
+                            eventData.length) *
+                            100,
+                        )}%`
+                      : "0%"
+                  }`}
+                </Text>
+              </View>
 
               {selectedStudent.length !== 0 ? (
                 <Animated2.FlatList
