@@ -369,6 +369,8 @@ const AddEventScreen = () => {
           />
 
           {/* Date Picker */}
+          <Text style={styles.rowText}>Event Date</Text>
+
           <TouchableOpacity
             style={styles.rowInput}
             onPress={() => {
@@ -415,7 +417,7 @@ const AddEventScreen = () => {
           ) : (
             showDatePicker && (
               <DateTimePicker
-                mode="datetime"
+                mode="date"
                 value={eventDate || new Date()}
                 display="default"
                 onChange={(_, date) => {
@@ -429,6 +431,8 @@ const AddEventScreen = () => {
           )}
 
           {/* Start Time */}
+          <Text style={styles.rowText}>Event Start</Text>
+
           <TouchableOpacity
             style={styles.rowInput}
             onPress={() => {
@@ -494,6 +498,8 @@ const AddEventScreen = () => {
           )}
 
           {/* End Time */}
+          <Text style={styles.rowText}>Event End</Text>
+
           <TouchableOpacity
             style={styles.rowInput}
             onPress={() => {
@@ -559,6 +565,8 @@ const AddEventScreen = () => {
           )}
 
           {/* Evaluation Start */}
+          <Text style={styles.rowText}>Evaluation Start</Text>
+
           <TouchableOpacity
             style={styles.rowInput}
             onPress={() => {
@@ -620,6 +628,8 @@ const AddEventScreen = () => {
           )}
 
           {/* Evaluation End */}
+          <Text style={styles.rowText}>Evaluation End</Text>
+
           <TouchableOpacity
             style={styles.rowInput}
             onPress={() => {

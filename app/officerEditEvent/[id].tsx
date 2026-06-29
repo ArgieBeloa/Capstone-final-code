@@ -488,7 +488,7 @@ const EditEvent = () => {
           ) : (
             showDatePicker && (
               <DateTimePicker
-                mode="datetime"
+                mode="date"
                 value={eventDate || new Date()}
                 display="default"
                 onChange={(_, date) => {

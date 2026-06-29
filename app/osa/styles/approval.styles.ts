@@ -3,12 +3,12 @@ import { StyleSheet } from "react-native";
 
 export const approvalStyles = StyleSheet.create({
   mainContainer: {
+    flex: 1,
     backgroundColor: COLORS.Forth,
     width: "95%",
-    marginHorizontal: "auto",
+    alignSelf: "center",
     marginVertical: 10,
     borderRadius: 10,
-    paddingBottom: 10,
   },
   card: {
     backgroundColor: "#fff",
