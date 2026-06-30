@@ -27,7 +27,7 @@ import { Picker } from "@react-native-picker/picker";
 
 const Register = () => {
   const [fullname, setFullname] = useState("");
-  const [course, setCourse] = useState("");
+  // const [course, setCourse] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,7 +45,7 @@ const Register = () => {
   // 🔴 Add validation state
   const [errors, setErrors] = useState<{
     fullname?: string;
-    course?: string;
+    // selec?: string;
     username?: string;
     password?: string;
     confirmPassword?: string;
@@ -113,14 +113,14 @@ const Register = () => {
     // 🔸 fallback
     return "UNASSIGNED";
   };
-  const department = getDepartmentFromCourse(course);
+  const department = getDepartmentFromCourse(selectedCourse);
 
   const newStudent: StudentModel = {
     studentName: fullname,
     studentNumber: username,
     role: "STUDENT",
     studentPassword: password,
-    course: selectedCourse,
+    course: selectedCourse as string,
     department: department,
     notificationId: expoPushToken || "no token",
     studentUpcomingEvents: [],
@@ -135,7 +135,7 @@ const Register = () => {
   const validateFields = () => {
     const newErrors: any = {};
     if (!fullname.trim()) newErrors.fullname = "Full name is required";
-    if (!course.trim()) newErrors.course = "Course is required";
+    // if (!course.trim()) newErrors.course = "Course is required";
     if (!username.trim()) newErrors.username = "Student number is required";
     if (!password.trim()) newErrors.password = "Password is required";
     if (!confirmPassword.trim())
@@ -150,6 +150,7 @@ const Register = () => {
   };
 
   const haddleRegister = async () => {
+    console.log("Selected course ", selectedCourse);
     if (!validateFields()) return;
 
     setLoading(true);

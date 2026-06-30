@@ -201,7 +201,7 @@ const EventViewMore = () => {
                   size={26}
                   color={COLORS.Primary}
                 />
-                Names
+                <Text>Names</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -215,7 +215,7 @@ const EventViewMore = () => {
                   size={26}
                   color={COLORS.Primary}
                 />
-                Feedback
+                <Text>Feedback</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -229,7 +229,7 @@ const EventViewMore = () => {
                   size={26}
                   color={COLORS.Primary}
                 />
-                Full Report
+                <Text>Full Report</Text>
               </TouchableOpacity>
             </View>
 

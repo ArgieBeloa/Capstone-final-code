@@ -16,7 +16,7 @@ import Loading from "@/components/Loading";
 import Mymodal from "@/components/Mymodal";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { Entypo, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -29,6 +29,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableHighlight,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -81,6 +82,7 @@ const OsaScreen: React.FC = () => {
   const [showPromoteArea, setShowPromoteArea] = useState(false);
   const [isPromoted, setIsPromoted] = useState(false);
   const [isDemoteVisible, setIsDemoteVisible] = useState(false);
+  const [isLogout, setIsLogout] = useState(false);
 
   // TESTING ADMIN DATA
   useFocusEffect(
@@ -99,6 +101,10 @@ const OsaScreen: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    setIsLogout(false);
+    router.push("/");
+  };
   // 🧠 Load all students on mount
   useEffect(() => {
     const fetchStudents = async () => {
@@ -323,12 +329,26 @@ const OsaScreen: React.FC = () => {
             </View>
 
             {/* Announcement Button */}
-            <TouchableOpacity
-              style={{ marginHorizontal: 10 }}
-              onPress={() => setShowAnnouncementModal(true)}
-            >
-              <FontAwesome5 name="bullhorn" size={18} color="black" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                style={{ marginHorizontal: 10 }}
+                onPress={() => setShowAnnouncementModal(true)}
+              >
+                <FontAwesome5 name="bullhorn" size={18} color="black" />
+              </TouchableOpacity>
+
+              {/* Logout Button */}
+              <TouchableHighlight
+                onPress={() => setIsLogout(true)}
+                underlayColor="transparent"
+                style={styles.logoutBtn}
+              >
+                <View style={{ flexDirection: "row", gap: 5 }}>
+                  <Entypo name="log-out" size={22} color="black" />
+                  <Text>Logout</Text>
+                </View>
+              </TouchableHighlight>
+            </View>
           </View>
 
           {/* Search Results Dropdown */}
@@ -868,6 +888,32 @@ const OsaScreen: React.FC = () => {
             </View>
           </Modal>
         </View>
+
+        {/* Logout Modal */}
+        <Modal transparent visible={isLogout} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>
+                Are you sure you want to log out?
+              </Text>
+              <View style={{ flexDirection: "row", gap: 20 }}>
+                <Pressable
+                  onPress={() => setIsLogout(false)}
+                  style={styles.modalBtn}
+                >
+                  <Text>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleLogout}
+                  style={[styles.modalBtn, { backgroundColor: "red" }]}
+                >
+                  <Text style={{ color: "white" }}>Yes</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <FloatingButton
           iconName="plus"
           onPress={() => router.push("../../officerAddEvent/addEvent")}
@@ -977,6 +1023,31 @@ const styles = StyleSheet.create({
   studentAvatarText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   studentName: { fontSize: 16, fontWeight: "600", color: "black" },
   studentNumber: { fontSize: 14, color: "gray" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBox: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 12,
+    width: "80%",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  modalBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "#ccc",
+  },
 
   promoteContainer: {
     backgroundColor: "#fff",
@@ -992,6 +1063,8 @@ const styles = StyleSheet.create({
     color: "#222",
     marginBottom: 10,
   },
+  logoutBtn: { right: 10, zIndex: 10 },
+
   promoteButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
