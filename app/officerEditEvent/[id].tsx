@@ -147,7 +147,7 @@ const EditEvent = () => {
     setEventEvaluationQuestion([
       ...(eventEvaluationQuestion ?? []),
       {
-        questionId: "",
+        questionId: `${Date.now()}-${Math.random()}`,
         questionText: "",
       },
     ]);

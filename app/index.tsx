@@ -158,8 +158,6 @@ export default function Index() {
       } else {
         // student access
         router.push("/(tabs)/home");
-        // router.push("/(officer)/home");
-        // router.push("/osa/tabs/osa");
       }
 
       setLoading(false);

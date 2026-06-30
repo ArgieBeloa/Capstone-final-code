@@ -112,6 +112,7 @@ const Events = () => {
       }
 
       const allEvents = await getAllEvents(studentToken);
+      // console.log(allEvents);
       const query = searchText.toLowerCase();
 
       const filtered = allEvents
@@ -218,14 +219,15 @@ const Events = () => {
       setLoading(false);
     }
   };
-
   const isTodayEventDate = (eventDate: string): boolean => {
-    // Normalize to YYYY-MM-DD
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Manila",
+    });
 
-    // If eventDate already comes as YYYY-MM-DD
+    console.log("Today:", today);
+    console.log("Event:", eventDate);
+
     return today === eventDate;
-    // return today === today;
   };
 
   /*
