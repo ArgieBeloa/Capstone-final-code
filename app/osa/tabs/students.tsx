@@ -1,25 +1,35 @@
 import { getAllStudents } from "@/api/admin/controller";
 import { StudentModel } from "@/api/students/model";
+import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
+import Styles from "@/app/osa/styles/globalCss";
+import studentStyles from "@/app/osa/styles/students.styles";
 import LinearbackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
+import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
-import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  Entypo,
+  FontAwesome5,
+  Ionicons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   FlatList,
+  Modal,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated2 from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Styles from "../styles/globalCss";
-import studentStyles from "../styles/students.styles";
 
 const Students = () => {
-  const { studentToken } = useUser();
+  const { studentToken, eventData } = useUser();
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
@@ -29,6 +39,27 @@ const Students = () => {
   const [filteredStudents, setFilteredStudents] = useState<StudentModel[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<
+    StudentEventAttendedAndEvaluationDetails[]
+  >([]);
+  const [student, setStudent] = useState<StudentModel>();
+
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleOpenModal = (id: string) => {
+    const student = allStudents.find((student) => student.id === id);
+    // if(!student?.studentEventAttendedAndEvaluationDetails.length){
+
+    // }
+    setSelectedStudent(student?.studentEventAttendedAndEvaluationDetails || []);
+    setStudent(student);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedStudent([]);
+  };
 
   const numberOfEvents: number = 1;
 
@@ -143,52 +174,54 @@ const Students = () => {
 
   // 🔹 Render each student card
   const studentRenderItem = ({ item }: { item: StudentModel }) => (
-    <Animated.View
-      style={[
-        studentStyles.containerItem,
-        { opacity: fadeAnim, transform: [{ translateY }] },
-      ]}
-    >
-      {/* Avatar */}
-      <View style={studentStyles.avatarStudent}>
-        <Text style={studentStyles.avatarText}>
-          {item.studentName.charAt(0).toUpperCase()}
-        </Text>
-      </View>
+    <TouchableOpacity onPress={() => handleOpenModal(item.id as string)}>
+      <Animated.View
+        style={[
+          studentStyles.containerItem,
+          { opacity: fadeAnim, transform: [{ translateY }] },
+        ]}
+      >
+        {/* Avatar */}
+        <View style={studentStyles.avatarStudent}>
+          <Text style={studentStyles.avatarText}>
+            {item.studentName.charAt(0).toUpperCase()}
+          </Text>
+        </View>
 
-      {/* Info */}
-      <View style={studentStyles.containerStudentsInfo}>
-        <Text style={studentStyles.studentNameText}>
-          Name: {item.studentName}
-        </Text>
-        <Text style={studentStyles.studentCourseText}>
-          Course: {item.course}
-        </Text>
-        <Text style={studentStyles.studentCourseText}>
-          #: {item.studentNumber}
-        </Text>
+        {/* Info */}
+        <View style={studentStyles.containerStudentsInfo}>
+          <Text style={studentStyles.studentNameText}>
+            Name: {item.studentName}
+          </Text>
+          <Text style={studentStyles.studentCourseText}>
+            Course: {item.course}
+          </Text>
+          <Text style={studentStyles.studentCourseText}>
+            #: {item.studentNumber}
+          </Text>
 
-        <LinearProgressBar
-          value={item.studentEventAttended.length}
-          max={numberOfEvents}
-          title={"Attendance"}
-        />
-        <LinearProgressBar
-          value={item.studentRecentEvaluations.length}
-          max={numberOfEvents}
-          title={"Evaluation"}
-        />
-      </View>
+          <LinearProgressBar
+            value={item.studentEventAttended.length}
+            max={numberOfEvents}
+            title={"Attendance"}
+          />
+          <LinearProgressBar
+            value={item.studentRecentEvaluations.length}
+            max={numberOfEvents}
+            title={"Evaluation"}
+          />
+        </View>
 
-      {/* Status Icon */}
-      <View style={studentStyles.studentStatus}>
-        <MaterialIcons
-          name="sentiment-very-satisfied"
-          size={24}
-          color={getColorIcon(item)}
-        />
-      </View>
-    </Animated.View>
+        {/* Status Icon */}
+        <View style={studentStyles.studentStatus}>
+          <MaterialIcons
+            name="sentiment-very-satisfied"
+            size={24}
+            color={getColorIcon(item)}
+          />
+        </View>
+      </Animated.View>
+    </TouchableOpacity>
   );
 
   return (
@@ -269,9 +302,242 @@ const Students = () => {
             </Text>
           )}
         </View>
+
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={handleCloseModal}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.sectionTitle}>
+                Event Attended & Evaluated
+              </Text>
+              <View style={{ flexDirection: "column", marginVertical: 10 }}>
+                <Text
+                  style={styles.sectionTitle}
+                >{`Event Attended ${student?.studentEventAttended.length}/${eventData.length}`}</Text>
+                <Text style={styles.sectionTitle}>{`Event Evaluated ${
+                  student?.studentEventAttended.filter(
+                    (event) => event.evaluated === true,
+                  ).length
+                }/${eventData.length}`}</Text>
+                {/* <Text style={styles.sectionTitle}>Overall Percentage</Text> */}
+                <Text style={styles.sectionTitle}>
+                  {`Attendance: ${
+                    (student?.studentEventAttended?.length ?? 0) !== 0
+                      ? `${Math.round(
+                          ((student?.studentEventAttended?.length ?? 0) /
+                            eventData.length) *
+                            100,
+                        )}%`
+                      : "0%"
+                  }`}
+                </Text>
+                <Text style={styles.sectionTitle}>
+                  {`Evaluated: ${
+                    (student?.studentEventAttended?.length ?? 0) !== 0
+                      ? `${Math.round(
+                          ((student?.studentEventAttended.filter(
+                            (event) => event.evaluated === true,
+                          ).length ?? 0) /
+                            eventData.length) *
+                            100,
+                        )}%`
+                      : "0%"
+                  }`}
+                </Text>
+              </View>
+
+              {selectedStudent.length !== 0 ? (
+                <Animated2.FlatList
+                  data={selectedStudent}
+                  keyExtractor={(item) => item.eventId}
+                  style={{ flex: 1 }}
+                  showsVerticalScrollIndicator
+                  renderItem={({ item }) => (
+                    <Animated.View style={styles.eventCard}>
+                      <View>
+                        <Text style={styles.eventText}>{item.eventTitle}</Text>
+                        <Text style={styles.eventText}>
+                          {item.eventDateAndTime}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={{
+                          justifyContent: "center",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {item.attended ? (
+                          <Entypo name="check" size={24} color="green" />
+                        ) : (
+                          <Entypo name="cycle" size={24} color="orange" />
+                        )}
+                        <Text style={styles.statusText}>
+                          {" "}
+                          {item.attended ? "Attended" : "Pending"}
+                        </Text>
+
+                        {item.evaluated ? (
+                          <Entypo name="check" size={24} color="green" />
+                        ) : (
+                          <Entypo name="cross" size={24} color="red" />
+                        )}
+                        <Text style={styles.statusText}>Evaluated</Text>
+                      </View>
+                    </Animated.View>
+                  )}
+                />
+              ) : (
+                <View
+                  style={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flex: 1,
+                  }}
+                >
+                  <Text>No events available!</Text>
+                </View>
+              )}
+              <TouchableOpacity
+                onPress={handleCloseModal}
+                style={{
+                  backgroundColor: "#007AFF",
+                  padding: 12,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </LinearbackGround>
   );
 };
 
 export default Students;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.Forth,
+    marginHorizontal: "auto",
+    marginVertical: 10,
+    padding: 10,
+    width: "95%",
+    maxWidth: 600,
+    borderRadius: 7,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center" },
+  headerTitle: { fontSize: 20, fontWeight: "600" },
+  avatarArea: {
+    width: 60,
+    height: 60,
+    borderRadius: 40,
+    backgroundColor: "grey",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  avatarText: { color: "white", fontSize: 20, fontWeight: "bold" },
+  studentInfo: { marginVertical: 5 },
+  infoText: { fontWeight: "500", marginBottom: 2 },
+  circleContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  textWrapper: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+  },
+  ratingText: {
+    color: COLORS.TextColor,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  eventCard: {
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 7,
+    marginVertical: 5,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  eventText: { fontWeight: "500", fontSize: 13 },
+  statusText: { fontSize: 10, fontWeight: "500", marginHorizontal: 4 },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    marginBottom: 15,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 20,
+  },
+  modalBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    minWidth: 250,
+    alignItems: "center",
+  },
+  closeButton: {
+    backgroundColor: "#e74c3c",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+  emptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
+  },
+});

@@ -302,6 +302,7 @@ const Students = () => {
             </Text>
           )}
         </View>
+
         <Modal
           visible={modalVisible}
           animationType="slide"

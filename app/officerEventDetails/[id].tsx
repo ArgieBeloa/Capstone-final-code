@@ -101,6 +101,13 @@ const EventViewMore = () => {
   const handlePrintStudentNames = async (id: string) => {
     router.push(`../PrintFolderStudentNames/${id}`);
   };
+  const getPerformanceLabel = (rating: number) => {
+    if (rating >= 4.5) return "Excellent";
+    if (rating >= 3.5) return "Very Good";
+    if (rating >= 2.5) return "Good";
+    if (rating >= 1.5) return "Fair";
+    return "Poor";
+  };
 
   return (
     <LinearBackGround>
@@ -156,6 +163,17 @@ const EventViewMore = () => {
                 }}
               >
                 Performance
+              </Text>
+              <Text
+                style={{
+                  fontSize: labelFontSize - 2,
+                  fontWeight: "700",
+                  textAlign: "center",
+                  color: COLORS.Primary,
+                }}
+              >
+                {getPerformanceLabel(overallPerformance)}
+                {/* {getPerformanceLabel(4.6)} */}
               </Text>
             </View>
           </View>
