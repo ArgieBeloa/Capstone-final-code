@@ -1,7 +1,6 @@
 import {
-  addEventAttendanceRecords,
   addMultipleAttendance,
-  getAllEvents,
+  getAllEvents
 } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentModel } from "@/api/students/model";
@@ -13,8 +12,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
+  ActivityIndicator, Alert, Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -22,7 +20,7 @@ import {
   Text,
   TouchableHighlight,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -167,51 +165,81 @@ const Profile = () => {
   const handleAttendanceLocal = async (eventId: string) => {
     if (isLoading) return;
 
-    setIsLoading(true);
+    Alert.alert(
+      "Upload Attendance",
+      "Are you sure you want to upload the local attendance? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Upload",
+          onPress: async () => {
+            setIsLoading(true);
 
-    try {
-      const localAttendance = await loadLocalAttendance(eventId);
+            try {
+              const localAttendance = await loadLocalAttendance(eventId);
 
-      if (!localAttendance) {
-        return;
-      }
-      // Upload all attendance records in one request
-      await addMultipleAttendance(
-        localAttendance.eventId,
-        localAttendance.attendances,
-        studentToken,
-      );
+              if (!localAttendance) {
+                Alert.alert(
+                  "No Attendance",
+                  "No local attendance was found for this event.",
+                );
+                return;
+              }
 
-      await Promise.all(
-        localAttendance.attendances.map(async (item) => {
-          await addEventAttendanceRecords(
-            studentToken,
-            localAttendance.eventId,
-            item,
-          );
+              // Upload all attendance in one request
+              await addMultipleAttendance(
+                localAttendance.eventId,
+                localAttendance.attendances,
+                studentToken,
+              );
 
-          await markStudentAttended(
-            studentToken,
-            item.studentId,
-            localAttendance.eventId,
-          );
+              // Update student records
+              await Promise.all(
+                localAttendance.attendances.map(async (item) => {
+                  await markStudentAttended(
+                    studentToken,
+                    item.studentId,
+                    localAttendance.eventId,
+                  );
 
-          await deleteStudentNotification(
-            studentToken,
-            item.studentId,
-            localAttendance.eventId,
-          );
-        }),
-      );
+                  await deleteStudentNotification(
+                    studentToken,
+                    item.studentId,
+                    localAttendance.eventId,
+                  );
+                }),
+              );
 
-      await deleteLocalAttendanceByEventId(eventId);
+              // Remove local copy
+              await deleteLocalAttendanceByEventId(eventId);
 
-      setLocalEvents((prev) => prev.filter((e) => e.eventId !== eventId));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+              setLocalEvents((prev) =>
+                prev.filter((e) => e.eventId !== eventId),
+              );
+
+              Alert.alert(
+                "Upload Successful",
+                `${localAttendance.attendances.length} attendance record(s) uploaded successfully.`,
+              );
+            } catch (error: any) {
+              console.error("❌ Upload failed:", error);
+
+              Alert.alert(
+                "Upload Failed",
+                error?.response?.data ||
+                  error?.message ||
+                  "An unexpected error occurred.",
+              );
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Reusable Event Card
