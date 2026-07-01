@@ -18,7 +18,6 @@ import {
 // ✅ IMPORT FROM local.ts (single source of truth)
 import { EventAttendance } from "@/api/events/utils";
 import { addStudent } from "@/api/local/local";
-import { addEventAttendance } from "@/api/students/controller";
 import { useLocalSearchParams } from "expo-router";
 
 export default function OfficerScanner() {
@@ -102,20 +101,27 @@ export default function OfficerScanner() {
       console.log("✅ QR Parsed:", studentQRGenerated);
 
       console.log("💾 Saving to local storage...");
-      await addStudent(id as string, studentQRGenerated);
-
-      // try to upload student
-      const student = await addEventAttendance(
-        studentToken,
-        parsedQR.studentId,
-        {
-          eventId: id as string,
-          eventTitle: event?.eventTitle || "",
-          studentDateAttended: parsedQR.dateScanned,
-          evaluated: false,
-          evaluationTime: event?.evaluationEnd || "",
-        },
+      const localAttendance = await addStudent(
+        id as string,
+        event?.eventTitle || "",
+        studentQRGenerated,
       );
+
+      console.log("Local Attendance:", localAttendance);
+      // await addStudent(id as string, studentQRGenerated);
+
+      // // try to upload student
+      // const student = await addEventAttendance(
+      //   studentToken,
+      //   parsedQR.studentId,
+      //   {
+      //     eventId: id as string,
+      //     eventTitle: event?.eventTitle || "",
+      //     studentDateAttended: parsedQR.dateScanned,
+      //     evaluated: false,
+      //     evaluationTime: event?.evaluationEnd || "",
+      //   },
+      // );
 
       console.log("Added success ", student);
 

@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { EventAttendance } from "@/api/events/utils";
+import { LocalEventAttendance } from "./localUtils";
 
 // 🔑 Dynamic storage key per event
 const getStorageKey = (eventId: string) => `localStudents_${eventId}`;
@@ -18,44 +19,31 @@ export const debugStorage = async () => {
 };
 // 📦 Load ALL local attendance (all events)
 export const loadAllLocalAttendance = async (): Promise<
-  Record<string, EventAttendance[]>
+  Record<string, LocalEventAttendance>
 > => {
   try {
-    log("LOADING ALL LOCAL ATTENDANCE...");
-
     const keys = await AsyncStorage.getAllKeys();
 
-    // only keys that belong to attendance
     const attendanceKeys = keys.filter((k) => k.startsWith("localStudents_"));
-
-    if (attendanceKeys.length === 0) {
-      log("NO LOCAL ATTENDANCE FOUND");
-      return {};
-    }
 
     const entries = await AsyncStorage.multiGet(attendanceKeys);
 
-    const result: Record<string, EventAttendance[]> = {};
+    const result: Record<string, LocalEventAttendance> = {};
 
     for (const [key, value] of entries) {
       if (!value) continue;
 
-      try {
-        const eventId = key.replace("localStudents_", "");
-        result[eventId] = JSON.parse(value) as EventAttendance[];
-      } catch (err) {
-        console.error("[AsyncStorage] PARSE ERROR", key, err);
-      }
+      const attendance = JSON.parse(value) as LocalEventAttendance;
+
+      result[attendance.eventId] = attendance;
     }
 
-    log("ALL LOCAL ATTENDANCE LOADED", result);
     return result;
-  } catch (error) {
-    console.error("[AsyncStorage] LOAD ALL ERROR", error);
+  } catch (e) {
+    console.error(e);
     return {};
   }
 };
-
 // 💾 Save (overwrite)
 export const saveStudents = async (
   eventId: string,
@@ -89,28 +77,85 @@ export const loadStudents = async (
     return [];
   }
 };
+// ADD local attenande for after use
+export const saveAttendance = async (
+  eventId: string,
+  eventTitle: string,
+  attendances: EventAttendance[],
+) => {
+  const key = `localStudents_${eventId}`;
+
+  const data: LocalEventAttendance = {
+    eventId,
+    eventTitle,
+    attendances,
+  };
+
+  await AsyncStorage.setItem(key, JSON.stringify(data));
+};
+
+// VIEW the local attenance
+export const loadLocalAttendance = async (
+  eventId: string,
+): Promise<LocalEventAttendance | null> => {
+  const key = `localStudents_${eventId}`;
+
+  const data = await AsyncStorage.getItem(key);
+
+  if (!data) return null;
+
+  return JSON.parse(data);
+};
 
 // ➕ Add student (prevent duplicate ID)
 export const addStudent = async (
   eventId: string,
+  eventTitle: string,
   student: EventAttendance,
-): Promise<EventAttendance[]> => {
+): Promise<LocalEventAttendance> => {
   log(`ADDING student to event ${eventId}`, student);
 
-  const students = await loadStudents(eventId);
+  const attendance = await loadLocalAttendance(eventId);
 
-  if (students.some((s) => s.studentId === student.studentId)) {
-    log("ADD FAILED: DUPLICATE ID", student.studentId);
-    return students;
+  // First student for this event
+  if (!attendance) {
+    const newAttendance: LocalEventAttendance = {
+      eventId,
+      eventTitle,
+      attendances: [student],
+    };
+
+    await saveAttendance(eventId, eventTitle, newAttendance.attendances);
+
+    log("ADD COMPLETE", newAttendance);
+
+    return newAttendance;
   }
 
-  const updated = [...students, student];
-  await saveStudents(eventId, updated);
+  // Prevent duplicates
+  const exists = attendance.attendances.some(
+    (s) =>
+      s.studentId === student.studentId ||
+      s.studentNumber === student.studentNumber,
+  );
 
-  log("ADD COMPLETE", updated);
-  return updated;
+  if (exists) {
+    log("ADD FAILED: STUDENT ALREADY EXISTS", student);
+    return attendance;
+  }
+
+  attendance.attendances.push(student);
+
+  await saveAttendance(
+    attendance.eventId,
+    attendance.eventTitle,
+    attendance.attendances,
+  );
+
+  log("ADD COMPLETE", attendance);
+
+  return attendance;
 };
-
 // ✏️ Update by student ID
 export const updateStudentById = async (
   eventId: string,

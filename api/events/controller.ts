@@ -101,6 +101,26 @@ export async function addEventAttendanceRecords(
   }
 }
 
+// Add multiple student to attendance then add the data student attended for evaluation
+export async function addMultipleAttendance(
+  eventId: string,
+  attendances: EventAttendance[],
+  token: string,
+): Promise<any> {
+  const res = await axios.post(
+    `${BASE_URL}/${eventId}/addMultipleAttendance`,
+    attendances,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  return res.data;
+}
+
 /**
  * ✅ 5. Add Evaluation for event
  */

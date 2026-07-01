@@ -24,19 +24,19 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle } from "react-native-svg";
 
 // ✅ local storage imports
 import { EventAttendance } from "@/api/events/utils";
 import {
   deleteLocalAttendanceByEventId,
   loadAllLocalAttendance,
-  loadStudents,
+  loadLocalAttendance,
 } from "@/api/local/local";
+import { LocalEventAttendance } from "@/api/local/localUtils";
 import { getOfflineEvents } from "@/api/local/userOffline";
 import {
   deleteStudentNotification,
-  markStudentAttended
+  markStudentAttended,
 } from "@/api/students/controller";
 
 // Type for local attendance
@@ -61,7 +61,7 @@ const Profile = () => {
   const [events, setEvents] = useState<EventModel[]>([]);
   const [doneEvents, setDoneEvents] = useState<EventModel[]>([]);
   const [soonEvents, setSoonEvents] = useState<EventModel[]>([]);
-  const [localEvents, setLocalEvents] = useState<EventModel[]>([]);
+  const [localEvents, setLocalEvents] = useState<LocalEventAttendance[]>([]);
   const [isLogout, setIsLogout] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -98,73 +98,59 @@ const Profile = () => {
 
   // 📅 Fetch events and local attendance
   useEffect(() => {
-    // online data
     const loadEvents = async () => {
       const allEvents = await getAllEvents(studentToken);
+
       setEvents(allEvents);
+
       const { done, upcoming } = separateEventsByDate(allEvents);
+
       setDoneEvents(done);
       setSoonEvents(upcoming);
     };
 
     const offlineData = async () => {
-      // offline data
-      const localDataEvents = await getOfflineEvents();
-      const eventsLocal = localDataEvents.find((item: null) => item !== null);
+      const localOfflineEvents = await getOfflineEvents();
+
+      const eventsLocal =
+        localOfflineEvents.find((item: EventModel[] | null) => item !== null) ||
+        [];
+
       setEvents(eventsLocal);
+
       const { done, upcoming } = separateEventsByDate(eventsLocal);
+
       setDoneEvents(done);
       setSoonEvents(upcoming);
     };
 
-    // attendance local copy
     const loadLocalEvents = async () => {
-      const eventsLocal = await loadAllLocalAttendance();
+      const localAttendance = await loadAllLocalAttendance();
 
-      const eventIds = Object.keys(eventsLocal || {});
-
-      const sourceEvents = isUserHasInternet
-        ? (eventData ?? [])
-        : (eventDataOffline ?? []);
-
-      const localEventsData = sourceEvents.filter(
-        (event) => event?.id && eventIds.includes(event.id),
-      );
-
-      setLocalEvents(localEventsData);
+      setLocalEvents(Object.values(localAttendance));
     };
+
     if (isUserHasInternet) {
       loadEvents();
     } else {
       offlineData();
     }
+
     loadLocalEvents();
   }, []);
 
   // 🔁 Reload local attendance when screen is focused
   useEffect(() => {
-    if (isFocused) {
-      const reloadLocalEvents = async () => {
-        const eventsLocal = await loadAllLocalAttendance();
-        const eventIds = Object.keys(eventsLocal || {});
+    if (!isFocused) return;
 
-        const sourceEvents = isUserHasInternet
-          ? eventData || []
-          : eventDataOffline || [];
+    const reloadLocalEvents = async () => {
+      const localAttendance = await loadAllLocalAttendance();
 
-        const localEventsData = sourceEvents.filter((event) =>
-          eventIds.includes(event.id),
-        );
+      setLocalEvents(Object.values(localAttendance));
+    };
 
-        setLocalEvents(localEventsData);
-        //
-        // localEventsData.forEach((e) => console.log(e));
-      };
-
-      reloadLocalEvents();
-    }
-  }, [isFocused, isUserHasInternet, eventData, eventDataOffline]);
-
+    reloadLocalEvents();
+  }, [isFocused]);
   // Logout
   const handleLogout = () => {
     setIsLogout(false);
@@ -177,59 +163,45 @@ const Profile = () => {
   };
 
   // Upload local attendance to cloud
-  const handleAttendanceLocal = async (
-    id: string,
-    eventTitle: string,
-    evaluationEnd: string,
-  ) => {
-    if (isLoading) return; // prevent double click
+  const handleAttendanceLocal = async (eventId: string) => {
+    if (isLoading) return;
+
     setIsLoading(true);
 
     try {
-      const localData: any[] = await loadStudents(id);
+      const localAttendance = await loadLocalAttendance(eventId);
 
-      if (!localData || localData.length === 0) {
+      if (!localAttendance) {
         return;
       }
 
-      // Upload all students in parallel
       await Promise.all(
-        localData.map(async (item) => {
-          await addEventAttendanceRecords(studentToken, id, {
-            studentId: item.studentId,
-            studentNumber: item.studentNumber,
-            studentName: item.studentName,
-            role: item.role,
-            department: item.department,
-            dateScanned: item.dateScanned,
-          });
+        localAttendance.attendances.map(async (item) => {
+          await addEventAttendanceRecords(
+            studentToken,
+            localAttendance.eventId,
+            item,
+          );
 
-          // await addEventAttendance(studentToken, item.studentId, {
-          //   eventId: id,
-          //   eventTitle,
-          //   studentDateAttended: item.dateScanned,
-          //   evaluationTime: item,
-          //   evaluated: false,
-          // });
-          console.log("Item ", item);
+          await markStudentAttended(
+            studentToken,
+            item.studentId,
+            localAttendance.eventId,
+          );
 
-          await markStudentAttended(studentToken, item.studentId, id);
-
-          await deleteStudentNotification(studentToken, item.studentId, id);
+          await deleteStudentNotification(
+            studentToken,
+            item.studentId,
+            localAttendance.eventId,
+          );
         }),
       );
 
-      // Delete local attendance from storage
-      await deleteLocalAttendanceByEventId(id);
+      await deleteLocalAttendanceByEventId(eventId);
 
-      // Update state: remove uploaded event + placeholders
-      setLocalEvents((prev) =>
-        prev.filter(
-          (event) => event.id !== id && event.id !== "no_id", // remove invalid placeholder
-        ),
-      );
+      setLocalEvents((prev) => prev.filter((e) => e.eventId !== eventId));
     } catch (error) {
-      console.error("❌ Upload failed", error);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -363,7 +335,7 @@ const Profile = () => {
             </View>
           </View>
 
-          {/* Progress Circle */}
+          {/* Progress Circle
           <View style={styles.circleContainer}>
             <Svg
               width={radius * 2 + strokeWidth}
@@ -394,7 +366,7 @@ const Profile = () => {
                 ? `${Math.round((eventDone / totalCount) * 100)}%`
                 : "0%"}
             </Text>
-          </View>
+          </View> */}
 
           {/* Done Events */}
           <Text style={styles.sectionTitle}>Done Events</Text>
@@ -414,7 +386,7 @@ const Profile = () => {
 
           {/* Local Attendance */}
           <Text style={styles.sectionTitle}>Local Attendance</Text>
-          <FlatList
+          {/* <FlatList
             data={localEvents}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => {
@@ -432,6 +404,25 @@ const Profile = () => {
                 />
               );
             }}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No local attendance yet.</Text>
+            }
+          /> */}
+          <FlatList
+            data={localEvents}
+            keyExtractor={(item) => item.eventId}
+            renderItem={({ item }) => (
+              <EventCard
+                event={
+                  {
+                    id: item.eventId,
+                    eventTitle: item.eventTitle,
+                  } as EventModel
+                }
+                onPrint={() => handleAttendanceLocal(item.eventId)}
+                uploadBtn
+              />
+            )}
             ListEmptyComponent={
               <Text style={styles.emptyText}>No local attendance yet.</Text>
             }
