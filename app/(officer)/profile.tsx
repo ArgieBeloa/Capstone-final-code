@@ -10,7 +10,6 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   Modal,
@@ -19,7 +18,7 @@ import {
   Text,
   TouchableHighlight,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -62,6 +61,9 @@ const Profile = () => {
   const [localEvents, setLocalEvents] = useState<LocalEventAttendance[]>([]);
   const [isLogout, setIsLogout] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState("");
 
   // 📊 circle progress
   const screenWidth = Dimensions.get("window").width;
@@ -161,85 +163,143 @@ const Profile = () => {
   };
 
   // Upload local attendance to cloud
-  const handleAttendanceLocal = async (eventId: string) => {
-    console.log("Clicked upload", eventId);
+  // const handleAttendanceLocal = async (eventId: string) => {
+  //   console.log("Clicked upload", eventId);
+  //   if (isLoading) return;
+
+  //   Alert.alert(
+  //     "Upload Attendance",
+  //     "Are you sure you want to upload the local attendance? This action cannot be undone.",
+  //     [
+  //       {
+  //         text: "Cancel",
+  //         style: "cancel",
+  //       },
+  //       {
+  //         text: "Upload",
+  //         onPress: async () => {
+  //           setIsLoading(true);
+
+  //           try {
+  //             const localAttendance = await loadLocalAttendance(eventId);
+
+  //             if (!localAttendance) {
+  //               Alert.alert(
+  //                 "No Attendance",
+  //                 "No local attendance was found for this event.",
+  //               );
+  //               return;
+  //             }
+
+  //             // Upload all attendance in one request
+  //             await addMultipleAttendance(
+  //               localAttendance.eventId,
+  //               localAttendance.attendances,
+  //               studentToken,
+  //             );
+
+  //             // Update student records
+  //             await Promise.all(
+  //               localAttendance.attendances.map(async (item) => {
+  //                 await markStudentAttended(
+  //                   studentToken,
+  //                   item.studentId,
+  //                   localAttendance.eventId,
+  //                 );
+
+  //                 await deleteStudentNotification(
+  //                   studentToken,
+  //                   item.studentId,
+  //                   localAttendance.eventId,
+  //                 );
+  //               }),
+  //             );
+
+  //             // Remove local copy
+  //             await deleteLocalAttendanceByEventId(eventId);
+
+  //             setLocalEvents((prev) =>
+  //               prev.filter((e) => e.eventId !== eventId),
+  //             );
+
+  //             Alert.alert(
+  //               "Upload Successful",
+  //               `${localAttendance.attendances.length} attendance record(s) uploaded successfully.`,
+  //             );
+  //           } catch (error: any) {
+  //             console.error("❌ Upload failed:", error);
+
+  //             Alert.alert(
+  //               "Upload Failed",
+  //               error?.response?.data ||
+  //                 error?.message ||
+  //                 "An unexpected error occurred.",
+  //             );
+  //           } finally {
+  //             setIsLoading(false);
+  //           }
+  //         },
+  //       },
+  //     ],
+  //   );
+  // };
+  const uploadAttendance = async (eventId: string) => {
     if (isLoading) return;
 
-    Alert.alert(
-      "Upload Attendance",
-      "Are you sure you want to upload the local attendance? This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Upload",
-          onPress: async () => {
-            setIsLoading(true);
+    setIsLoading(true);
 
-            try {
-              const localAttendance = await loadLocalAttendance(eventId);
+    try {
+      const localAttendance = await loadLocalAttendance(eventId);
 
-              if (!localAttendance) {
-                Alert.alert(
-                  "No Attendance",
-                  "No local attendance was found for this event.",
-                );
-                return;
-              }
+      if (!localAttendance) {
+        alert("No local attendance found.");
+        return;
+      }
 
-              // Upload all attendance in one request
-              await addMultipleAttendance(
-                localAttendance.eventId,
-                localAttendance.attendances,
-                studentToken,
-              );
+      // Upload attendance
+      await addMultipleAttendance(
+        localAttendance.eventId,
+        localAttendance.attendances,
+        studentToken,
+      );
 
-              // Update student records
-              await Promise.all(
-                localAttendance.attendances.map(async (item) => {
-                  await markStudentAttended(
-                    studentToken,
-                    item.studentId,
-                    localAttendance.eventId,
-                  );
+      // Update students
+      await Promise.all(
+        localAttendance.attendances.map(async (item) => {
+          await markStudentAttended(
+            studentToken,
+            item.studentId,
+            localAttendance.eventId,
+          );
 
-                  await deleteStudentNotification(
-                    studentToken,
-                    item.studentId,
-                    localAttendance.eventId,
-                  );
-                }),
-              );
+          await deleteStudentNotification(
+            studentToken,
+            item.studentId,
+            localAttendance.eventId,
+          );
+        }),
+      );
 
-              // Remove local copy
-              await deleteLocalAttendanceByEventId(eventId);
+      // Delete local copy
+      await deleteLocalAttendanceByEventId(eventId);
 
-              setLocalEvents((prev) =>
-                prev.filter((e) => e.eventId !== eventId),
-              );
+      // Remove from UI
+      setLocalEvents((prev) => prev.filter((e) => e.eventId !== eventId));
 
-              Alert.alert(
-                "Upload Successful",
-                `${localAttendance.attendances.length} attendance record(s) uploaded successfully.`,
-              );
-            } catch (error: any) {
-              console.error("❌ Upload failed:", error);
+      alert(
+        `${localAttendance.attendances.length} attendance record(s) uploaded successfully.`,
+      );
+    } catch (error: any) {
+      console.error("Upload failed:", error);
 
-              Alert.alert(
-                "Upload Failed",
-                error?.response?.data ||
-                  error?.message ||
-                  "An unexpected error occurred.",
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ],
-    );
+      alert(
+        error?.response?.data ||
+          error?.message ||
+          "An unexpected error occurred.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Reusable Event Card
@@ -458,8 +518,11 @@ const Profile = () => {
                     eventTitle: item.eventTitle,
                   } as EventModel
                 }
-                onPrint={() => handleAttendanceLocal(item.eventId)}
                 uploadBtn
+                onPrint={() => {
+                  setSelectedEvent(item.eventId);
+                  setShowConfirm(true);
+                }}
               />
             )}
             ListEmptyComponent={
@@ -487,6 +550,39 @@ const Profile = () => {
                   style={[styles.modalBtn, { backgroundColor: "red" }]}
                 >
                   <Text style={{ color: "white" }}>Yes</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showConfirm} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text>Upload attendance?</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  marginTop: 20,
+                  gap: 15,
+                }}
+              >
+                <Pressable
+                  style={styles.modalBtn}
+                  onPress={() => setShowConfirm(false)}
+                >
+                  <Text>Cancel</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.modalBtn, { backgroundColor: "#4F46E5" }]}
+                  disabled={isLoading}
+                  onPress={() => {
+                    setShowConfirm(false);
+                    uploadAttendance(selectedEvent);
+                  }}
+                >
+                  <Text style={{ color: "#fff" }}>Upload</Text>
                 </Pressable>
               </View>
             </View>
