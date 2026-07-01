@@ -261,7 +261,7 @@ const Students = () => {
             <TouchableOpacity
               style={{ marginHorizontal: 10 }}
               onPress={() => {
-                router.push("../../addStudentbyAdmin/register");
+                router.push("../../addStudentByAdmin/register");
               }}
             >
               <FontAwesome5 name="plus" size={18} color="black" />
