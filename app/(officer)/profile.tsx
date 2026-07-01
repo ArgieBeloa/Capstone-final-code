@@ -1,5 +1,6 @@
 import {
   addEventAttendanceRecords,
+  addMultipleAttendance,
   getAllEvents,
 } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
@@ -174,6 +175,12 @@ const Profile = () => {
       if (!localAttendance) {
         return;
       }
+      // Upload all attendance records in one request
+      await addMultipleAttendance(
+        localAttendance.eventId,
+        localAttendance.attendances,
+        studentToken,
+      );
 
       await Promise.all(
         localAttendance.attendances.map(async (item) => {
