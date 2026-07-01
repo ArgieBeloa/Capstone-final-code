@@ -460,7 +460,7 @@ export default function Index() {
                     //   router.push("/(tabs)/home");
                     // }
                     setShowModalNoInternetUser(false);
-                    handleOffline(studentDataOffline.role);
+                    // handleOffline(studentDataOffline.role);
                   }}
                   style={{
                     backgroundColor: "#007bff",

@@ -3,6 +3,8 @@ import LinearbackGround from "@/components/LinearBackGround";
 import Loading from "@/components/Loading";
 import ViewPanel from "@/components/ViewPanel";
 import { COLORS } from "@/constants/ColorCpc";
+import { registerForPushNotificationsAsync } from "@/src/pushToken";
+import { useUser } from "@/src/userContext";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -18,14 +20,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
-import { registerForPushNotificationsAsync } from "../src/pushToken";
+
 // import { Student } from "./Oop/Types";
 import { StudentModel } from "@/api/students/model";
 import { Course } from "@/api/students/utils";
 import { Picker } from "@react-native-picker/picker";
 
 const Register = () => {
+  const { studentToken } = useUser();
   const [fullname, setFullname] = useState("");
   // const [course, setCourse] = useState("");
   const [username, setUsername] = useState("");
@@ -156,7 +160,7 @@ const Register = () => {
     setRegisterBtnDisable(true);
 
     try {
-      const studentAdded = await registerStudent(newStudent);
+      const studentAdded = await registerStudent(newStudent, studentToken);
       console.log("Student Added: ", studentAdded);
 
       setIsSuccess(true);

@@ -177,8 +177,11 @@ export const deleteEvaluationTemplate = async (
 =========================================================== */
 export async function registerStudent(
   newStudent: StudentModel,
+  token: string,
 ): Promise<string> {
-  const res = await axios.post(`${BASE_URL}/register`, newStudent);
+  const res = await axios.post(`${BASE_URL}/register`, newStudent, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return res.data;
 }
 

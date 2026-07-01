@@ -13,7 +13,7 @@ import {
   Ionicons,
   MaterialIcons,
 } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -43,6 +43,7 @@ const Students = () => {
     StudentEventAttendedAndEvaluationDetails[]
   >([]);
   const [student, setStudent] = useState<StudentModel>();
+  const router = useRouter();
 
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -254,6 +255,16 @@ const Students = () => {
               onPress={() => setShowAnnouncementModal(true)}
             >
               <FontAwesome5 name="bullhorn" size={18} color="black" />
+            </TouchableOpacity>
+
+            {/* Add */}
+            <TouchableOpacity
+              style={{ marginHorizontal: 10 }}
+              onPress={() => {
+                router.push("../../addStudentbyAdmin/register");
+              }}
+            >
+              <FontAwesome5 name="plus" size={18} color="black" />
             </TouchableOpacity>
           </View>
 
