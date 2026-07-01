@@ -1,7 +1,4 @@
-import {
-  addMultipleAttendance,
-  getAllEvents
-} from "@/api/events/controller";
+import { addMultipleAttendance, getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { StudentModel } from "@/api/students/model";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -12,7 +9,9 @@ import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator, Alert, Dimensions,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -20,7 +19,7 @@ import {
   Text,
   TouchableHighlight,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -163,6 +162,7 @@ const Profile = () => {
 
   // Upload local attendance to cloud
   const handleAttendanceLocal = async (eventId: string) => {
+    console.log("Clicked upload", eventId);
     if (isLoading) return;
 
     Alert.alert(
@@ -325,12 +325,16 @@ const Profile = () => {
             }}
           >
             <Ionicons name="save-outline" size={15} color="#fff" />
+            <Text
+              style={{
+                color: "#fff",
+                marginLeft: 8,
+                fontWeight: "600",
+              }}
+            >
+              {uploadBtn ? "Upload" : "Attendance"}
+            </Text>
           </TouchableOpacity>
-          <Text
-            style={{ color: "#030000ff", marginLeft: 8, fontWeight: "600" }}
-          >
-            {uploadBtn ? "Upload" : "Attendance"}
-          </Text>
         </View>
       </View>
     </View>
