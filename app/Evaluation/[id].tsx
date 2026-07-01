@@ -208,6 +208,7 @@ export default function RatingsScreen() {
       const event = await getEventById(studentToken, id as string);
 
       setEvaluationData(event.evaluationQuestions);
+      console.log(event.evaluationQuestions);
       setEvent(event);
     };
 

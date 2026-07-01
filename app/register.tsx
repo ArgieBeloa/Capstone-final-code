@@ -118,7 +118,6 @@ const Register = () => {
   const newStudent: StudentModel = {
     studentName: fullname,
     studentNumber: username,
-    role: "STUDENT",
     studentPassword: password,
     course: selectedCourse as string,
     department: department,

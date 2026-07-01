@@ -15,7 +15,6 @@ export interface StudentModel {
   studentPassword: string;
 
   // 🧭 Access control
-  role: "STUDENT" | "OFFICER" | "ADMIN";
   officerCredentials: OfficerCredentials;
 
   // 🧑‍🎓 Student info
