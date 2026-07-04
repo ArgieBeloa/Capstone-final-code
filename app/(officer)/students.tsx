@@ -28,6 +28,8 @@ import {
 import Animated2 from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useRouter } from "expo-router";
+
 const Students = () => {
   const { studentToken, eventData } = useUser();
   const officerName = "OSA Officer";
@@ -43,7 +45,7 @@ const Students = () => {
     StudentEventAttendedAndEvaluationDetails[]
   >([]);
   const [student, setStudent] = useState<StudentModel>();
-
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleOpenModal = (id: string) => {
@@ -254,6 +256,16 @@ const Students = () => {
               onPress={() => setShowAnnouncementModal(true)}
             >
               <FontAwesome5 name="bullhorn" size={18} color="black" />
+            </TouchableOpacity>
+
+            {/* Add */}
+            <TouchableOpacity
+              style={{ marginHorizontal: 10 }}
+              onPress={() => {
+                router.push("../addStudentByAdmin/register");
+              }}
+            >
+              <FontAwesome5 name="plus" size={18} color="black" />
             </TouchableOpacity>
           </View>
 

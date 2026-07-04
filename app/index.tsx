@@ -72,9 +72,9 @@ export default function Index() {
       router.push("/(tabs)/home");
     }
   };
-  const haddleRegister = () => {
-    router.push("/register");
-  };
+  // const haddleRegister = () => {
+  //   router.push("/register");
+  // };
   const checkUserLocalData = async (
     userData: StudentModel,
     events: EventModel[],
@@ -266,7 +266,7 @@ export default function Index() {
             <View style={styles.deviderPanel}></View>
 
             {/* register section */}
-            <View
+            {/* <View
               style={{
                 flexDirection: "row",
                 gap: 5,
@@ -275,9 +275,9 @@ export default function Index() {
             >
               <Text style={{ fontWeight: "400", fontSize: 16 }}>
                 Don't have an account?
-              </Text>
+              </Text> */}
 
-              <Pressable onPress={haddleRegister}>
+            {/* <Pressable onPress={haddleRegister}>
                 <Text
                   style={{
                     textDecorationLine: "underline",
@@ -288,8 +288,8 @@ export default function Index() {
                 >
                   Register
                 </Text>
-              </Pressable>
-            </View>
+              </Pressable> */}
+            {/* </View> */}
           </View>
 
           {/* modal */}

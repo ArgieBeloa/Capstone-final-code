@@ -54,6 +54,8 @@ export interface StudentEvaluationInfo {
 export interface OfficerCredentials {
   canEditEvent: boolean;
   canAddEvent: boolean;
+  canScanStudent: boolean;
+  canAddStudent: boolean;
 }
 
 // 🔹 StudentEvaluationDetails.java

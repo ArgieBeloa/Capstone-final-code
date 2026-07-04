@@ -131,8 +131,13 @@ const Register = () => {
     studentRecentEvaluations: [],
     studentNotifications: [],
     studentEventAttendedAndEvaluationDetails: [],
-    officerCredentials: { canAddEvent: false, canEditEvent: false },
-  };
+    officerCredentials: {
+      canAddEvent: false,
+      canEditEvent: false,
+      canAddStudent: false,
+      canScanStudent: false,
+    },
+  } as StudentModel;
 
   // ✅ Validate inputs (like HTML required)
   const validateFields = () => {
@@ -380,11 +385,16 @@ const Register = () => {
                     ]}
                     onPress={() => {
                       setModalVisible(false);
-                      if (isSuccess) router.push("/");
+                      if (isSuccess) {
+                        setFullname("");
+                        setUsername("");
+                        setPassword("");
+                        setConfirmPassword("");
+                      }
                     }}
                   >
                     <Text style={styles.textStyle}>
-                      {isSuccess ? "Login now" : "Close"}
+                      {isSuccess ? "add more student" : "Close"}
                     </Text>
                   </Pressable>
                 </View>

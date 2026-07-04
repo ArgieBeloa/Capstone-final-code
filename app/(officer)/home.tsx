@@ -397,7 +397,7 @@ const Home = () => {
         </View>
 
         {/* Floating Add Button */}
-        {studentData.officerCredentials.canAddEvent && (
+        {studentData?.officerCredentials?.canAddEvent && (
           <FloatingButton
             iconName="plus"
             onPress={() => router.push("../officerAddEvent/addEvent")}

@@ -18,7 +18,7 @@ import {
   Text,
   TouchableHighlight,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -63,7 +63,11 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showLocalAttendance, setShowLocalAttendance] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState("");
+  const [selectedEventLocal, setSelectedEventLocal] = useState<
+    EventAttendance[]
+  >([]);
 
   // 📊 circle progress
   const screenWidth = Dimensions.get("window").width;
@@ -243,14 +247,26 @@ const Profile = () => {
   //     ],
   //   );
   // };
+
+  // view attenance
+
+  const handleViewAttendance = async (eventId: string) => {
+    try {
+      const event = await loadLocalAttendance(eventId);
+
+      setSelectedEventLocal(event?.attendances || []);
+      console.log("local event ", event);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const uploadAttendance = async (eventId: string) => {
     if (isLoading) return;
 
     setIsLoading(true);
-
+    const localAttendance = await loadLocalAttendance(eventId);
     try {
-      const localAttendance = await loadLocalAttendance(eventId);
-
       if (!localAttendance) {
         alert("No local attendance found.");
         return;
@@ -277,6 +293,8 @@ const Profile = () => {
             item.studentId,
             localAttendance.eventId,
           );
+
+          // testing deleting only student
         }),
       );
 
@@ -290,8 +308,16 @@ const Profile = () => {
         `${localAttendance.attendances.length} attendance record(s) uploaded successfully.`,
       );
     } catch (error: any) {
-      console.error("Upload failed:", error);
-
+      console.error("Upload failed:", error.data);
+      // if (!localAttendance) {
+      //   alert("No local attendance found.");
+      //   return;
+      // }
+      // await removeTheStudentLocal(
+      //   eventId,
+      //   studentData.id as string,
+      //   localAttendance?.attendances,
+      // );
       alert(
         error?.response?.data ||
           error?.message ||
@@ -331,6 +357,130 @@ const Profile = () => {
         >
           {event.eventTitle}
         </Text>
+
+        <View style={{ marginBottom: 8 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
+            <Ionicons
+              name="time-outline"
+              size={16}
+              color="#666"
+              style={{ marginRight: 4 }}
+            />
+            <Text style={{ color: "#666", fontSize: 14 }}>
+              {event.eventTimeLength || event.eventDate}
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color="#999"
+              style={{ marginRight: 4 }}
+            />
+            <Text style={{ color: "#999", fontSize: 13 }}>
+              {event.eventLocation || "No location specified"}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            marginTop: 15,
+            position: "absolute",
+            right: 2,
+            bottom: 2,
+          }}
+        >
+          <TouchableOpacity
+            onPress={onPrint}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: uploadBtn ? "#4f61b4" : "#28a745",
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderRadius: 8,
+            }}
+          >
+            <Ionicons name="save-outline" size={15} color="#fff" />
+            <Text
+              style={{
+                color: "#fff",
+                marginLeft: 8,
+                fontWeight: "600",
+              }}
+            >
+              {uploadBtn ? "Upload" : "Attendance"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  const EventCardLocal = ({
+    event,
+    onPrint,
+    uploadBtn = false,
+  }: {
+    event: EventModel;
+    onPrint: () => void;
+    uploadBtn?: boolean;
+  }) => (
+    <View style={styles.card}>
+      <View style={{ marginRight: 10, width: 40, alignItems: "center" }}>
+        <Ionicons
+          name="checkmark-done-circle"
+          size={24}
+          color={COLORS.Primary}
+        />
+      </View>
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: COLORS.TextColor,
+              marginBottom: 6,
+            }}
+          >
+            {event.eventTitle}
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              setShowLocalAttendance(true);
+              handleViewAttendance(event.id);
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "grey",
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderRadius: 8,
+            }}
+          >
+            <Ionicons name="save-outline" size={15} color="#fff" />
+            <Text
+              style={{
+                color: "#fff",
+                marginLeft: 8,
+                fontWeight: "600",
+              }}
+            >
+              View
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ marginBottom: 8 }}>
           <View
@@ -511,7 +661,7 @@ const Profile = () => {
             data={localEvents}
             keyExtractor={(item) => item.eventId}
             renderItem={({ item }) => (
-              <EventCard
+              <EventCardLocal
                 event={
                   {
                     id: item.eventId,
@@ -585,6 +735,37 @@ const Profile = () => {
                   <Text style={{ color: "#fff" }}>Upload</Text>
                 </Pressable>
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showLocalAttendance} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text>Attendance</Text>
+              <FlatList
+                data={selectedEventLocal}
+                renderItem={({ item }) => (
+                  <View style={{ flexDirection: "column", marginVertical: 10 }}>
+                    <View style={{ flexDirection: "column" }}>
+                      <Text>{item.studentName}</Text>
+                      <Text>{item.studentNumber}</Text>
+                      <Text>{item.department}</Text>
+                      <Text>{item.dateScanned}</Text>
+                    </View>
+                  </View>
+                )}
+                ListEmptyComponent={
+                  <Text style={styles.emptyText}>No local attendance yet.</Text>
+                }
+              />
+
+              <Pressable
+                style={styles.modalBtn}
+                onPress={() => setShowLocalAttendance(false)}
+              >
+                <Text>Cancel</Text>
+              </Pressable>
             </View>
           </View>
         </Modal>

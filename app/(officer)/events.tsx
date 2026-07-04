@@ -227,7 +227,10 @@ const Events = () => {
     console.log("Today:", today);
     console.log("Event:", eventDate);
 
-    return today === eventDate;
+    if (studentData.officerCredentials.canScanStudent) {
+      return today === eventDate;
+    }
+    return false;
   };
 
   /*

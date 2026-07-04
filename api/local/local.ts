@@ -156,6 +156,25 @@ export const addStudent = async (
 
   return attendance;
 };
+
+// delete student data local in event when upload
+export const removeTheStudentLocal = async (
+  eventId: string,
+  studentId: string,
+  student: EventAttendance[],
+): Promise<void> => {
+  log(`deleting student to event ${eventId}`, student);
+
+  const attendance = await loadLocalAttendance(eventId);
+
+  // get student
+  const studentLocal = attendance?.attendances.filter(
+    (student) => student.studentId !== studentId,
+  );
+
+  console.log(studentLocal);
+};
+
 // ✏️ Update by student ID
 export const updateStudentById = async (
   eventId: string,
