@@ -199,7 +199,7 @@ export const deleteLocalAttendanceByEventId = async (
   eventId: string,
 ): Promise<void> => {
   try {
-    const key = getStorageKey(eventId);
+    const key = `localStudents_${eventId}`;
 
     log(`DELETING LOCAL ATTENDANCE for event ${eventId}...`);
     await AsyncStorage.removeItem(key);

@@ -31,10 +31,6 @@ import {
 } from "@/api/local/local";
 import { LocalEventAttendance } from "@/api/local/localUtils";
 import { getOfflineEvents } from "@/api/local/userOffline";
-import {
-  deleteStudentNotification,
-  markStudentAttended,
-} from "@/api/students/controller";
 
 // Type for local attendance
 type LocalAttendance = {
@@ -63,6 +59,9 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showModalDelete, setShowModalDelete] = useState(false);
+  const [eventIdState, setEventIdState] = useState("");
+
   const [showLocalAttendance, setShowLocalAttendance] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState("");
   const [selectedEventLocal, setSelectedEventLocal] = useState<
@@ -130,7 +129,9 @@ const Profile = () => {
 
     const loadLocalEvents = async () => {
       const localAttendance = await loadAllLocalAttendance();
-
+      if (localAttendance === null) {
+        console.log("nge");
+      }
       setLocalEvents(Object.values(localAttendance));
     };
 
@@ -260,47 +261,40 @@ const Profile = () => {
       console.log(error);
     }
   };
+  const handleDeleteLocalAttendance = async (eventId: string) => {
+    try {
+      setIsLoading(true);
 
+      //  delete local
+      await deleteLocalAttendanceByEventId(eventId);
+      setShowModalDelete(false);
+      setLocalEvents((prev) => prev.filter((e) => e.eventId !== eventId));
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const uploadAttendance = async (eventId: string) => {
     if (isLoading) return;
 
-    setIsLoading(true);
     const localAttendance = await loadLocalAttendance(eventId);
-    try {
-      if (!localAttendance) {
-        alert("No local attendance found.");
-        return;
-      }
 
+    if (!localAttendance) {
+      alert("No local attendance found.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
       // Upload attendance
       await addMultipleAttendance(
         localAttendance.eventId,
         localAttendance.attendances,
         studentToken,
       );
-
-      // Update students
-      await Promise.all(
-        localAttendance.attendances.map(async (item) => {
-          await markStudentAttended(
-            studentToken,
-            item.studentId,
-            localAttendance.eventId,
-          );
-
-          await deleteStudentNotification(
-            studentToken,
-            item.studentId,
-            localAttendance.eventId,
-          );
-
-          // testing deleting only student
-        }),
-      );
-
-      // Delete local copy
       await deleteLocalAttendanceByEventId(eventId);
-
       // Remove from UI
       setLocalEvents((prev) => prev.filter((e) => e.eventId !== eventId));
 
@@ -308,26 +302,19 @@ const Profile = () => {
         `${localAttendance.attendances.length} attendance record(s) uploaded successfully.`,
       );
     } catch (error: any) {
-      console.error("Upload failed:", error.data);
-      // if (!localAttendance) {
-      //   alert("No local attendance found.");
-      //   return;
-      // }
-      // await removeTheStudentLocal(
-      //   eventId,
-      //   studentData.id as string,
-      //   localAttendance?.attendances,
-      // );
-      alert(
-        error?.response?.data ||
-          error?.message ||
-          "An unexpected error occurred.",
-      );
+      /*
+       */
+      alert(error?.message || "An unexpected error occurred.");
+
+      console.log("Full error:", error);
+      console.log("Response:", error.response);
+      console.log("Data:", error.response?.data);
+      console.log("Message:", error.message);
+      console.log("Status:", error.response?.status);
     } finally {
       setIsLoading(false);
     }
   };
-
   // Reusable Event Card
   const EventCard = ({
     event,
@@ -525,6 +512,10 @@ const Profile = () => {
         >
           <TouchableOpacity
             onPress={onPrint}
+            onLongPress={() => {
+              setShowModalDelete(true);
+              setEventIdState(event.id as string);
+            }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -766,6 +757,38 @@ const Profile = () => {
               >
                 <Text>Cancel</Text>
               </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showModalDelete} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text>Are tou sure want to delete this local attendance</Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-evenly",
+                  marginVertical: 10,
+                }}
+              >
+                <Pressable
+                  style={[styles.modalBtn, { marginHorizontal: 5 }]}
+                  onPress={() => {
+                    handleDeleteLocalAttendance(eventIdState);
+                  }}
+                >
+                  <Text>Delete</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.modalBtn, { backgroundColor: "red" }]}
+                  onPress={() => setShowModalDelete(false)}
+                >
+                  <Text>Cancel</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </Modal>

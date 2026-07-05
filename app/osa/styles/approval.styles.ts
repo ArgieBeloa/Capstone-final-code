@@ -112,3 +112,4 @@ export const approvalStyles = StyleSheet.create({
     borderRadius: 10,
   },
 });
+export default approvalStyles;
