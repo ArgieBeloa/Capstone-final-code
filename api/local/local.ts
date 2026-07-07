@@ -23,19 +23,30 @@ export const loadAllLocalAttendance = async (): Promise<
 > => {
   try {
     const keys = await AsyncStorage.getAllKeys();
-
     const attendanceKeys = keys.filter((k) => k.startsWith("localStudents_"));
 
     const entries = await AsyncStorage.multiGet(attendanceKeys);
 
     const result: Record<string, LocalEventAttendance> = {};
 
-    for (const [key, value] of entries) {
+    for (const [, value] of entries) {
       if (!value) continue;
 
-      const attendance = JSON.parse(value) as LocalEventAttendance;
+      try {
+        const parsed = JSON.parse(value);
 
-      result[attendance.eventId] = attendance;
+        if (Array.isArray(parsed)) {
+          continue;
+        }
+
+        result[parsed.eventId] = {
+          eventId: parsed.eventId,
+          eventTitle: parsed.eventTitle ?? "",
+          attendances: parsed.attendances ?? [],
+        };
+      } catch (e) {
+        console.error("Invalid local attendance:", e);
+      }
     }
 
     return result;
@@ -98,41 +109,49 @@ export const saveAttendance = async (
 export const loadLocalAttendance = async (
   eventId: string,
 ): Promise<LocalEventAttendance | null> => {
-  const key = `localStudents_${eventId}`;
+  try {
+    const data = await AsyncStorage.getItem(getStorageKey(eventId));
 
-  const data = await AsyncStorage.getItem(key);
+    if (!data) return null;
 
-  if (!data) return null;
+    const parsed = JSON.parse(data);
 
-  return JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      return {
+        eventId,
+        eventTitle: "",
+        attendances: parsed,
+      };
+    }
+
+    return {
+      eventId: parsed.eventId ?? eventId,
+      eventTitle: parsed.eventTitle ?? "",
+      attendances: parsed.attendances ?? [],
+    };
+  } catch (e) {
+    console.error("loadLocalAttendance", e);
+    return null;
+  }
 };
-
 // ➕ Add student (prevent duplicate ID)
 export const addStudent = async (
   eventId: string,
   eventTitle: string,
   student: EventAttendance,
 ): Promise<LocalEventAttendance> => {
-  log(`ADDING student to event ${eventId}`, student);
+  let attendance = await loadLocalAttendance(eventId);
 
-  const attendance = await loadLocalAttendance(eventId);
-
-  // First student for this event
   if (!attendance) {
-    const newAttendance: LocalEventAttendance = {
+    attendance = {
       eventId,
       eventTitle,
-      attendances: [student],
+      attendances: [],
     };
-
-    await saveAttendance(eventId, eventTitle, newAttendance.attendances);
-
-    log("ADD COMPLETE", newAttendance);
-
-    return newAttendance;
   }
 
-  // Prevent duplicates
+  attendance.attendances ??= [];
+
   const exists = attendance.attendances.some(
     (s) =>
       s.studentId === student.studentId ||
@@ -140,8 +159,7 @@ export const addStudent = async (
   );
 
   if (exists) {
-    log("ADD FAILED: STUDENT ALREADY EXISTS", student);
-    return attendance;
+    throw new Error("Student already exists in local attendance.");
   }
 
   attendance.attendances.push(student);
@@ -151,8 +169,6 @@ export const addStudent = async (
     attendance.eventTitle,
     attendance.attendances,
   );
-
-  log("ADD COMPLETE", attendance);
 
   return attendance;
 };
