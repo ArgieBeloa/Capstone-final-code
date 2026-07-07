@@ -3,6 +3,7 @@ import { EventModel } from "@/api/events/model";
 import { EventAttendance } from "@/api/events/utils";
 
 import { useUser } from "@/src/userContext";
+import { Asset } from "expo-asset";
 import * as FileSystem from "expo-file-system";
 import * as Print from "expo-print";
 import { useLocalSearchParams } from "expo-router";
@@ -21,6 +22,7 @@ import {
 const PrintScreen = () => {
   const { studentToken } = useUser();
   const { id } = useLocalSearchParams();
+  const [logo, setLogo] = useState("");
 
   const [event, setEvent] = useState<EventModel | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +39,24 @@ const PrintScreen = () => {
 
     loadEvent();
   }, [id, studentToken]);
+
+  useEffect(() => {
+    const loadLogo = async () => {
+      const asset = Asset.fromModule(
+        require("@/assets/images/cpcLogo2-removebg.png"),
+      );
+
+      await asset.downloadAsync();
+
+      const base64 = await FileSystem.readAsStringAsync(asset.localUri!, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      setLogo(`data:image/png;base64,${base64}`);
+    };
+
+    loadLogo();
+  }, []);
 
   // =========================
   // GENERATE HTML
@@ -97,11 +117,26 @@ const PrintScreen = () => {
 
       pages.push(`
         <div class="page">
-          <h2>${event.eventTitle}</h2>
-          ${department ? `<h3>${department}</h3>` : ""}
-          <p><strong>Date:</strong> ${event.eventDate}</p>
-          <p><strong>Location:</strong> ${event.eventLocation}</p>
+         <div class="header">
+            <img src="${logo}" class="logo" />
 
+            <div class="header-text">
+              <h1>Colegio De la Purisima Concepcion</h1>
+              <p>The School of the Archdiocese of capiz <br>
+                 Roxas City 5800, Philippines <br>
+                 Tel/ FAX NO. (036) 6210286
+              </p>
+              <h1>Office Of the Student Affairs & Services</h1>
+              <h2>${event.eventTitle}</h2>
+              ${department ? `<h3>${department}</h3>` : ""}
+
+              <p><strong>Date:</strong> ${event.eventDate}</p>
+              <p><strong>Location:</strong> ${event.eventLocation}</p>
+            </div>
+
+            <img src="${logo}" class="logo" />
+
+           </div>
           <div class="columns">
             <!-- LEFT COLUMN -->
             <table>
@@ -135,8 +170,31 @@ const PrintScreen = () => {
           </div>
 
           <div class="footer">
-            Page ${Math.floor(i / chunkSize) + 1} /
-            ${Math.ceil(attendance.length / chunkSize)}
+            <div class="footer-left">
+              ${
+                Math.floor(i / chunkSize) + 1 ===
+                Math.ceil(attendance.length / chunkSize)
+                  ? `
+                  <p>
+                    <strong>Total number of members who attended:</strong>
+                    ${attendance.length}
+                  </p>
+
+                  <p>
+                    <em>(To be filled up by OSA personnel)</em><br><br>
+                    <strong>Received by:</strong> _____________________________________________
+                    &nbsp;&nbsp;&nbsp;  &nbsp;&nbsp;&nbsp;
+                    <strong>Date:</strong> ______________________
+                  </p>
+                `
+                  : ""
+              }
+            </div>
+
+            <div class="footer-right">
+              Page ${Math.floor(i / chunkSize) + 1} of
+              ${Math.ceil(attendance.length / chunkSize)}
+            </div>
           </div>
         </div>
       `);
@@ -146,7 +204,10 @@ const PrintScreen = () => {
       <html>
         <head>
           <style>
-            body { font-family: Arial; padding: 20px; }
+            body {
+              font-family: Arial, sans-serif;
+              margin: 20px;
+            }
             .page { page-break-after: always; }
 
             h2, h3 { text-align: center; }
@@ -155,27 +216,87 @@ const PrintScreen = () => {
               display: flex;
               gap: 10px;
             }
+table {
+  width: 49%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+}
 
-            table {
-              width: 50%;
-              border-collapse: collapse;
-              margin-top: 20px;
+th {
+  border: 1px solid #000;
+  padding: 6px;
+  font-size: 10px;
+  text-align: center;
+  background: #f5f5f5;
+}
+
+td {
+  border: 1px solid #000;
+  padding: 5px 6px;
+  font-size: 10px;
+  text-align: center;      /* Center horizontally */
+  vertical-align: middle;  /* Center vertically */
+}   
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+              margin-bottom: 15px;
             }
 
-            th, td {
-              border: 1px solid #ccc;
-              padding: 6px;
-              font-size: 10px;
+            .logo {
+              width: 70px;
+              height: 70px;
+              object-fit: contain;
+              flex-shrink: 0;
             }
 
-            th { background: #f0f0f0; }
+            .header-text {
+              flex: 1;
+              text-align: center;
+              padding: 0 15px;
+            }
 
+            .header-text h1 {
+              margin: 0;
+              font-size: 20px;
+              font-weight: bold;
+            }
+
+            .header-text p {
+              margin: 2px 0;
+              font-size: 12px;
+            }
+
+            .header-text h2 {
+              margin: 8px 0 3px;
+              font-size: 18px;
+            }
+
+            .header-text h3 {
+              margin: 0 0 5px;
+              font-size: 14px;
+            }
             .footer {
-              text-align: right;
-              margin-top: 10px;
-              font-size: 10px;
-              color: #666;
-            }
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 6px;
+            border-top: 1px solid #999;
+            font-size: 10px;
+            color: #666;
+          }
+
+          .footer-left {
+            text-align: left;
+          }
+
+          .footer-right {
+            text-align: right;
+          }
           </style>
         </head>
         <body>${pages.join("")}</body>
