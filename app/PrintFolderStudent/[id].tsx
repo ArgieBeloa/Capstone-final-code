@@ -100,11 +100,15 @@ const PrintScreen = () => {
       text += `Total: ${students.length}\n`;
 
       if (students.length > 0) {
-        text += students
+        const evalauationAlphabetical = [...students].sort((a, b) =>
+          a.studentName.localeCompare(b.studentName),
+        );
+        text += evalauationAlphabetical
           .map((student, index) => `${index + 1}. ${student.studentName}`)
           .join("\n");
 
         // set student names
+
         const names = students.map(
           (student, index) => `${index + 1}. ${student.studentName}`,
         );

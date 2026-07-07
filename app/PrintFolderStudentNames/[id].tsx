@@ -59,7 +59,10 @@ const PrintScreen = () => {
       const names = data.eventEvaluationDetails.filter(
         (student) => student.course === selectedCourse,
       );
-      setPrintStudents(names);
+      const evalauationAlphabetical = [...names].sort((a, b) =>
+        a.studentName.localeCompare(b.studentName),
+      );
+      setPrintStudents(evalauationAlphabetical);
       console.log(printStudents);
     } catch (err: any) {
       Alert.alert("Error", err.message);
@@ -177,7 +180,11 @@ const PrintScreen = () => {
     const changeDataNames = uniqueEvaluations.filter(
       (student) => student.course === selectedCourse,
     );
-    setPrintStudents(changeDataNames);
+
+    const evalauationAlphabetical = [...changeDataNames].sort((a, b) =>
+      a.studentName.localeCompare(b.studentName),
+    );
+    setPrintStudents(evalauationAlphabetical);
   }, [selectedCourse, eventEvaluationDetails]);
 
   const generatePDF = async () => {
