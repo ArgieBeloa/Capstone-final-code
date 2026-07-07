@@ -315,16 +315,33 @@ const Events = () => {
             )}
 
             {/* QR generated Button */}
-            {isTodayEventDate(item.eventDate) && (
-              <Pressable
-                style={styles.qrGeneratorbtn}
-                onPress={() => {
-                  router.push(`../OfficerScanner/${item.id}`);
-                }}
-              >
-                <MaterialIcons name="qr-code-2" size={24} color="black" />
-              </Pressable>
-            )}
+            <View style={styles.actionContainer}>
+              {/* QR Scanner */}
+              {isTodayEventDate(item.eventDate) && (
+                <Pressable
+                  style={styles.qrGeneratorbtn}
+                  onPress={() => router.push(`../OfficerScanner/${item.id}`)}
+                >
+                  <MaterialIcons name="qr-code-2" size={24} color="black" />
+                </Pressable>
+              )}
+
+              {/* Manual Attendance */}
+              {isTodayEventDate(item.eventDate) && (
+                <Pressable
+                  style={styles.manualAttendanceBtn}
+                  onPress={() =>
+                    router.push(`../officerManualAttendance/${item.id}`)
+                  }
+                >
+                  <MaterialIcons
+                    name="person-add-alt-1"
+                    size={24}
+                    color="white"
+                  />
+                </Pressable>
+              )}
+            </View>
 
             {/* Event Title */}
             <View style={{ marginTop: "auto", paddingLeft: 10 }}>
@@ -496,6 +513,19 @@ const styles = StyleSheet.create({
   },
   activeButton: {
     backgroundColor: COLORS.Secondary,
+  },
+  actionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10, // React Native 0.71+. Otherwise use marginRight.
+  },
+
+  manualAttendanceBtn: {
+    backgroundColor: "#2563EB",
+    padding: 10,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingOverlay: {
     position: "absolute",
