@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -18,6 +19,7 @@ import { getAllStudents } from "@/api/admin/controller";
 import { EventAttendance } from "@/api/events/utils";
 import { addStudent } from "@/api/local/local";
 import { Course } from "@/api/students/utils";
+import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams } from "expo-router";
 
@@ -37,10 +39,15 @@ export default function OfficerManualAttendance() {
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [modalStatus, setModalStatus] = useState<"success" | "error">(
+    "success",
+  );
 
   const { studentData, studentToken, eventData } = useUser();
 
   const student: StudentModel = studentData;
+  const [searchText, setSearchText] = useState("");
+
   const event = eventData.find((e) => e.id === (id as string));
 
   const handleOfficerLocalAttendance = async (
@@ -59,20 +66,39 @@ export default function OfficerManualAttendance() {
       // Close confirmation modal
       setModalVisible(false);
 
-      // Show success modal
+      setModalStatus("success");
       setSuccessMessage(
-        `✅ Successfully added to local attendance.\n\n${eventAttendance.studentName}\n${eventAttendance.department}`,
+        `✅ Successfully added to local attendance.\n\nName: ${eventAttendance.studentName}\nDepartment: ${eventAttendance.department}`,
       );
       setSuccessModalVisible(true);
     } catch (error: any) {
-      console.error("❌ QR Scan Error:", error.message);
-
       setModalVisible(false);
 
-      setSuccessMessage("❌ Failed to add attendance.");
+      setModalStatus("error");
+
+      setSuccessMessage(
+        error?.message || "Unable to add attendance. Please try again.",
+      );
+
       setSuccessModalVisible(true);
     }
   };
+  useEffect(() => {
+    let students = allStudentState.filter(
+      (item) => item.course === selectedCourse,
+    );
+
+    if (searchText.trim()) {
+      students = students.filter((student) =>
+        student.studentNumber
+          ?.toLowerCase()
+          .includes(searchText.trim().toLowerCase()),
+      );
+    }
+
+    setStudentByCourseState(students);
+  }, [selectedCourse, allStudentState, searchText]);
+
   // get all students
   //sort by department
   useEffect(() => {
@@ -100,6 +126,24 @@ export default function OfficerManualAttendance() {
   return (
     <SafeAreaView style={styles.safeAreaview}>
       <View style={{ flex: 1 }}>
+        {/* Search  by student id*/}
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={20}
+            color="#6B7280"
+            style={styles.searchIcon}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Search Student Number..."
+            placeholderTextColor="#9CA3AF"
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+        </View>
+
         {/* Option by course */}
         <View style={styles.container}>
           <Text style={styles.label}>Select Course</Text>
@@ -346,6 +390,41 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
     marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginTop: 15,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#D1D5DB",
+
+    // Android shadow
+    elevation: 3,
+
+    // iOS shadow
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+
+  searchIcon: {
+    marginRight: 10,
+  },
+
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: "#111827",
   },
   modalButton: {
     backgroundColor: "#007AFF",
