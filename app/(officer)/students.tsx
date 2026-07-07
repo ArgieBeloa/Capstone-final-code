@@ -250,13 +250,13 @@ const Students = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Announcement */}
+            {/* Announcement
             <TouchableOpacity
               style={{ marginHorizontal: 10 }}
               onPress={() => setShowAnnouncementModal(true)}
             >
               <FontAwesome5 name="bullhorn" size={18} color="black" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {/* Add */}
             <TouchableOpacity
