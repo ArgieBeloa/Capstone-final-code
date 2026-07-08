@@ -87,7 +87,7 @@ export enum Course {
 
   COLLEGE_OF_LAW = "College of Law",
 
-  BACHELOR_OF_ARTS = "Bachelor of Arts",
+  BACHELOR_OF_ARTS_IN_POLITICAL_SCIENCE = "Bachelor of Arts In Political Science",
   BACHELOR_OF_SCIENCE_IN_PSYCHOLOGY = "Bachelor of Science in Psychology",
   BACHELOR_OF_SCIENCE_IN_MATHEMATICS = "Bachelor of Science in Mathematics",
   BACHELOR_OF_SECONDARY_EDUCATION = "Bachelor of Secondary Education",
@@ -128,7 +128,7 @@ export const DepartmentCourses = {
   [Department.LAW]: [Course.COLLEGE_OF_LAW],
 
   [Department.CASE]: [
-    Course.BACHELOR_OF_ARTS,
+    Course.BACHELOR_OF_ARTS_IN_POLITICAL_SCIENCE,
     Course.BACHELOR_OF_SCIENCE_IN_PSYCHOLOGY,
     Course.BACHELOR_OF_SCIENCE_IN_MATHEMATICS,
     Course.BACHELOR_OF_SECONDARY_EDUCATION,

@@ -185,6 +185,12 @@ export async function registerStudent(
   return res.data;
 }
 
+export async function registerStudentOpen(
+  newStudent: StudentModel,
+): Promise<string> {
+  const res = await axios.post(`${BASE_URL}/registerOpen`, newStudent);
+  return res.data;
+}
 /* ===========================================================
    ✅ 2. Login (student)
    POST /api/auth/login
