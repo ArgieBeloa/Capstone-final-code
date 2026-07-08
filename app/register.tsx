@@ -393,7 +393,7 @@ const Register = () => {
                         setConfirmPassword("");
 
                         // Navigate to Login screen
-                        navigation.navigate("Login");
+                        haddleLoginBack();
                       }
                     }}
                   >
