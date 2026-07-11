@@ -1,10 +1,15 @@
-import { getAllStudents } from "@/api/admin/controller";
+import {
+  deleteStudent,
+  getAllStudents,
+  updateStudentByIdApi,
+} from "@/api/admin/controller";
 import { StudentModel } from "@/api/students/model";
 import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
 import Styles from "@/app/osa/styles/globalCss";
 import studentStyles from "@/app/osa/styles/students.styles";
 import LinearbackGround from "@/components/LinearBackGround";
 import LinearProgressBar from "@/components/LinearProgressBar";
+import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import {
@@ -14,7 +19,13 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import {
   Animated,
   FlatList,
@@ -28,7 +39,45 @@ import {
 import Animated2 from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// userducer
+
+const intialState = {
+  studentName: "",
+  studentNumber: "",
+  course: "",
+  department: "",
+};
+
+function reducer(state: any, action: any) {
+  switch (action.type) {
+    case "SET STUDENTNAME":
+      return { ...state, studentName: action.payload };
+
+    case "SET STUDENTNUMBER":
+      return { ...state, studentNumber: action.payload };
+
+    case "SET COURSE":
+      return { ...state, course: action.payload };
+
+    case "SET DEPARTMENT":
+      return { ...state, department: action.payload };
+
+    default:
+      return state;
+  }
+}
 const Students = () => {
+  /*
+  
+  1. long press show modal that choice edit or delete
+  2. get student data by id 
+  3. edit show the data in respective field
+  4. delete get the function delete in controller
+  5. show message response
+  7. remove modal 
+
+  */
+
   const { studentToken, eventData } = useUser();
   const officerName = "OSA Officer";
   const firstLetterName = officerName.charAt(0).toUpperCase();
@@ -37,8 +86,14 @@ const Students = () => {
   const [allStudents, setAllStudents] = useState<StudentModel[]>([]); // ✅ Keep all students for reset
   const [searchText, setSearchText] = useState("");
   const [filteredStudents, setFilteredStudents] = useState<StudentModel[]>([]);
+  const [studentIdState, setStudentIdState] = useState("");
+  const [studentState, setStudentState] = useState<StudentModel>();
+  const [state, dispatch] = useReducer(reducer, intialState);
+
   const [showResults, setShowResults] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [modal, setModal] = useState(false);
+
   const [selectedStudent, setSelectedStudent] = useState<
     StudentEventAttendedAndEvaluationDetails[]
   >([]);
@@ -46,6 +101,7 @@ const Students = () => {
   const router = useRouter();
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleOpenModal = (id: string) => {
     const student = allStudents.find((student) => student.id === id);
@@ -97,7 +153,7 @@ const Students = () => {
       };
       loadStudents();
       animateList();
-    }, [studentToken]),
+    }, [studentToken, loading]),
   );
 
   // 🔹 Filter logic for dropdown
@@ -173,9 +229,82 @@ const Students = () => {
     else return "red";
   };
 
+  // FUNCTION UTILS
+  const handleDeleteStudent = async (studentId: string) => {
+    // const student = allStudents.find((student) => student.id === studentId);
+    setLoading(true);
+    try {
+      const deleted = await deleteStudent(studentId, studentToken);
+      console.log(deleted);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      (setModal(false), setLoading(false));
+    }
+  };
+  const handdlStudentUpdate = async () => {
+    setLoading(true);
+    try {
+      /*
+      const intialState = {
+  studentName: "",
+  studentNumber: "",
+  course: "",
+  deparment: "",
+};
+
+*/
+
+      const updateStudent: StudentModel = {
+        studentNumber: studentState?.studentNumber || "",
+        officerCredentials: {
+          canAddEvent: studentState?.officerCredentials.canAddEvent || false,
+          canEditEvent: studentState?.officerCredentials.canEditEvent || false,
+          canScanStudent:
+            studentState?.officerCredentials.canScanStudent || false,
+          canAddStudent:
+            studentState?.officerCredentials.canAddStudent || false,
+        },
+        studentName: state.studentName,
+        course: state.course,
+        department: state.department,
+        notificationId: studentState?.notificationId || "",
+        studentUpcomingEvents: studentState?.studentUpcomingEvents || [],
+        studentEventAttended: studentState?.studentEventAttended || [],
+        studentRecentEvaluations: studentState?.studentRecentEvaluations || [],
+        studentNotifications: studentState?.studentNotifications || [],
+        studentEventAttendedAndEvaluationDetails:
+          studentState?.studentEventAttendedAndEvaluationDetails || [],
+      };
+
+      await updateStudentByIdApi(studentIdState, studentToken, updateStudent);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+      setModal(false);
+    }
+  };
+  const handleEditStudent = async (studentId: string) => {
+    const student = allStudents.find((student) => student.id === studentId);
+    setStudentState(student);
+    dispatch({ type: "SET STUDENTNAME", payload: student?.studentName });
+    dispatch({ type: "SET COURSE", payload: student?.course });
+    dispatch({ type: "SET DEPARTMENT", payload: student?.department });
+  };
+
   // 🔹 Render each student card
   const studentRenderItem = ({ item }: { item: StudentModel }) => (
-    <TouchableOpacity onPress={() => handleOpenModal(item.id as string)}>
+    <TouchableOpacity
+      onPress={() => {
+        handleOpenModal(item.id as string);
+      }}
+      onLongPress={() => {
+        setStudentIdState(item.id as string);
+
+        setModal(true);
+      }}
+    >
       <Animated.View
         style={[
           studentStyles.containerItem,
@@ -429,6 +558,166 @@ const Students = () => {
             </View>
           </View>
         </Modal>
+        <Loading text="Please wait..." color="#4F46E5" visible={loading} />
+
+        {/* modal delete or edit student */}
+        <Modal visible={modal} animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              {/* Student details */}
+
+              <Text
+                style={{ fontSize: 20, fontWeight: 700, textAlign: "center" }}
+              >
+                please select an Option
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  padding: 5,
+                  justifyContent: "space-between",
+                  marginVertical: 10,
+                }}
+              >
+                {/* delete button */}
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "red",
+                    marginHorizontal: 10,
+                    padding: 5,
+                    borderRadius: 5,
+                  }}
+                  onPress={() => {
+                    handleDeleteStudent(studentIdState);
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 17,
+                      textAlign: "center",
+                      color: "white",
+                    }}
+                  >
+                    Delete
+                  </Text>
+                </TouchableOpacity>
+
+                {/* edit button*/}
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "green",
+                    padding: 5,
+                    borderRadius: 5,
+                    marginHorizontal: 10,
+                  }}
+                  onPress={() => handleEditStudent(studentIdState)}
+                >
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      color: "white",
+                      fontSize: 17,
+                    }}
+                  >
+                    edit
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* view edit */}
+              {studentState && (
+                <View style={{ marginVertical: 10 }}>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 600,
+                      marginVertical: 10,
+                      textAlign: "center",
+                    }}
+                  >
+                    Edit student
+                  </Text>
+
+                  {/* studentName */}
+                  <Text style={{ marginVertical: 5, fontSize: 17 }}>
+                    Student Name
+                  </Text>
+
+                  <TextInput
+                    placeholderTextColor="black"
+                    style={styles.textfieldInputPass}
+                    onChangeText={(text) => {
+                      dispatch({ type: "SET STUDENTNAME", payload: text });
+                    }}
+                  />
+                  <Text style={{ marginVertical: 10, fontSize: 17 }}>
+                    {state.studentName}
+                  </Text>
+
+                  {/* course */}
+                  <Text style={{ marginVertical: 5, fontSize: 17 }}>
+                    Student Course
+                  </Text>
+
+                  <TextInput
+                    placeholderTextColor="black"
+                    style={styles.textfieldInputPass}
+                    onChangeText={(text) => {
+                      dispatch({ type: "SET COURSE", payload: text });
+                    }}
+                  />
+                  <Text style={{ marginVertical: 10, fontSize: 17 }}>
+                    {state.course}
+                  </Text>
+
+                  {/* DEPARTMENT */}
+
+                  <Text style={{ marginVertical: 5, fontSize: 17 }}>
+                    Student Department
+                  </Text>
+
+                  <TextInput
+                    placeholderTextColor="black"
+                    style={styles.textfieldInputPass}
+                    onChangeText={(text) => {
+                      dispatch({ type: "SET DEPARTMENT", payload: text });
+                    }}
+                  />
+                  <Text style={{ marginVertical: 10, fontSize: 17 }}>
+                    {state.department}
+                  </Text>
+
+                  {/* update button */}
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: "#007AFF",
+                      padding: 12,
+                      borderRadius: 10,
+                      alignItems: "center",
+                    }}
+                    onPress={handdlStudentUpdate}
+                  >
+                    <Text style={{ color: "white" }}>Update</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* MODAL  CLOSE */}
+              <TouchableOpacity
+                onPress={() => setModal(false)}
+                style={{
+                  backgroundColor: "#d80707",
+                  padding: 12,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </LinearbackGround>
   );
@@ -506,10 +795,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalBox: {
-    width: "80%",
-    backgroundColor: "#fff",
+    backgroundColor: "#3f1717",
     padding: 20,
     borderRadius: 12,
+
     alignItems: "center",
   },
   modalTitle: {
@@ -536,8 +825,8 @@ const styles = StyleSheet.create({
   modalContainer: {
     backgroundColor: "white",
     padding: 20,
+    width: "60%",
     borderRadius: 10,
-    minWidth: 250,
     alignItems: "center",
   },
   closeButton: {
@@ -550,5 +839,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
+  },
+  textfieldInputPass: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: "black",
+    backgroundColor: "#fff",
+    paddingLeft: 3,
+    borderColor: "black",
+    borderWidth: 1,
+    borderRadius: 5,
   },
 });

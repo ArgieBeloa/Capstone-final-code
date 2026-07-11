@@ -12,7 +12,7 @@ export interface StudentModel {
 
   // 🔐 Credentials
   studentNumber: string;
-  studentPassword: string;
+  studentPassword?: string;
 
   // 🧭 Access control
   officerCredentials: OfficerCredentials;

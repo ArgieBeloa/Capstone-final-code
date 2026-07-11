@@ -357,6 +357,29 @@ export async function demoteOfficer(
     }
   }
 }
+export async function updateStudentByIdApi(
+  id: string,
+  token: string,
+  updatedStudent: StudentModel,
+): Promise<StudentModel> {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/admin/updateStudentById/${id}`,
+      updatedStudent,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Error updating event:");
+    throw error.response?.data || error;
+  }
+}
 
 export async function deleteStudent(
   id: string,
@@ -367,14 +390,12 @@ export async function deleteStudent(
       throw new Error("Token is missing");
     }
 
-    // 🔥 Always remove Bearer if it exists
-    const cleanToken = token.replace("Bearer ", "").trim();
-
-    console.log("🪙 Clean Token:", cleanToken);
-
-    const response = await axios.delete(`${BASE_URL}/deleteStudent/${id}`, {
-      headers: { Authorization: `Bearer ${cleanToken}` },
-    });
+    const response = await axios.delete(
+      `${BASE_URL}/admin/deleteStudent/${id}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     console.log("✅ Student deleted successfully:", response.data);
     return response.data;
   } catch (error: any) {
