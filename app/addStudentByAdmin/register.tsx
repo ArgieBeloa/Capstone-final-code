@@ -118,18 +118,21 @@ const Register = () => {
   //   return "UNASSIGNED";
   // };
 
-  const getDepartmentFromCourse = (
+  const getDepartmentCodeFromCourse = (
     course: string,
-  ): Department | "UNASSIGNED" => {
-    for (const [department, courses] of Object.entries(DepartmentCourses)) {
-      if (courses.includes(course as Course)) {
-        return department as Department;
+  ): keyof typeof Department | "UNASSIGNED" => {
+    for (const key of Object.keys(Department) as (keyof typeof Department)[]) {
+      const department = Department[key];
+
+      if (DepartmentCourses[department].includes(course as Course)) {
+        return key;
       }
     }
 
     return "UNASSIGNED";
   };
-  const department = getDepartmentFromCourse(selectedCourse);
+
+  const departmentCode = getDepartmentCodeFromCourse(selectedCourse);
   // const department = getDepartmentFromCourse(selectedCourse);
 
   const newStudent: StudentModel = {
@@ -137,7 +140,7 @@ const Register = () => {
     studentNumber: username,
     studentPassword: password,
     course: selectedCourse as string,
-    department: department,
+    department: departmentCode,
     notificationId: expoPushToken || "no token",
     studentUpcomingEvents: [],
     studentEventAttended: [],
