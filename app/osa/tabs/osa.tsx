@@ -471,6 +471,7 @@ const OsaScreen: React.FC = () => {
 
           <Animated.FlatList
             data={currentOfficer}
+            style={{ flex: 1 }}
             keyExtractor={(item) =>
               item.studentId?.toString() || Math.random().toString()
             }
