@@ -323,6 +323,9 @@ const EventDetails = () => {
 
                 <Text style={styles.sectionTitle}>About</Text>
                 <Text style={styles.body}>{event.eventBody}</Text>
+                <Text style={styles.subTitle}>
+                  Evaluation End {event.evaluationEnd}
+                </Text>
 
                 <Text style={styles.sectionTitle}>Agenda</Text>
                 <AgendaSection eventAgendas={eventAgendas} />

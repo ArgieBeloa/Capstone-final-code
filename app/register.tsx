@@ -7,7 +7,7 @@ import { registerForPushNotificationsAsync } from "@/src/pushToken";
 import { useUser } from "@/src/userContext";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -45,6 +45,8 @@ const Register = () => {
   const [selectedCourse, setSelectedCourse] = useState(
     Course.BACHELOR_OF_SCIENCE_IN_INFORMATION_TECHNOLOGY,
   );
+
+  const isSubmitting = useRef(false);
 
   // 🔴 Add validation state
   const [errors, setErrors] = useState<{
@@ -173,23 +175,29 @@ const Register = () => {
   };
 
   const haddleRegister = async () => {
-    console.log("Selected course ", selectedCourse);
-    if (!validateFields()) return;
+    if (isSubmitting.current) return;
 
-    setLoading(true);
+    isSubmitting.current = true;
     setRegisterBtnDisable(true);
 
+    if (!validateFields()) {
+      isSubmitting.current = false;
+      setRegisterBtnDisable(false);
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const studentAdded = await registerStudentOpen(newStudent);
-      console.log("Student Added: ", studentAdded);
+      await registerStudentOpen(newStudent);
 
       setIsSuccess(true);
       setModalVisible(true);
     } catch (error) {
-      console.log("Register failed: ", error);
       setIsSuccess(false);
       setModalVisible(true);
     } finally {
+      isSubmitting.current = false;
       setLoading(false);
       setRegisterBtnDisable(false);
     }
