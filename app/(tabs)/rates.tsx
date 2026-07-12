@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const Rates = () => {
   // student attended data
   const {
+    eventData,
     studentData,
     setStudentData,
     studentToken,
@@ -27,6 +28,10 @@ const Rates = () => {
   >(studentData.studentEventAttended);
 
   const router = useRouter();
+  const getEvaluationEnd = (date: string) => {
+    // Treat backend LocalDateTime as UTC
+    return new Date(date + "Z");
+  };
 
   const haddleEvaluationPage = (id: string) => {
     router.push({
@@ -72,14 +77,20 @@ const Rates = () => {
                 keyExtractor={(item) => item.eventId}
                 contentContainerStyle={{ marginHorizontal: 10 }}
                 renderItem={({ item }) => {
-                  console.log(item.evaluationTime);
+                  const eventEvaluationEnd = eventData.find(
+                    (event) => event.id === item.eventId,
+                  );
+                  console.log(eventEvaluationEnd?.evaluationEnd);
 
                   return (
                     <TouchableHighlight
                       onPress={() => haddleEvaluationPage(item.eventId)}
                       disabled={
                         item.evaluated ||
-                        new Date() > new Date(item.evaluationTime)
+                        new Date() >
+                          getEvaluationEnd(
+                            eventEvaluationEnd?.evaluationEnd as string,
+                          )
                       }
                     >
                       <Animated.View
@@ -114,7 +125,10 @@ const Rates = () => {
                                 name="warning"
                                 size={22}
                                 color={
-                                  new Date() > new Date(item.evaluationTime)
+                                  new Date() >
+                                  getEvaluationEnd(
+                                    eventEvaluationEnd?.evaluationEnd as string,
+                                  )
                                     ? "red"
                                     : "orange"
                                 }
@@ -124,12 +138,18 @@ const Rates = () => {
                                   fontSize: 10,
                                   fontWeight: "500",
                                   color:
-                                    new Date() > new Date(item.evaluationTime)
+                                    new Date() >
+                                    getEvaluationEnd(
+                                      eventEvaluationEnd?.evaluationEnd as string,
+                                    )
                                       ? "red"
                                       : "orange",
                                 }}
                               >
-                                {new Date() > new Date(item.evaluationTime)
+                                {new Date() >
+                                getEvaluationEnd(
+                                  eventEvaluationEnd?.evaluationEnd as string,
+                                )
                                   ? "Expired"
                                   : "Required"}
                               </Text>

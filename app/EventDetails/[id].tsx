@@ -152,6 +152,9 @@ const EventDetails = () => {
 
         setEvent(event);
         setEventAgendas(event.eventAgendas);
+        const utcString = event.evaluationEnd + "Z"; // Treat as UTC
+        const date = new Date(utcString);
+
         const formatted = new Intl.DateTimeFormat("en-PH", {
           timeZone: "Asia/Manila",
           year: "numeric",
@@ -160,7 +163,9 @@ const EventDetails = () => {
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
-        }).format(new Date(event.evaluationEnd));
+        }).format(date);
+
+        console.log(formatted); // July 13, 2026, 2:00 PM
 
         setEvaluationEndState(formatted);
       } else {
