@@ -52,6 +52,7 @@ const EventDetails = () => {
     StudentUpcomingEvents[]
   >([]);
   const [event, setEvent] = useState<EventModel | null>(null);
+  const [evaluationEndState, setEvaluationEndState] = useState<string>();
   const [eventAgendas, setEventAgendas] = useState<EventAgenda[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -151,6 +152,17 @@ const EventDetails = () => {
 
         setEvent(event);
         setEventAgendas(event.eventAgendas);
+        const formatted = new Intl.DateTimeFormat("en-PH", {
+          timeZone: "Asia/Manila",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }).format(new Date(event.evaluationEnd));
+
+        setEvaluationEndState(formatted);
       } else {
         setStudentUpcomingEvents(studentDataOffline.studentUpcomingEvents);
         const event = eventDataOffline.find((e) => e.id === id);
@@ -323,9 +335,9 @@ const EventDetails = () => {
 
                 <Text style={styles.sectionTitle}>About</Text>
                 <Text style={styles.body}>{event.eventBody}</Text>
-                <Text style={styles.subTitle}>
-                  Evaluation End {event.evaluationEnd}
-                </Text>
+
+                <Text style={styles.sectionTitle}>Evaluation End</Text>
+                <Text style={styles.subTitle}>{evaluationEndState}</Text>
 
                 <Text style={styles.sectionTitle}>Agenda</Text>
                 <AgendaSection eventAgendas={eventAgendas} />
