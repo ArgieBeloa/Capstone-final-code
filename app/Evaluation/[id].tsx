@@ -177,11 +177,11 @@ export default function RatingsScreen() {
       );
 
       // delete the event evaluated to student upcoming events
-      const studentUpcomingEvent = studentData.studentUpcomingEvents.find(
-        (event) => event.eventId === (id as string),
-      );
-
-      if (studentUpcomingEvent) {
+      if (
+        studentData.studentUpcomingEvents.some(
+          (event) => event.eventId === (id as string),
+        )
+      ) {
         await deleteUpcomingEvent(studentToken, userId, id as string);
       }
 
