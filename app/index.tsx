@@ -454,13 +454,9 @@ export default function Index() {
 
                 <Pressable
                   onPress={() => {
-                    // if (studentDataOffline?.role === "OFFICER") {
-                    //   setShowModalOfficer(true);
-                    // } else {
-                    //   router.push("/(tabs)/home");
-                    // }
+                    router.push("/(tabs)/home");
+
                     setShowModalNoInternetUser(false);
-                    // handleOffline(studentDataOffline.role);
                   }}
                   style={{
                     backgroundColor: "#007bff",
