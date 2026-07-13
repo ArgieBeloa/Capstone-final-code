@@ -266,7 +266,7 @@ export default function Index() {
             <View style={styles.deviderPanel}></View>
 
             {/* register section */}
-            <View
+            {/* <View
               style={{
                 flexDirection: "row",
                 gap: 5,
@@ -289,7 +289,7 @@ export default function Index() {
                   Register Here
                 </Text>
               </Pressable>
-            </View>
+            </View> */}
           </View>
 
           {/* modal */}
