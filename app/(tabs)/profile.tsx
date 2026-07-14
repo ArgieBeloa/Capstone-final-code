@@ -208,19 +208,19 @@ const Profile = () => {
                       backgroundColor="white"
                       color="black"
                     />
+                    <Text
+                      style={{
+                        marginBottom: 20,
+                        fontSize: 18,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {studentData.studentNumber}
+                    </Text>
                     <Pressable
                       style={styles.closeButton}
                       onPress={() => setModalIsVisible(false)}
                     >
-                      <Text
-                        style={{
-                          marginBottom: 20,
-                          fontSize: 18,
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {studentData.studentNumber}
-                      </Text>
                       <Text>Close</Text>
                     </Pressable>
                   </View>
