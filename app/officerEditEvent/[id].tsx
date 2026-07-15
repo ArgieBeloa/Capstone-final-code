@@ -236,6 +236,9 @@ const EditEvent = () => {
       setLoading(false);
     }
   };
+  const parseUTCToLocal = (dateTime: string) => {
+    return new Date(dateTime + "Z");
+  };
 
   useEffect(() => {
     const getEvent = async () => {
@@ -243,12 +246,13 @@ const EditEvent = () => {
         const res = await getEventById(studentToken, id as string);
 
         const evaluationStartVariable = res.evaluationStart
-          ? parseLocalDateTime(res.evaluationStart)
+          ? parseUTCToLocal(res.evaluationStart)
           : null;
 
         const evaluationEndVariable = res.evaluationEnd
-          ? parseLocalDateTime(res.evaluationEnd)
+          ? parseUTCToLocal(res.evaluationEnd)
           : null;
+
         const [start, end] = res.eventTimeLength.split(" - ");
 
         console.log(parseLocalDateTime(res.evaluationEnd));

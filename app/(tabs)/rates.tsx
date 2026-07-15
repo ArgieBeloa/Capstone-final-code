@@ -29,11 +29,11 @@ const Rates = () => {
 
   const router = useRouter();
 
-  // const getEvaluationEnd = (date: string) => {
-  //   // Treat backend LocalDateTime as UTC
-  //   return new Date(date + "Z");
-  // };
-  const getEvaluationEnd = (date: string) => new Date(date);
+  const getEvaluationEnd = (date: string) => {
+    // Treat backend LocalDateTime as UTC
+    return new Date(date + "Z");
+  };
+  // const getEvaluationEnd = (date: string) => new Date(date);
 
   const haddleEvaluationPage = (id: string) => {
     router.push({
