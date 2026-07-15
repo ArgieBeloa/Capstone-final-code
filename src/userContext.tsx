@@ -1,4 +1,5 @@
 import { EventModel } from "@/api/events/model";
+import { EventAttendance } from "@/api/events/utils";
 import { StudentModel } from "@/api/students/model";
 import React, { createContext, useContext, useState } from "react";
 // Types
@@ -31,6 +32,10 @@ type UserContextType = {
 
   studentToken: string;
   setStudentToken: (token: string) => void;
+
+  // StudentQR
+  studentQR: EventAttendance;
+  setStudentQR: (studentqr: EventAttendance) => void;
 };
 
 // Create Context
@@ -41,6 +46,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [studentNumber, setStudentNumber] = useState("");
   const [userId, setUserId] = useState("");
   const [studentData, setStudentData] = useState<StudentModel | any>();
+  const [studentQR, setStudentQR] = useState<EventAttendance | any>();
   const [eventData, setEventData] = useState<EventModel[] | any>();
 
   // offline data
@@ -73,6 +79,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         setEventData,
         studentToken,
         setStudentToken,
+        studentQR,
+        setStudentQR,
       }}
     >
       {children}

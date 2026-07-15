@@ -29,6 +29,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { loginStudent } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
+import { EventAttendance } from "@/api/events/utils";
 import {
   getOfflineStudents,
   saveEventOfflineLocal,
@@ -64,6 +65,7 @@ export default function Index() {
     setStudentDataOffline,
     eventDataOffline,
     setEventDataOffline,
+    setStudentQR,
   } = useUser();
   const handleOffline = (userRole: string) => {
     if (userRole === "OFFICER") {
@@ -147,6 +149,19 @@ export default function Index() {
 
       const userData = await getStudentById(response.token, response._id);
       setStudentData(userData);
+
+      const studentqr: EventAttendance = {
+        studentId: userData.id || "",
+        studentNumber: userData.studentNumber,
+        studentName: userData.studentName,
+        role: "STUDENT",
+        department: userData.department,
+        dateScanned: new Date().toISOString(),
+      };
+      console.log("User context student qr ", studentqr);
+
+      // set qr in advance
+      setStudentQR(studentqr);
 
       // local copy of user
       checkUserLocalData(userData, events);

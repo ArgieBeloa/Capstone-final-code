@@ -10,7 +10,7 @@ import { useUser } from "@/src/userContext";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useLayoutEffect, useState } from "react";
 import {
   Dimensions,
   Modal,
@@ -42,6 +42,7 @@ const Profile = () => {
     userId,
     isUserHasInternet,
     eventDataOffline,
+    studentQR,
   } = useUser();
 
   const [studentAttendedData, setStudentAttendedData] = useState<
@@ -145,6 +146,12 @@ const Profile = () => {
     setStudentDataQR(qrPayload);
     setModalIsVisible(true);
   };
+  useLayoutEffect(() => {
+    console.log("QR recieve ", studentQR);
+    if (studentQR) {
+      setStudentDataQR(studentQR);
+    }
+  }, []);
 
   return (
     <LinearbackGround>
@@ -163,18 +170,7 @@ const Profile = () => {
 
             {/* qr generated students data */}
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableHighlight
-                onPress={() =>
-                  handleStudentQR(
-                    student?.id ?? "no_id",
-                    student?.studentNumber ?? "",
-                    student?.studentName ?? "",
-                    "Student",
-                    student?.department ?? "",
-                    dateString,
-                  )
-                }
-              >
+              <TouchableHighlight onPress={() => setModalIsVisible(true)}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <MaterialIcons
                     name="qr-code-scanner"
