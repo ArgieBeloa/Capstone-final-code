@@ -48,7 +48,7 @@ const Events = () => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(0);
   const router = useRouter();
 
-  const [allEvents, setAllEvents] = useState<EventModel[]>([]);
+  const [allEvents, setAllEvents] = useState<EventModel[]>(eventData);
   const [eventState, setEventState] = useState<EventModel[]>();
   const imageCache = useRef<Record<string, string | null>>({});
 
