@@ -251,6 +251,7 @@ const EditEvent = () => {
           : null;
         const [start, end] = res.eventTimeLength.split(" - ");
 
+        console.log(parseLocalDateTime(res.evaluationEnd));
         setEvent(res);
         setEventTitle(res.eventTitle);
         setEventShortDescription(res.eventShortDescription);
