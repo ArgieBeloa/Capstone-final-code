@@ -1,5 +1,6 @@
 import { EventModel } from "@/api/events/model";
 import { EventAttendance } from "@/api/events/utils";
+import { getStudentQRLocal } from "@/api/local/local";
 import { getOfflineEvents, getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
@@ -126,30 +127,20 @@ const Profile = () => {
   };
 
   // student qr generated
-  const handleStudentQR = (
-    studentId: string,
-    studentNumber: string,
-    studentName: string,
-    role: string,
-    department: string,
-    dateScanned: string,
-  ) => {
-    const qrPayload: EventAttendance = {
-      studentId,
-      studentNumber,
-      studentName,
-      role,
-      department,
-      dateScanned,
-    };
-
-    setStudentDataQR(qrPayload);
-    setModalIsVisible(true);
-  };
   useLayoutEffect(() => {
-    console.log("QR recieve ", studentQR);
-    if (studentQR) {
-      setStudentDataQR(studentQR);
+    if (isUserHasInternet) {
+      if (studentQR) {
+        setStudentDataQR(studentQR);
+      }
+    } else {
+      const getLocalQR = async () => {
+        const qr = await getStudentQRLocal();
+
+        if (qr) {
+          setStudentDataQR(qr);
+        }
+      };
+      getLocalQR();
     }
   }, []);
 

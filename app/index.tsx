@@ -30,6 +30,7 @@ import { loginStudent } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EventAttendance } from "@/api/events/utils";
+import { saveStudentQRLocal } from "@/api/local/local";
 import {
   getOfflineStudents,
   saveEventOfflineLocal,
@@ -162,6 +163,9 @@ export default function Index() {
 
       // set qr in advance
       setStudentQR(studentqr);
+
+      //
+      await saveStudentQRLocal(studentqr);
 
       // local copy of user
       checkUserLocalData(userData, events);

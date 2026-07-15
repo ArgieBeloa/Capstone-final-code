@@ -6,6 +6,9 @@ import { LocalEventAttendance } from "./localUtils";
 // 🔑 Dynamic storage key per event
 const getStorageKey = (eventId: string) => `localStudents_${eventId}`;
 
+// KEY FOR QR LOCAL
+const STUDENT_QR_KEY = "studentQR";
+
 // 🔍 Logger helper
 const log = (action: string, payload?: any) => {
   console.log(`[AsyncStorage] ${action}`, payload ?? "");
@@ -223,6 +226,44 @@ export const deleteLocalAttendanceByEventId = async (
     log("DELETE SUCCESS");
   } catch (error) {
     console.error("[AsyncStorage] DELETE ERROR", error);
+  }
+};
+
+// QR ATTENDANCE LOCAL SAVE
+export const saveStudentQRLocal = async (
+  studentQR: EventAttendance,
+): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STUDENT_QR_KEY, JSON.stringify(studentQR));
+
+    console.log("[AsyncStorage] STUDENT QR SAVED");
+  } catch (error) {
+    console.error("[AsyncStorage] SAVE STUDENT QR ERROR", error);
+  }
+};
+
+export const getStudentQRLocal = async (): Promise<EventAttendance | null> => {
+  try {
+    const data = await AsyncStorage.getItem(STUDENT_QR_KEY);
+
+    if (!data) {
+      return null;
+    }
+
+    return JSON.parse(data) as EventAttendance;
+  } catch (error) {
+    console.error("[AsyncStorage] GET STUDENT QR ERROR", error);
+    return null;
+  }
+};
+
+export const deleteStudentQR = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(STUDENT_QR_KEY);
+
+    console.log("[AsyncStorage] STUDENT QR DELETED");
+  } catch (error) {
+    console.error("[AsyncStorage] DELETE STUDENT QR ERROR", error);
   }
 };
 
