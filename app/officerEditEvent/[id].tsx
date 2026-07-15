@@ -5,8 +5,8 @@ import { EventModel } from "@/api/events/model";
 import {
   EvaluationQuestion,
   EventAgenda,
-  formatLocalDateTimeUTils,
   parseLocalDateTimeUtils,
+  toLocalDateTimeString,
 } from "@/api/events/utils";
 import DateTemplate from "@/components/DateTemplate";
 import { COLORS } from "@/constants/ColorCpc";
@@ -215,11 +215,11 @@ const EditEvent = () => {
         eventDate: dateString,
         eventTimeLength: `${timeString} - ${eventLength}`,
         evaluationStart: evaluationStart
-          ? formatLocalDateTimeUTils(evaluationStart)
+          ? toLocalDateTimeString(evaluationStart)
           : null,
 
         evaluationEnd: evaluationEnd
-          ? formatLocalDateTimeUTils(evaluationEnd)
+          ? toLocalDateTimeString(evaluationEnd)
           : null,
         eventOrganizer: {
           organizerName,
@@ -236,7 +236,7 @@ const EditEvent = () => {
       );
       // console.log(res);
 
-      Alert.alert("✅ Event Added");
+      Alert.alert("Success", "Update request has been submitted.");
 
       router.back();
     } catch (error: any) {
@@ -252,17 +252,18 @@ const EditEvent = () => {
       try {
         const res = await getEventById(studentToken, id as string);
 
-        const [start, end] = res.eventTimeLength.split(" - ");
+        const [start = res.eventTime, end = res.eventTime] =
+          res.eventTimeLength?.split(" - ") ?? [];
 
-        console.log(parseLocalDateTime(res.evaluationEnd));
         setEvent(res);
         setEventTitle(res.eventTitle);
         setEventShortDescription(res.eventShortDescription);
         setEventBody(res.eventBody);
         setEventLocation(res.eventLocation);
         setEventCategory(res.eventCategory);
-        (setEventTime(parseTime(res.eventTime)),
-          setEventTimeEnd(parseTime(end)));
+        setEventTime(parseTime(start));
+        setEventTimeEnd(parseTime(end));
+
         setEventDate(parseDate(res.eventDate));
 
         if (res.evaluationEnd) {
@@ -282,7 +283,7 @@ const EditEvent = () => {
     };
 
     getEvent();
-  }, []);
+  }, [id, studentToken]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -484,7 +485,7 @@ const EditEvent = () => {
               <input
                 type="datetime-local"
                 value={
-                  eventDate
+                  eventDate && !isNaN(eventDate.getTime())
                     ? new Date(
                         eventDate.getTime() -
                           eventDate.getTimezoneOffset() * 60000,

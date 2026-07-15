@@ -120,13 +120,17 @@ export function getOverallEvaluationPerformance(
 // DATE CONFLICT
 
 // read
-export const parseLocalDateTimeUtils = (dateTime: string): Date => {
-  const [datePart, timePart] = dateTime.split("T");
+export const parseLocalDateTimeUtils = (value?: string | null): Date | null => {
+  if (!value) return null;
 
-  const [year, month, day] = datePart.split("-").map(Number);
-  const [hour, minute, second = 0] = timePart.split(":").map(Number);
+  const date = new Date(value);
 
-  return new Date(year, month - 1, day, hour, minute, second);
+  if (isNaN(date.getTime())) {
+    console.error("Invalid date:", value);
+    return null;
+  }
+
+  return date;
 };
 
 // Save to db
@@ -141,4 +145,23 @@ export const formatLocalDateTimeUTils = (date: Date): string => {
     `${pad(date.getMinutes())}:` +
     `${pad(date.getSeconds())}`
   );
+};
+
+/**
+ * Returns true if the evaluation has expired.
+ * Accepts strings like:
+ * 2026-07-15T12:30:00.000+00:00
+ */
+export const isEvaluationExpired = (evaluationEnd?: string): boolean => {
+  if (!evaluationEnd) return false;
+
+  const end = new Date(evaluationEnd);
+
+  if (isNaN(end.getTime())) return false;
+
+  return Date.now() > end.getTime();
+};
+
+export const toLocalDateTimeString = (date: Date): string => {
+  return date.toISOString();
 };

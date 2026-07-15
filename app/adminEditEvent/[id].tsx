@@ -5,7 +5,7 @@ import { EventModel } from "@/api/events/model";
 import {
   EvaluationQuestion,
   EventAgenda,
-  formatLocalDateTimeUTils,
+  toLocalDateTimeString,
 } from "@/api/events/utils";
 import DateTemplate from "@/components/DateTemplate";
 import TimeTemplate from "@/components/TimeTemplate";
@@ -187,11 +187,11 @@ const EditEvent = () => {
         eventTimeLength: `${timeString} - ${eventLength}`,
 
         evaluationStart: evaluationStart
-          ? formatLocalDateTimeUTils(evaluationStart)
+          ? toLocalDateTimeString(evaluationStart)
           : null,
 
         evaluationEnd: evaluationEnd
-          ? formatLocalDateTimeUTils(evaluationEnd)
+          ? toLocalDateTimeString(evaluationEnd)
           : null,
 
         eventOrganizer: {
@@ -209,9 +209,7 @@ const EditEvent = () => {
         studentToken,
       );
       console.log(res);
-
-      Alert.alert("✅ Event Added");
-
+      Alert.alert("Success", "Event update has been approved.");
       router.back();
     } catch (error: any) {
       console.error("❌ Update failed:", error);
@@ -222,7 +220,7 @@ const EditEvent = () => {
   };
   useLayoutEffect(() => {
     getAdminData();
-  }, []);
+  }, [studentToken]);
 
   // Functions
   const parseDate = (dateString: string): Date | undefined => {
@@ -253,16 +251,6 @@ const EditEvent = () => {
     return date;
   };
 
-  const parseLocalDateTime = (dateTime: string) => {
-    const [datePart, timePart] = dateTime.split("T");
-
-    const [year, month, day] = datePart.split("-").map(Number);
-    const [hour, minute, second = 0] = timePart.split(":").map(Number);
-
-    // Creates a Date in the device's local timezone (PHT if the device is in PH)
-    return new Date(year, month - 1, day, hour, minute, second);
-  };
-
   const getAdminData = async () => {
     try {
       const adminData = await getAdminById(
@@ -285,54 +273,29 @@ const EditEvent = () => {
 
       if (!event) return;
 
-      const [start, end] = event.eventTimeLength.split(" - ");
+      const [start = "", end = ""] = event.eventTimeLength?.split(" - ") ?? [];
 
       setEventTitle(event.eventTitle);
       setEventShortDescription(event.eventShortDescription);
       setEventBody(event.eventBody);
       setEventLocation(event.eventLocation);
       setEventCategory(event.eventCategory);
-      setEventTime(parseTime(event.eventTime));
+      setEventTime(parseTime(start));
       setEventTimeEnd(parseTime(end));
       setEventDate(parseDate(event.eventDate));
-      if (event.evaluationEnd) {
-        setEvaluationEnd(parseLocalDateTime(event.evaluationEnd));
-      }
+      setEvaluationStart(
+        event.evaluationStart ? new Date(event.evaluationStart) : null,
+      );
 
-      if (event.evaluationStart) {
-        setEvaluationStart(parseLocalDateTime(event.evaluationStart));
-      }
-      setOrganizerName(event.eventOrganizer.organizerName);
-      setOrganizerEmail(event.eventOrganizer.organizerEmail);
+      setEvaluationEnd(
+        event.evaluationEnd ? new Date(event.evaluationEnd) : null,
+      );
+      setOrganizerName(event.eventOrganizer?.organizerName ?? "");
+      setOrganizerEmail(event.eventOrganizer?.organizerEmail ?? "");
       setEventAgenda(event.eventAgendas);
       setEventEvaluationQuestion(event.evaluationQuestions);
     }
   }, [approveEvent, id]);
-
-  // useEffect(() => {
-  //   const getEvent = async () => {
-  //     try {
-  //       const res = await getEventById(studentToken, id as string);
-  //       setEvent(res);
-  //       setEventTitle(res.eventTitle);
-  //       setEventShortDescription(res.eventShortDescription);
-  //       setEventBody(res.eventBody);
-  //       setEventLocation(res.eventLocation);
-  //       setEventCategory(res.eventCategory);
-  //       const eventTimeLength = res.eventTimeLength;
-  //       setEventTime(eventTimeLength);
-  //       setEventDate(res.eventDate);
-  //       setOrganizerName(res.eventOrganizer.organizerName);
-  //       setOrganizerEmail(res.eventOrganizer.organizerEmail);
-  //       setEventAgenda(res.eventAgendas);
-  //       setEventEvaluationQuestion(res.evaluationQuestions);
-  //     } catch (e) {
-  //       console.error("❌ Error fetching event:", e);
-  //     }
-  //   };
-
-  //   getEvent();
-  // }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -635,7 +598,8 @@ const EditEvent = () => {
 
           {/* --- Request for approval event --- */}
           <TouchableOpacity
-            style={[styles.submitBtn]}
+            disabled={loading}
+            style={[styles.submitBtn, loading && { opacity: 0.6 }]}
             onPress={updateEventToCloud}
           >
             {loading ? (

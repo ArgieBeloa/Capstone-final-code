@@ -1,4 +1,6 @@
-import { parseLocalDateTimeUtils } from "@/api/events/utils";
+import {
+  parseLocalDateTimeUtils
+} from "@/api/events/utils";
 import { getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentEventAttended } from "@/api/students/utils";
@@ -76,13 +78,15 @@ const Rates = () => {
                 renderItem={({ item }) => {
                   const event = eventData.find((e) => e.id === item.eventId);
 
-                  const evaluationEnd = event?.evaluationEnd
-                    ? parseLocalDateTimeUtils(event.evaluationEnd)
-                    : null;
+                  // try see
+
+                  const evaluationEnd = parseLocalDateTimeUtils(
+                    event?.evaluationEnd,
+                  );
 
                   const expired =
-                    evaluationEnd !== null &&
-                    new Date().getTime() > evaluationEnd.getTime();
+                    evaluationEnd != null &&
+                    Date.now() > evaluationEnd.getTime();
 
                   return (
                     <TouchableHighlight
