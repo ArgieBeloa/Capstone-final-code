@@ -116,3 +116,29 @@ export function getOverallEvaluationPerformance(
     performance,
   };
 }
+
+// DATE CONFLICT
+
+// read
+export const parseLocalDateTimeUtils = (dateTime: string): Date => {
+  const [datePart, timePart] = dateTime.split("T");
+
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute, second = 0] = timePart.split(":").map(Number);
+
+  return new Date(year, month - 1, day, hour, minute, second);
+};
+
+// Save to db
+export const formatLocalDateTimeUTils = (date: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    `${date.getFullYear()}-` +
+    `${pad(date.getMonth() + 1)}-` +
+    `${pad(date.getDate())}T` +
+    `${pad(date.getHours())}:` +
+    `${pad(date.getMinutes())}:` +
+    `${pad(date.getSeconds())}`
+  );
+};

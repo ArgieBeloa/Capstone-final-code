@@ -2,7 +2,12 @@ import { addApprovalEvent } from "@/api/admin/controller";
 import { approvalUpdateEvent } from "@/api/admin/utils";
 import { getEventById } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
-import { EvaluationQuestion, EventAgenda } from "@/api/events/utils";
+import {
+  EvaluationQuestion,
+  EventAgenda,
+  formatLocalDateTimeUTils,
+  parseLocalDateTimeUtils,
+} from "@/api/events/utils";
 import DateTemplate from "@/components/DateTemplate";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
@@ -209,8 +214,13 @@ const EditEvent = () => {
         eventTime: timeString,
         eventDate: dateString,
         eventTimeLength: `${timeString} - ${eventLength}`,
-        evaluationStart,
-        evaluationEnd,
+        evaluationStart: evaluationStart
+          ? formatLocalDateTimeUTils(evaluationStart)
+          : null,
+
+        evaluationEnd: evaluationEnd
+          ? formatLocalDateTimeUTils(evaluationEnd)
+          : null,
         eventOrganizer: {
           organizerName,
           organizerEmail,
@@ -236,22 +246,11 @@ const EditEvent = () => {
       setLoading(false);
     }
   };
-  const parseUTCToLocal = (dateTime: string) => {
-    return new Date(dateTime + "Z");
-  };
 
   useEffect(() => {
     const getEvent = async () => {
       try {
         const res = await getEventById(studentToken, id as string);
-
-        const evaluationStartVariable = res.evaluationStart
-          ? parseUTCToLocal(res.evaluationStart)
-          : null;
-
-        const evaluationEndVariable = res.evaluationEnd
-          ? parseUTCToLocal(res.evaluationEnd)
-          : null;
 
         const [start, end] = res.eventTimeLength.split(" - ");
 
@@ -266,8 +265,13 @@ const EditEvent = () => {
           setEventTimeEnd(parseTime(end)));
         setEventDate(parseDate(res.eventDate));
 
-        setEvaluationStart(evaluationStartVariable);
-        setEvaluationEnd(evaluationEndVariable);
+        if (res.evaluationEnd) {
+          setEvaluationEnd(parseLocalDateTimeUtils(res.evaluationEnd));
+        }
+
+        if (res.evaluationStart) {
+          setEvaluationStart(parseLocalDateTimeUtils(res.evaluationStart));
+        }
         setOrganizerName(res.eventOrganizer.organizerName);
         setOrganizerEmail(res.eventOrganizer.organizerEmail);
         setEventAgenda(res.eventAgendas);

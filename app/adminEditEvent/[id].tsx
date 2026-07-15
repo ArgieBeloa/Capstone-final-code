@@ -2,7 +2,11 @@ import { deleteApprovalEvent, getAdminById } from "@/api/admin/controller";
 import { approvalUpdateEvent } from "@/api/admin/utils";
 import { updateEvent } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
-import { EvaluationQuestion, EventAgenda } from "@/api/events/utils";
+import {
+  EvaluationQuestion,
+  EventAgenda,
+  formatLocalDateTimeUTils,
+} from "@/api/events/utils";
 import DateTemplate from "@/components/DateTemplate";
 import TimeTemplate from "@/components/TimeTemplate";
 import { COLORS } from "@/constants/ColorCpc";
@@ -181,8 +185,15 @@ const EditEvent = () => {
         eventTime: timeString,
         eventDate: dateString,
         eventTimeLength: `${timeString} - ${eventLength}`,
-        evaluationStart,
-        evaluationEnd,
+
+        evaluationStart: evaluationStart
+          ? formatLocalDateTimeUTils(evaluationStart)
+          : null,
+
+        evaluationEnd: evaluationEnd
+          ? formatLocalDateTimeUTils(evaluationEnd)
+          : null,
+
         eventOrganizer: {
           organizerName,
           organizerEmail,
@@ -273,13 +284,6 @@ const EditEvent = () => {
       console.log(event?.eventTime);
 
       if (!event) return;
-      const evaluationStart = event.evaluationStart
-        ? parseLocalDateTime(event.evaluationStart)
-        : null;
-
-      const evaluationEndVariable = event.evaluationEnd
-        ? parseLocalDateTime(event.evaluationEnd)
-        : null;
 
       const [start, end] = event.eventTimeLength.split(" - ");
 
@@ -291,17 +295,13 @@ const EditEvent = () => {
       setEventTime(parseTime(event.eventTime));
       setEventTimeEnd(parseTime(end));
       setEventDate(parseDate(event.eventDate));
-      setEvaluationStart(
-        evaluationStart && !isNaN(evaluationStart.getTime())
-          ? evaluationStart
-          : null,
-      );
+      if (event.evaluationEnd) {
+        setEvaluationEnd(parseLocalDateTime(event.evaluationEnd));
+      }
 
-      setEvaluationEnd(
-        evaluationEndVariable && !isNaN(evaluationEndVariable.getTime())
-          ? evaluationEndVariable
-          : null,
-      );
+      if (event.evaluationStart) {
+        setEvaluationStart(parseLocalDateTime(event.evaluationStart));
+      }
       setOrganizerName(event.eventOrganizer.organizerName);
       setOrganizerEmail(event.eventOrganizer.organizerEmail);
       setEventAgenda(event.eventAgendas);

@@ -1,3 +1,4 @@
+import { parseLocalDateTimeUtils } from "@/api/events/utils";
 import { getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentEventAttended } from "@/api/students/utils";
@@ -28,12 +29,6 @@ const Rates = () => {
   >(studentData.studentEventAttended);
 
   const router = useRouter();
-
-  const getEvaluationEnd = (date: string) => {
-    // Treat backend LocalDateTime as UTC
-    return new Date(date + "Z");
-  };
-  // const getEvaluationEnd = (date: string) => new Date(date);
 
   const haddleEvaluationPage = (id: string) => {
     router.push({
@@ -79,21 +74,20 @@ const Rates = () => {
                 keyExtractor={(item) => item.eventId}
                 contentContainerStyle={{ marginHorizontal: 10 }}
                 renderItem={({ item }) => {
-                  const eventEvaluationEnd = eventData.find(
-                    (event) => event.id === item.eventId,
-                  );
-                  console.log(eventEvaluationEnd?.evaluationEnd);
+                  const event = eventData.find((e) => e.id === item.eventId);
+
+                  const evaluationEnd = event?.evaluationEnd
+                    ? parseLocalDateTimeUtils(event.evaluationEnd)
+                    : null;
+
+                  const expired =
+                    evaluationEnd !== null &&
+                    new Date().getTime() > evaluationEnd.getTime();
 
                   return (
                     <TouchableHighlight
                       onPress={() => haddleEvaluationPage(item.eventId)}
-                      disabled={
-                        item.evaluated ||
-                        new Date() >
-                          getEvaluationEnd(
-                            eventEvaluationEnd?.evaluationEnd as string,
-                          )
-                      }
+                      disabled={item.evaluated || expired}
                     >
                       <Animated.View
                         entering={FadeInUp.duration(500)}
@@ -126,34 +120,17 @@ const Rates = () => {
                               <Entypo
                                 name="warning"
                                 size={22}
-                                color={
-                                  new Date() >
-                                  getEvaluationEnd(
-                                    eventEvaluationEnd?.evaluationEnd as string,
-                                  )
-                                    ? "red"
-                                    : "orange"
-                                }
+                                color={expired ? "red" : "orange"}
                               />
+
                               <Text
                                 style={{
                                   fontSize: 10,
                                   fontWeight: "500",
-                                  color:
-                                    new Date() >
-                                    getEvaluationEnd(
-                                      eventEvaluationEnd?.evaluationEnd as string,
-                                    )
-                                      ? "red"
-                                      : "orange",
+                                  color: expired ? "red" : "orange",
                                 }}
                               >
-                                {new Date() >
-                                getEvaluationEnd(
-                                  eventEvaluationEnd?.evaluationEnd as string,
-                                )
-                                  ? "Expired"
-                                  : "Required"}
+                                {expired ? "Expired" : "Required"}
                               </Text>
                             </View>
                           )}
