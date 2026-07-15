@@ -242,6 +242,16 @@ const EditEvent = () => {
     return date;
   };
 
+  const parseLocalDateTime = (dateTime: string) => {
+    const [datePart, timePart] = dateTime.split("T");
+
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute, second = 0] = timePart.split(":").map(Number);
+
+    // Creates a Date in the device's local timezone (PHT if the device is in PH)
+    return new Date(year, month - 1, day, hour, minute, second);
+  };
+
   const getAdminData = async () => {
     try {
       const adminData = await getAdminById(
@@ -264,11 +274,13 @@ const EditEvent = () => {
 
       if (!event) return;
       const evaluationStart = event.evaluationStart
-        ? new Date(event.evaluationStart)
+        ? parseLocalDateTime(event.evaluationStart)
         : null;
+
       const evaluationEndVariable = event.evaluationEnd
-        ? new Date(event.evaluationEnd)
+        ? parseLocalDateTime(event.evaluationEnd)
         : null;
+
       const [start, end] = event.eventTimeLength.split(" - ");
 
       setEventTitle(event.eventTitle);

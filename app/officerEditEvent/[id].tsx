@@ -110,6 +110,15 @@ const EditEvent = () => {
 
     return date;
   };
+  const parseLocalDateTime = (dateTime: string) => {
+    const [datePart, timePart] = dateTime.split("T");
+
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute, second = 0] = timePart.split(":").map(Number);
+
+    // Creates a Date in the device's local timezone (PHT if the device is in PH)
+    return new Date(year, month - 1, day, hour, minute, second);
+  };
 
   const addAgenda = () => {
     setEventAgenda([
@@ -233,6 +242,13 @@ const EditEvent = () => {
       try {
         const res = await getEventById(studentToken, id as string);
 
+        const evaluationStartVariable = res.evaluationStart
+          ? parseLocalDateTime(res.evaluationStart)
+          : null;
+
+        const evaluationEndVariable = res.evaluationEnd
+          ? parseLocalDateTime(res.evaluationEnd)
+          : null;
         const [start, end] = res.eventTimeLength.split(" - ");
 
         setEvent(res);
@@ -245,12 +261,8 @@ const EditEvent = () => {
           setEventTimeEnd(parseTime(end)));
         setEventDate(parseDate(res.eventDate));
 
-        setEvaluationStart(
-          res.evaluationStart ? new Date(res.evaluationStart) : undefined,
-        );
-        setEvaluationEnd(
-          res.evaluationEnd ? new Date(res.evaluationEnd) : undefined,
-        );
+        setEvaluationStart(evaluationStartVariable);
+        setEvaluationEnd(evaluationEndVariable);
         setOrganizerName(res.eventOrganizer.organizerName);
         setOrganizerEmail(res.eventOrganizer.organizerEmail);
         setEventAgenda(res.eventAgendas);
