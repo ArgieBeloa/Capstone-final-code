@@ -97,7 +97,7 @@ export enum Course {
   BACHELOR_OF_SCIENCE_IN_ACCOUNTANCY = "Bachelor of Science in Accountancy",
   BACHELOR_OF_SCIENCE_IN_BUSINESS_ADMINISTRATION = "Bachelor of Science in Business Administration",
   BACHELOR_OF_SCIENCE_IN_HOSPITALITY_MANAGEMENT = "Bachelor of Science in Hospitality Management",
-  BACHELOR_OF_SCIENCE_IN_TOURISM_MANAGEMENT = "Bachelor of Science in Tourism & Management",
+  BACHELOR_OF_SCIENCE_IN_TOURISM_MANAGEMENT = "Bachelor of Science in Tourism Management",
   BACHELOR_OF_SCIENCE_IN_INFORMATION_TECHNOLOGY = "Bachelor of Science in Information Technology",
   BACHELOR_OF_SCIENCE_IN_CIVIL_ENGINEERING = "Bachelor of Science in Civil Engineering",
   BACHELOR_OF_SCIENCE_IN_COMPUTER_ENGINEERING = "Bachelor of Science in Computer Engineering",
