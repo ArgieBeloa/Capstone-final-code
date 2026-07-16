@@ -157,6 +157,7 @@ export default function Index() {
         studentName: userData.studentName,
         role: "STUDENT",
         department: userData.department,
+        course: userData.course,
         dateScanned: new Date().toISOString(),
       };
       console.log("User context student qr ", studentqr);

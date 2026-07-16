@@ -36,6 +36,7 @@ export interface EventAttendance {
   studentNumber: string;
   studentName: string;
   role: string;
+  course: string;
   department: string;
   dateScanned: string; // ISO 8601 or formatted date string
 }

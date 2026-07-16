@@ -216,6 +216,7 @@ export default function OfficerManualAttendance() {
                         studentNumber: selectedStudent.studentNumber,
                         department: selectedStudent.department,
                         role: "Student",
+                        course: selectedStudent.course,
                         dateScanned: new Date().toISOString(),
                       });
 
