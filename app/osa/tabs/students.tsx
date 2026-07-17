@@ -356,10 +356,12 @@ const Students = () => {
 
       // server message
       Alert.alert("Server response ", state.serverMessage);
+      setModalForget(false);
     } catch (error) {
       dispatchForget({ type: "SET LOADING", payload: false });
       dispatchForget({ type: "SET SERVERMESSAGE", payload: error });
       Alert.alert("Server response ", state.serverMessage);
+      setModalForget(false);
 
       console.log(error);
     }
@@ -826,13 +828,12 @@ const Students = () => {
             // dispatch({ type: "SET NEWPASSWORD", payload: "" });
             // dispatch({ type: "SET LOADING", payload: false });
             // dispatch({ type: "SET SERVERMESSAGE", payload: "" });
-
             setModalForget(false);
           }}
           animationType="fade"
         >
           {/* Parent container */}
-          <View style={{ justifyContent: "center", marginTop: 10 }}>
+          <View style={{ alignItems: "center", marginTop: 10 }}>
             {/* container */}
 
             <View style={styles.containerForgetPass}>
