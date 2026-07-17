@@ -7,6 +7,7 @@ import {
   approvalUpdateEvent,
   currentOfficer,
   evaluationTemplates,
+  ForgetPassword,
 } from "./utils";
 
 // ✅ Base URL of your Spring Boot backend
@@ -397,6 +398,36 @@ export async function deleteStudent(
       },
     );
     console.log("✅ Student deleted successfully:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      "❌ Error deleting event:",
+      error.response?.data || error.message,
+    );
+    throw error.response?.data || error;
+  }
+}
+
+export async function resetPassword(
+  token: string,
+  forgetPassword: ForgetPassword,
+): Promise<string> {
+  try {
+    if (!token) {
+      throw new Error("Token is missing");
+    }
+
+    const response = await axios.post(
+      `${BASE_URL}/admin/resetPassword`,
+      forgetPassword,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
     return response.data;
   } catch (error: any) {
     console.error(

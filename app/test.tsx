@@ -562,28 +562,190 @@
 
 // const styles = StyleSheet.create({});
 
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { resetPassword } from "@/api/admin/controller";
+import { ForgetPassword } from "@/api/admin/utils";
+import Loading from "@/components/Loading";
+import React, { useEffect, useReducer, useState } from "react";
+import {
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableHighlight,
+  View,
+} from "react-native";
+
+const intialStateForgetPass = {
+  studentName: "",
+  studentNumber: "",
+  studentNewPassword: "",
+  serverMessage: "",
+  loading: false,
+};
+
+function reducer(state: any, action: any) {
+  switch (action.type) {
+    case "SET STUDENTNAME":
+      return { ...state, studentName: action.payload };
+
+    case "SET STUDENTNUMBER":
+      return { ...state, studentNumber: action.payload };
+
+    case "SET NEWPASSWORD":
+      return { ...state, studentNewPassword: action.payload };
+
+    case "SET LOADING":
+      return { ...state, loading: action.payload };
+
+    case "SET SERVERMESSAGE":
+      return { ...state, serverMessage: action.payload };
+
+    default:
+      return state;
+  }
+}
 
 const test = () => {
   const [count, setCount] = useState(0);
 
+  const [modalForget, setModalForget] = useState(false);
+  const [state, dispatch] = useReducer(reducer, intialStateForgetPass);
+
   useEffect(() => {
     const test = () => {
       setCount(count + 1);
-
+      setModalForget(true);
       console.log(count);
     };
     test();
   }, []);
 
+  const handleForgetPasword = async () => {
+    try {
+      // dispatch({ type: "SET LOADING", payload: true });
+      console.log(state.studentName);
+      console.log(state.studentNewPassword);
+
+      const jsonBody: ForgetPassword = {
+        studentNumber: state.studentNumber,
+        newPassword: state.studentNewPassword,
+      };
+
+      const response = await resetPassword("token", jsonBody);
+      console.log(response);
+
+      // server message
+      Alert.alert("Server response ", state.serverMessage);
+    } catch (error) {
+      dispatch({ type: "SET LOADING", payload: false });
+      dispatch({ type: "SET SERVERMESSAGE", payload: error });
+      Alert.alert("Server response ", state.serverMessage);
+
+      console.log(error);
+    }
+  };
   return (
     <View>
-      <Text>test</Text>
+      <Modal
+        visible={modalForget}
+        onRequestClose={() => {
+          //useReducer reset
+          // dispatch({ type: "SET STUDENTNUMBER", payload: "" });
+          // dispatch({ type: "SET STUDENTNAME", payload: "" });
+          // dispatch({ type: "SET NEWPASSWORD", payload: "" });
+          // dispatch({ type: "SET LOADING", payload: false });
+          // dispatch({ type: "SET SERVERMESSAGE", payload: "" });
+
+          setModalForget(false);
+        }}
+        animationType="fade"
+      >
+        {/* container */}
+        <View style={styles.containerForgetPass}>
+          {/* TEXT */}
+
+          <Text>Forget Password</Text>
+          {/* Student name */}
+          <Text>Student Name</Text>
+          <TextInput
+            style={styles.forgetPassField}
+            value={state.studentName}
+            onChangeText={(text) => {
+              dispatch({ type: "SET STUDENTNAME", payload: text });
+            }}
+          />
+
+          {/* Student number */}
+          <Text>Student Number</Text>
+          <TextInput
+            style={styles.forgetPassField}
+            value={state.studentNumber}
+            editable={false}
+            onChangeText={(text) => {
+              dispatch({ type: "SET STUDENTNUMBER", payload: text });
+            }}
+          />
+
+          {/* new password */}
+          <Text>Student new password</Text>
+          <TextInput
+            style={styles.forgetPassField}
+            value={state.studentNewPassword}
+            onChangeText={(text) => {
+              dispatch({ type: "SET NEWPASSWORD", payload: text });
+            }}
+          />
+
+          {/* Button forget */}
+
+          <TouchableHighlight
+            style={styles.forgetButton}
+            disabled={state.loading}
+            onPress={handleForgetPasword}
+          >
+            <Text>Forget password</Text>
+          </TouchableHighlight>
+
+          {/* loading */}
+          <Loading
+            text="Please wait..."
+            color="#4F46E5"
+            visible={state.loading}
+          />
+        </View>
+      </Modal>
     </View>
   );
 };
 
 export default test;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  containerForgetPass: {
+    maxWidth: 600,
+    flexDirection: "column",
+    margin: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  label: {
+    fontWeight: "500",
+    fontSize: 13,
+  },
+  forgetPassField: {
+    width: "98%",
+    height: 50,
+    borderRadius: 10,
+    borderWidth: 1,
+    fontSize: 16,
+    borderColor: "black",
+    paddingLeft: 10,
+  },
+  forgetButton: {
+    backgroundColor: "#e74c3c",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+  },
+});

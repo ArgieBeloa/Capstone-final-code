@@ -1,8 +1,10 @@
 import {
   deleteStudent,
   getAllStudents,
+  resetPassword,
   updateStudentByIdApi,
 } from "@/api/admin/controller";
+import { ForgetPassword } from "@/api/admin/utils";
 import { StudentModel } from "@/api/students/model";
 import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
 import Styles from "@/app/osa/styles/globalCss";
@@ -27,12 +29,14 @@ import React, {
   useState,
 } from "react";
 import {
+  Alert,
   Animated,
   FlatList,
   Modal,
   StyleSheet,
   Text,
   TextInput,
+  TouchableHighlight,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -66,6 +70,36 @@ function reducer(state: any, action: any) {
       return state;
   }
 }
+
+const intialStateForgetPass = {
+  studentName: "",
+  studentNumber: "",
+  studentNewPassword: "",
+  serverMessage: "",
+  loading: false,
+};
+
+function reducerForget(state: any, action: any) {
+  switch (action.type) {
+    case "SET STUDENTNAME":
+      return { ...state, studentName: action.payload };
+
+    case "SET STUDENTNUMBER":
+      return { ...state, studentNumber: action.payload };
+
+    case "SET NEWPASSWORD":
+      return { ...state, studentNewPassword: action.payload };
+
+    case "SET LOADING":
+      return { ...state, loading: action.payload };
+
+    case "SET SERVERMESSAGE":
+      return { ...state, serverMessage: action.payload };
+
+    default:
+      return state;
+  }
+}
 const Students = () => {
   /*
   
@@ -93,6 +127,12 @@ const Students = () => {
   const [showResults, setShowResults] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [modal, setModal] = useState(false);
+
+  const [modalForget, setModalForget] = useState(false);
+  const [stateforget, dispatchForget] = useReducer(
+    reducerForget,
+    intialStateForgetPass,
+  );
 
   const [selectedStudent, setSelectedStudent] = useState<
     StudentEventAttendedAndEvaluationDetails[]
@@ -291,6 +331,28 @@ const Students = () => {
     dispatch({ type: "SET STUDENTNAME", payload: student?.studentName });
     dispatch({ type: "SET COURSE", payload: student?.course });
     dispatch({ type: "SET DEPARTMENT", payload: student?.department });
+  };
+
+  const handleForgetPasword = async () => {
+    try {
+      dispatchForget({ type: "SET LOADING", payload: true });
+      const jsonBody: ForgetPassword = {
+        studentNumber: stateforget.studentNumber,
+        newPassword: stateforget.studentNewPassword,
+      };
+
+      const response = await resetPassword(studentToken, jsonBody);
+      console.log(response);
+
+      // server message
+      Alert.alert("Server response ", state.serverMessage);
+    } catch (error) {
+      dispatchForget({ type: "SET LOADING", payload: false });
+      dispatchForget({ type: "SET SERVERMESSAGE", payload: error });
+      Alert.alert("Server response ", state.serverMessage);
+
+      console.log(error);
+    }
   };
 
   // 🔹 Render each student card
@@ -603,7 +665,7 @@ const Students = () => {
                   </Text>
                 </TouchableOpacity>
 
-                {/* edit button*/}
+                {/* edit */}
                 <TouchableOpacity
                   style={{
                     backgroundColor: "green",
@@ -612,6 +674,30 @@ const Students = () => {
                     marginHorizontal: 10,
                   }}
                   onPress={() => handleEditStudent(studentIdState)}
+                >
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      color: "white",
+                      fontSize: 17,
+                    }}
+                  >
+                    edit
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Forget password button*/}
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "green",
+                    padding: 5,
+                    borderRadius: 5,
+                    marginHorizontal: 10,
+                  }}
+                  onPress={() => {
+                    setModal(false);
+                    setModalForget(true);
+                  }}
                 >
                   <Text
                     style={{
@@ -716,6 +802,76 @@ const Students = () => {
                 <Text style={{ color: "#fff", fontWeight: "bold" }}>Close</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </Modal>
+
+        {/* RESET AREA */}
+        <Modal
+          visible={modalForget}
+          onRequestClose={() => {
+            //useReducer reset
+            // dispatch({ type: "SET STUDENTNUMBER", payload: "" });
+            // dispatch({ type: "SET STUDENTNAME", payload: "" });
+            // dispatch({ type: "SET NEWPASSWORD", payload: "" });
+            // dispatch({ type: "SET LOADING", payload: false });
+            // dispatch({ type: "SET SERVERMESSAGE", payload: "" });
+
+            setModalForget(false);
+          }}
+          animationType="fade"
+        >
+          {/* container */}
+          <View style={styles.containerForgetPass}>
+            {/* TEXT */}
+
+            <Text>Forget Password</Text>
+            {/* Student name */}
+            <Text>Student Name</Text>
+            <TextInput
+              style={styles.forgetPassField}
+              value={stateforget.studentName}
+              onChangeText={(text) => {
+                dispatchForget({ type: "SET STUDENTNAME", payload: text });
+              }}
+            />
+
+            {/* Student number */}
+            <Text>Student Number</Text>
+            <TextInput
+              style={styles.forgetPassField}
+              value={stateforget.studentNumber}
+              editable={false}
+              onChangeText={(text) => {
+                dispatchForget({ type: "SET STUDENTNUMBER", payload: text });
+              }}
+            />
+
+            {/* new password */}
+            <Text>Student new password</Text>
+            <TextInput
+              style={styles.forgetPassField}
+              value={stateforget.studentNewPassword}
+              onChangeText={(text) => {
+                dispatchForget({ type: "SET NEWPASSWORD", payload: text });
+              }}
+            />
+
+            {/* Button forget */}
+
+            <TouchableHighlight
+              style={styles.forgetButton}
+              disabled={state.loading}
+              onPress={handleForgetPasword}
+            >
+              <Text>Forget password</Text>
+            </TouchableHighlight>
+
+            {/* loading */}
+            <Loading
+              text="Please wait..."
+              color="#4F46E5"
+              visible={state.loading}
+            />
           </View>
         </Modal>
       </SafeAreaView>
@@ -850,5 +1006,33 @@ const styles = StyleSheet.create({
     borderColor: "black",
     borderWidth: 1,
     borderRadius: 5,
+  },
+
+  // Forger style
+  containerForgetPass: {
+    maxWidth: 600,
+    flexDirection: "column",
+    margin: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  label: {
+    fontWeight: "500",
+    fontSize: 13,
+  },
+  forgetPassField: {
+    width: "98%",
+    height: 50,
+    borderRadius: 10,
+    borderWidth: 1,
+    fontSize: 16,
+    borderColor: "black",
+    paddingLeft: 10,
+  },
+  forgetButton: {
+    backgroundColor: "#e74c3c",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
   },
 });

@@ -9,6 +9,11 @@ export interface currentOfficer {
   canAddEvent: boolean;
 }
 
+export interface ForgetPassword {
+  studentNumber: string;
+  newPassword: string;
+}
+
 export interface evaluationTemplates {
   id: string;
   templateName: string;
