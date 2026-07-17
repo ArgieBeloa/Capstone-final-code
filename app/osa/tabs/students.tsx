@@ -333,6 +333,16 @@ const Students = () => {
     dispatch({ type: "SET DEPARTMENT", payload: student?.department });
   };
 
+  const handleForgetState = async (studentId: string) => {
+    const student = allStudents.find((student) => student.id === studentId);
+    setStudentState(student);
+    dispatchForget({ type: "SET STUDENTNAME", payload: student?.studentName });
+    dispatchForget({
+      type: "SET STUDENTNUMBER",
+      payload: student?.studentNumber,
+    });
+  };
+
   const handleForgetPasword = async () => {
     try {
       dispatchForget({ type: "SET LOADING", payload: true });
@@ -695,6 +705,7 @@ const Students = () => {
                     marginHorizontal: 10,
                   }}
                   onPress={() => {
+                    handleForgetState(studentIdState);
                     setModal(false);
                     setModalForget(true);
                   }}
@@ -820,58 +831,62 @@ const Students = () => {
           }}
           animationType="fade"
         >
-          {/* container */}
-          <View style={styles.containerForgetPass}>
-            {/* TEXT */}
+          {/* Parent container */}
+          <View style={{ justifyContent: "center", marginTop: 10 }}>
+            {/* container */}
 
-            <Text>Forget Password</Text>
-            {/* Student name */}
-            <Text>Student Name</Text>
-            <TextInput
-              style={styles.forgetPassField}
-              value={stateforget.studentName}
-              onChangeText={(text) => {
-                dispatchForget({ type: "SET STUDENTNAME", payload: text });
-              }}
-            />
+            <View style={styles.containerForgetPass}>
+              {/* TEXT */}
 
-            {/* Student number */}
-            <Text>Student Number</Text>
-            <TextInput
-              style={styles.forgetPassField}
-              value={stateforget.studentNumber}
-              editable={false}
-              onChangeText={(text) => {
-                dispatchForget({ type: "SET STUDENTNUMBER", payload: text });
-              }}
-            />
+              <Text>Forget Password</Text>
+              {/* Student name */}
+              <Text>Student Name</Text>
+              <TextInput
+                style={styles.forgetPassField}
+                value={stateforget.studentName}
+                onChangeText={(text) => {
+                  dispatchForget({ type: "SET STUDENTNAME", payload: text });
+                }}
+              />
 
-            {/* new password */}
-            <Text>Student new password</Text>
-            <TextInput
-              style={styles.forgetPassField}
-              value={stateforget.studentNewPassword}
-              onChangeText={(text) => {
-                dispatchForget({ type: "SET NEWPASSWORD", payload: text });
-              }}
-            />
+              {/* Student number */}
+              <Text>Student Number</Text>
+              <TextInput
+                style={styles.forgetPassField}
+                value={stateforget.studentNumber}
+                editable={false}
+                onChangeText={(text) => {
+                  dispatchForget({ type: "SET STUDENTNUMBER", payload: text });
+                }}
+              />
 
-            {/* Button forget */}
+              {/* new password */}
+              <Text>Student new password</Text>
+              <TextInput
+                style={styles.forgetPassField}
+                value={stateforget.studentNewPassword}
+                onChangeText={(text) => {
+                  dispatchForget({ type: "SET NEWPASSWORD", payload: text });
+                }}
+              />
 
-            <TouchableHighlight
-              style={styles.forgetButton}
-              disabled={state.loading}
-              onPress={handleForgetPasword}
-            >
-              <Text>Forget password</Text>
-            </TouchableHighlight>
+              {/* Button forget */}
 
-            {/* loading */}
-            <Loading
-              text="Please wait..."
-              color="#4F46E5"
-              visible={state.loading}
-            />
+              <TouchableHighlight
+                style={styles.forgetButton}
+                disabled={state.loading}
+                onPress={handleForgetPasword}
+              >
+                <Text>Forget password</Text>
+              </TouchableHighlight>
+
+              {/* loading */}
+              <Loading
+                text="Please wait..."
+                color="#4F46E5"
+                visible={state.loading}
+              />
+            </View>
           </View>
         </Modal>
       </SafeAreaView>
