@@ -689,7 +689,7 @@ const Students = () => {
                 {/* Forget password button*/}
                 <TouchableOpacity
                   style={{
-                    backgroundColor: "green",
+                    backgroundColor: "yellow",
                     padding: 5,
                     borderRadius: 5,
                     marginHorizontal: 10,
@@ -706,7 +706,7 @@ const Students = () => {
                       fontSize: 17,
                     }}
                   >
-                    edit
+                    Forget Password
                   </Text>
                 </TouchableOpacity>
               </View>
