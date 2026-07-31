@@ -663,6 +663,7 @@ td {
             <Button title="CME" onPress={() => handlePrint("CME")} />
             <Button title="CHTM" onPress={() => handlePrint("CHTM")} />
             <Button title="CCJ" onPress={() => handlePrint("CCJ")} />
+            <Button title="CBMA" onPress={() => handlePrint("CBMA")} />
           </View>
           <Text style={styles.label}>By Course</Text>
 
