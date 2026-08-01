@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   BackHandler,
@@ -135,7 +135,7 @@ export default function Index() {
         setUserId(userId as string);
         const events = await getAllEvents(token);
         setEventData(events);
-        router.replace("/(tabs)/home");
+        router.push("/(tabs)/home");
       }
     } catch (error) {
       console.log("Error checking token:", error);
@@ -158,7 +158,6 @@ export default function Index() {
       if (state.isConnected) {
         setIsUserHasInternet(true);
         setShowModalNoInternetUser(false);
-        userCheckToken();
       } else {
         setIsUserHasInternet(false);
         setShowModalNoInternetUser(true);
@@ -168,9 +167,13 @@ export default function Index() {
 
     checkInternet();
   }, []);
+  const checkedRef = useRef(false);
+
   useEffect(() => {
     if (!rootNavigationState?.key) return;
+    if (checkedRef.current) return;
 
+    checkedRef.current = true;
     userCheckToken();
   }, [rootNavigationState]);
   const haddleAuthStudent = async () => {
