@@ -18,13 +18,16 @@ import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { Entypo, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
+
 import {
   ActivityIndicator,
   Alert,
   Animated,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -101,8 +104,19 @@ const OsaScreen: React.FC = () => {
     }
   };
 
+  async function deleteToken() {
+    if (Platform.OS === "web") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+    } else {
+      await SecureStore.deleteItemAsync("token");
+      await SecureStore.deleteItemAsync("userId");
+    }
+  }
+
   const handleLogout = () => {
     setIsLogout(false);
+    deleteToken();
     router.push("/");
   };
   // 🧠 Load all students on mount

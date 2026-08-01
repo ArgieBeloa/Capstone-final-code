@@ -7,12 +7,14 @@ import { useUser } from "@/src/userContext";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -156,10 +158,20 @@ const Profile = () => {
 
     reloadLocalEvents();
   }, [isFocused]);
+  async function deleteToken() {
+    if (Platform.OS === "web") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+    } else {
+      await SecureStore.deleteItemAsync("token");
+      await SecureStore.deleteItemAsync("userId");
+    }
+  }
 
   // Logout
   const handleLogout = () => {
     setIsLogout(false);
+    deleteToken();
     router.push("/");
   };
 

@@ -125,8 +125,10 @@ const Profile = () => {
   async function deleteToken() {
     if (Platform.OS === "web") {
       localStorage.removeItem("token");
+      localStorage.removeItem("userId");
     } else {
       await SecureStore.deleteItemAsync("token");
+      await SecureStore.deleteItemAsync("userId");
     }
   }
 
