@@ -11,10 +11,12 @@ import { useUser } from "@/src/userContext";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useCallback, useLayoutEffect, useState } from "react";
 import {
   Dimensions,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -120,9 +122,18 @@ const Profile = () => {
       }
     }, []),
   );
+  async function deleteToken() {
+    if (Platform.OS === "web") {
+      localStorage.removeItem("token");
+    } else {
+      await SecureStore.deleteItemAsync("token");
+    }
+  }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLogout(false);
+    // delete local token
+    deleteToken();
     router.push("/");
   };
 

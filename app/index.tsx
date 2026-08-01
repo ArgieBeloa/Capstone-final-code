@@ -2,12 +2,15 @@
 //  eas build --platform android --profile development
 // npx expo export --platform web
 
+import { useRootNavigationState } from "expo-router";
+
 import Loading from "@/components/Loading";
 import { COLORS } from "@/constants/ColorCpc";
 import { useUser } from "@/src/userContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -53,6 +56,8 @@ export default function Index() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showModalOfficer, setShowModalOfficer] = useState(false);
   const [showModalNoInternetUser, setShowModalNoInternetUser] = useState(false);
+  const [checkingToken, setCheckingToken] = useState(true);
+  const rootNavigationState = useRootNavigationState();
 
   const router = useRouter();
   const {
@@ -99,6 +104,46 @@ export default function Index() {
     }
   };
 
+  async function saveToken(token: string, userId: string) {
+    if (Platform.OS === "web") {
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
+    } else {
+      await SecureStore.setItemAsync("token", token);
+      await SecureStore.setItemAsync("userId", userId);
+    }
+  }
+  const userCheckToken = async () => {
+    try {
+      let token: string | null = null;
+      let userId: string | null = null;
+
+      if (Platform.OS === "web") {
+        // Web: use localStorage
+        token = localStorage.getItem("token");
+        userId = localStorage.getItem("userId");
+      } else {
+        // Android/iOS: use SecureStore
+        token = await SecureStore.getItemAsync("token");
+        userId = await SecureStore.getItemAsync("userId");
+      }
+      if (token?.trim()) {
+        console.log("User is already logged in.");
+        const userData = await getStudentById(token, userId as string);
+        setStudentToken(token);
+        setStudentData(userData);
+        setUserId(userId as string);
+        const events = await getAllEvents(token);
+        setEventData(events);
+        router.replace("/(tabs)/home");
+      }
+    } catch (error) {
+      console.log("Error checking token:", error);
+    } finally {
+      setCheckingToken(false);
+    }
+  };
+
   useEffect(() => {
     // function offline data
     const getOfflineData = async () => {
@@ -113,6 +158,7 @@ export default function Index() {
       if (state.isConnected) {
         setIsUserHasInternet(true);
         setShowModalNoInternetUser(false);
+        userCheckToken();
       } else {
         setIsUserHasInternet(false);
         setShowModalNoInternetUser(true);
@@ -120,16 +166,13 @@ export default function Index() {
       }
     });
 
-    // const getLocal = async () => {
-    //   const localData = await getOfflineStudents();
-    //   const studentLocal = localData.find((item: null) => item !== null);
-    //   setStudentDataOffline(studentLocal);
-    // };
-
     checkInternet();
-    // getLocal();
   }, []);
+  useEffect(() => {
+    if (!rootNavigationState?.key) return;
 
+    userCheckToken();
+  }, [rootNavigationState]);
   const haddleAuthStudent = async () => {
     setLoading(true);
     // console.log("username :", username)
@@ -144,6 +187,7 @@ export default function Index() {
       // setStudentToken(response.token)
       setUserId(response._id);
       setStudentToken(response.token.trim());
+      saveToken(response.token.trim(), response._id);
 
       const events = await getAllEvents(response.token);
       setEventData(events);
@@ -181,8 +225,11 @@ export default function Index() {
       }
 
       setLoading(false);
-    } catch (error) {
-      console.log("Login failed", error);
+    } catch (error: any) {
+      console.log("Login failed:", error);
+      console.log("Message:", error?.message);
+      console.log("Response:", error?.response?.data);
+
       setLoading(false);
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
@@ -220,6 +267,12 @@ export default function Index() {
   };
 
   const remainingAttempts = 3 - attempts;
+
+  if (checkingToken) {
+    return (
+      <Loading visible={true} text="Checking session..." color="#4F46E5" />
+    );
+  }
 
   return (
     <LinearGradient

@@ -1,7 +1,6 @@
-import {
-  parseLocalDateTimeUtils
-} from "@/api/events/utils";
-import { getOfflineStudents } from "@/api/local/userOffline";
+import { getAllEvents } from "@/api/events/controller";
+import { parseLocalDateTimeUtils } from "@/api/events/utils";
+import { getOfflineEvents, getOfflineStudents } from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentEventAttended } from "@/api/students/utils";
 import LinearbackGround from "@/components/LinearBackGround";
@@ -29,6 +28,7 @@ const Rates = () => {
   const [studentAttendentState, setStudentAttendedState] = useState<
     StudentEventAttended[]
   >(studentData.studentEventAttended);
+  const [eventsState, setEventState] = useState(eventData);
 
   const router = useRouter();
 
@@ -43,7 +43,9 @@ const Rates = () => {
       const getOfflineData = async () => {
         const localData = await getOfflineStudents();
         const studentLocal = localData.find((item: null) => item !== null);
-
+        const localDataEvents = await getOfflineEvents();
+        const eventsLocal = localDataEvents.find((item: null) => item !== null);
+        setEventState(eventsLocal);
         setStudentAttendedState(studentLocal?.studentEventAttended || []);
       };
 
@@ -52,6 +54,8 @@ const Rates = () => {
         const student = await getStudentById(studentToken, userId);
         setStudentData(student);
         setStudentAttendedState(student.studentEventAttended);
+        const events = await getAllEvents(studentToken);
+        setEventState(events);
       };
       // check internet
       if (isUserHasInternet) {
@@ -76,7 +80,7 @@ const Rates = () => {
                 keyExtractor={(item) => item.eventId}
                 contentContainerStyle={{ marginHorizontal: 10 }}
                 renderItem={({ item }) => {
-                  const event = eventData.find((e) => e.id === item.eventId);
+                  const event = eventsState.find((e) => e.id === item.eventId);
 
                   // try see
 
