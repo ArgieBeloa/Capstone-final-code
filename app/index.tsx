@@ -719,7 +719,7 @@ export default function Index() {
                             .canScanStudent &&
                           isTodayEventDate(item.eventDate)
                         ) {
-                          router.push(`../OfficerScanner/${item.id}`);
+                          router.push(`./OfficerScanner/${item.id}`);
                         } else if (!isTodayEventDate(item.eventDate)) {
                           Alert.alert(
                             "Event Not Available",
