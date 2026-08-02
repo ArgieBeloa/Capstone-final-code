@@ -64,6 +64,7 @@ export default function Index() {
   const [studentDataQR, setStudentDataQR] = useState<EventAttendance>();
   const [studentDataLocal, setStudentDataLocal] = useState<StudentModel>();
   const [isOfficer, setIsOfficer] = useState(false);
+  const [isOfficerCanScan, setIsOfficerCanScan] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [eventsLocal, setEventLocal] = useState<EventModel[]>([]);
 
@@ -186,8 +187,11 @@ export default function Index() {
       const localStudentData = await getOfflineStudents();
       console.log("Success get Student data ", localStudentData);
       setStudentDataLocal(localStudentData[0]);
-      setIsOfficer(localStudentData[0]?.role?.toLowerCase() === "officer");
 
+      setIsOfficer(localStudentData[0]?.role?.toLowerCase() === "officer");
+      setIsOfficerCanScan(
+        localStudentData[0].officerCredentials.canScanStudent,
+      );
       const localDataEvents = await getOfflineEvents();
       setEventLocal(localDataEvents[0]);
       console.log("Get local events ", localDataEvents[0]);
@@ -231,6 +235,7 @@ export default function Index() {
 
     const check = async () => {
       const loggedIn = await userCheckToken();
+
       setShowModalAlreadyLogin(loggedIn);
     };
 
@@ -715,8 +720,7 @@ export default function Index() {
 
                         // Check first officer credential
                         if (
-                          studentDataOffline.officerCredentials
-                            .canScanStudent &&
+                          isOfficerCanScan &&
                           isTodayEventDate(item.eventDate)
                         ) {
                           router.push(`./OfficerScanner/${item.id}`);
