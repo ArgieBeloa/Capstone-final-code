@@ -240,9 +240,9 @@ const Events = () => {
             setShowDeleteModal(true);
           }}
           onPress={() => {
-            // router.push(`../../EventDetails/${item.id}`);
+            router.push(`../../EventDetails/${item.id}`);
             // handleEdit(item.id);
-            router.push(`../../adminEditEvent/${item.id}`);
+            // router.push(`../../adminEditEvent/${item.id}`);
           }}
         >
           {loadingImage ? (
