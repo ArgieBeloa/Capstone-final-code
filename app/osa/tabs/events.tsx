@@ -71,6 +71,10 @@ const Events = () => {
     router.push(`../officerEventDetails/${id}`);
   };
 
+  const handleEdit = (id: string) => {
+    router.push(`../../adminEditEvent/${id}`);
+  };
+
   // ✅ Load all events and student notification tokens (refresh each time you revisit screen)
   useFocusEffect(
     useCallback(() => {
@@ -236,7 +240,8 @@ const Events = () => {
             setShowDeleteModal(true);
           }}
           onPress={() => {
-            router.push(`../../EventDetails/${item.id}`);
+            // router.push(`../../EventDetails/${item.id}`);
+            handleEdit(item.id);
           }}
         >
           {loadingImage ? (

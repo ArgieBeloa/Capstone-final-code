@@ -11,10 +11,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Alert,
   BackHandler,
+  FlatList,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -33,8 +34,9 @@ import { loginStudent } from "@/api/admin/controller";
 import { getAllEvents } from "@/api/events/controller";
 import { EventModel } from "@/api/events/model";
 import { EventAttendance } from "@/api/events/utils";
-import { saveStudentQRLocal } from "@/api/local/local";
+import { getStudentQRLocal, saveStudentQRLocal } from "@/api/local/local";
 import {
+  getOfflineEvents,
   getOfflineStudents,
   saveEventOfflineLocal,
   saveStudentOfflineLocal,
@@ -44,6 +46,7 @@ import {
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
 import NetInfo from "@react-native-community/netinfo";
+import QRCode from "react-native-qrcode-svg";
 
 export default function Index() {
   const [password, setPassword] = useState("");
@@ -55,8 +58,15 @@ export default function Index() {
   const [attempts, setAttempts] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showModalOfficer, setShowModalOfficer] = useState(false);
+  const [showModalAlreadyLogin, setShowModalAlreadyLogin] = useState(false);
   const [showModalNoInternetUser, setShowModalNoInternetUser] = useState(false);
   const [checkingToken, setCheckingToken] = useState(true);
+  const [studentDataQR, setStudentDataQR] = useState<EventAttendance>();
+  const [studentDataLocal, setStudentDataLocal] = useState<StudentModel>();
+  const [isOfficer, setIsOfficer] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [eventsLocal, setEventLocal] = useState<EventModel[]>([]);
+
   const rootNavigationState = useRootNavigationState();
 
   const router = useRouter();
@@ -82,6 +92,16 @@ export default function Index() {
   };
   const haddleRegister = () => {
     router.push("./register");
+  };
+  const isTodayEventDate = (eventDate: string | Date): boolean => {
+    const today = new Date();
+    const date = new Date(eventDate);
+
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    );
   };
   const checkUserLocalData = async (
     userData: StudentModel,
@@ -135,7 +155,7 @@ export default function Index() {
         setUserId(userId as string);
         const events = await getAllEvents(token);
         setEventData(events);
-        router.push("/(tabs)/home");
+        // router.push("/(tabs)/home");
       }
     } catch (error) {
       console.log("Error checking token:", error);
@@ -144,7 +164,37 @@ export default function Index() {
     }
   };
 
+  useLayoutEffect(() => {
+    console.log("running use layout effect");
+    console.log("Get the student QR");
+    const getLocalQR = async () => {
+      const qr = await getStudentQRLocal();
+
+      if (qr) {
+        console.log("Success getting StudentQR value ", qr);
+        setStudentDataQR(qr);
+      }
+    };
+
+    // Get studnent Local Data
+    console.log("Get the student Data");
+    const getOfflineSaveData = async () => {
+      const localStudentData = await getOfflineStudents();
+      console.log("Success get Student data ", localStudentData);
+      setStudentDataLocal(localStudentData[0]);
+      setIsOfficer(localStudentData[0]?.role?.toLowerCase() === "officer");
+
+      const localDataEvents = await getOfflineEvents();
+      setEventLocal(localDataEvents[0]);
+      console.log("Get local events ", localDataEvents[0]);
+    };
+
+    getLocalQR();
+    getOfflineSaveData();
+  }, []);
+
   useEffect(() => {
+    console.log("Index use effect");
     // function offline data
     const getOfflineData = async () => {
       console.log("local data ");
@@ -175,6 +225,7 @@ export default function Index() {
 
     checkedRef.current = true;
     userCheckToken();
+    setShowModalAlreadyLogin(true);
   }, [rootNavigationState]);
   const haddleAuthStudent = async () => {
     setLoading(true);
@@ -548,6 +599,132 @@ export default function Index() {
               </View>
             </View>
           </Modal>
+
+          <Modal
+            visible={showModalAlreadyLogin}
+            animationType="fade"
+            transparent
+            onRequestClose={() => setShowModalAlreadyLogin(false)}
+          >
+            <View style={styles.overlay}>
+              <View style={styles.modal}>
+                {/* Close Button */}
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowModalAlreadyLogin(false)}
+                >
+                  <Ionicons name="close" size={24} color="red" />
+                </TouchableOpacity>
+
+                <Text style={styles.title}>You're already logged in</Text>
+
+                <Text style={styles.subtitle}>What would you like to do?</Text>
+
+                {/* QR */}
+                <View style={{ marginVertical: 20 }}>
+                  <QRCode
+                    value={JSON.stringify(studentDataQR)}
+                    size={200}
+                    backgroundColor="white"
+                    color="black"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={styles.homeButton}
+                  onPress={() => {
+                    setShowModalAlreadyLogin(false);
+                    router.push("/(tabs)/home");
+                  }}
+                >
+                  <Text style={styles.homeText}>Go to Home</Text>
+                </TouchableOpacity>
+
+                {/* Officer Actions */}
+                {isOfficer && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.officerButton}
+                      onPress={() => {
+                        setShowModalAlreadyLogin(false);
+                        router.push("/(officer)/home");
+                      }}
+                    >
+                      <Ionicons name="home-outline" size={22} color="#fff" />
+                      <Text style={styles.scanText}>Officer Home</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.scanButton}
+                      onPress={() => {
+                        setShowModalAlreadyLogin(false);
+                        setShowEventModal(true);
+                      }}
+                    >
+                      <Ionicons name="scan-outline" size={22} color="#fff" />
+                      <Text style={styles.scanText}>Scan QR</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
+          </Modal>
+
+          {/* Qr Events Modal */}
+          <Modal
+            visible={showEventModal}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowEventModal(false)}
+          >
+            <View style={styles.overlay}>
+              <View style={styles.modal}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowEventModal(false)}
+                >
+                  <Ionicons name="close" size={24} color="#555" />
+                </TouchableOpacity>
+
+                <Text style={styles.title}>Select an Event</Text>
+
+                {/* Your local events go here */}
+                <FlatList
+                  data={eventsLocal}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.eventItem}
+                      onPress={() => {
+                        setShowEventModal(false);
+
+                        // Check first officer credential
+                        if (
+                          studentDataOffline.officerCredentials
+                            .canScanStudent &&
+                          isTodayEventDate(item.eventDate)
+                        ) {
+                          router.push(`../OfficerScanner/${item.id}`);
+                        } else if (!isTodayEventDate(item.eventDate)) {
+                          Alert.alert(
+                            "Event Not Available",
+                            "QR scanning is only available on the event date.",
+                          );
+                        } else {
+                          Alert.alert(
+                            "Permission Denied",
+                            "You do not have permission to scan students.",
+                          );
+                        }
+                      }}
+                    >
+                      <Text style={styles.eventTitle}>{item.eventTitle}</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            </View>
+          </Modal>
         </SafeAreaView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -648,4 +825,93 @@ const styles = StyleSheet.create({
   },
   textStyle: { color: "white", fontWeight: "bold" },
   modalText: { fontSize: 18, textAlign: "center" },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modal: {
+    width: "92%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    elevation: 8,
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    padding: 4,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginTop: 8,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: "#666",
+    marginTop: 8,
+    textAlign: "center",
+  },
+  homeButton: {
+    width: "100%",
+    backgroundColor: "#2563EB",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  homeText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  scanButton: {
+    marginTop: 12,
+    width: "100%",
+    backgroundColor: "#10B981",
+    paddingVertical: 14,
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  scanText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+  officerButton: {
+    marginTop: 12,
+    width: "100%",
+    backgroundColor: "#2563EB", // Blue
+    paddingVertical: 14,
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  eventItem: {
+    width: "100%",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+  },
 });
