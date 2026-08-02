@@ -155,6 +155,7 @@ export default function Index() {
         setUserId(userId as string);
         const events = await getAllEvents(token);
         setEventData(events);
+
         // router.push("/(tabs)/home");
       }
     } catch (error) {
@@ -225,7 +226,9 @@ export default function Index() {
 
     checkedRef.current = true;
     userCheckToken();
-    setShowModalAlreadyLogin(true);
+    checkingToken
+      ? setShowModalAlreadyLogin(true)
+      : setShowModalAlreadyLogin(false);
   }, [rootNavigationState]);
   const haddleAuthStudent = async () => {
     setLoading(true);
