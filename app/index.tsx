@@ -245,9 +245,14 @@ export default function Index() {
 
       const events = await getAllEvents(response.token);
       setEventData(events);
+      // local copy
+      saveEventOfflineLocal(events);
 
       const userData = await getStudentById(response.token, response._id);
       setStudentData(userData);
+      // student update local
+      console.log("Student Data ", userData);
+      saveStudentOfflineLocal(userData);
 
       const studentqr: EventAttendance = {
         studentId: userData.id || "",

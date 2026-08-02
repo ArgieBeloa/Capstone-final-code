@@ -11,14 +11,24 @@ export const saveStudentOfflineLocal = async (student: any) => {
     const existing = await AsyncStorage.getItem(STUDENT_KEY);
     const students = existing ? JSON.parse(existing) : [];
 
-    students.push(student);
+    const index = students.findIndex((s: any) => s.id === student.id);
+
+    if (index !== -1) {
+      // Update existing student
+      students[index] = {
+        ...students[index],
+        ...student,
+      };
+    } else {
+      // Add new student
+      students.push(student);
+    }
 
     await AsyncStorage.setItem(STUDENT_KEY, JSON.stringify(students));
   } catch (error) {
     console.log("Error saving student offline", error);
   }
 };
-
 // -----------------------------
 // UPDATE STUDENT
 // -----------------------------
