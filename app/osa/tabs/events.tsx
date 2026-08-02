@@ -241,7 +241,8 @@ const Events = () => {
           }}
           onPress={() => {
             // router.push(`../../EventDetails/${item.id}`);
-            handleEdit(item.id);
+            // handleEdit(item.id);
+            router.push(`../../adminEditEvent/${item.id}`);
           }}
         >
           {loadingImage ? (
