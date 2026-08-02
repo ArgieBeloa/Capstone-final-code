@@ -139,27 +139,30 @@ export default function Index() {
       let userId: string | null = null;
 
       if (Platform.OS === "web") {
-        // Web: use localStorage
         token = localStorage.getItem("token");
         userId = localStorage.getItem("userId");
       } else {
-        // Android/iOS: use SecureStore
         token = await SecureStore.getItemAsync("token");
         userId = await SecureStore.getItemAsync("userId");
       }
-      if (token?.trim()) {
-        console.log("User is already logged in.");
-        const userData = await getStudentById(token, userId as string);
-        setStudentToken(token);
-        setStudentData(userData);
-        setUserId(userId as string);
-        const events = await getAllEvents(token);
-        setEventData(events);
 
-        // router.push("/(tabs)/home");
+      if (!token?.trim()) {
+        return false;
       }
+
+      const userData = await getStudentById(token, userId as string);
+
+      setStudentToken(token);
+      setStudentData(userData);
+      setUserId(userId as string);
+
+      const events = await getAllEvents(token);
+      setEventData(events);
+
+      return true;
     } catch (error) {
-      console.log("Error checking token:", error);
+      console.log(error);
+      return false;
     } finally {
       setCheckingToken(false);
     }
@@ -225,11 +228,15 @@ export default function Index() {
     if (checkedRef.current) return;
 
     checkedRef.current = true;
-    userCheckToken();
-    checkingToken
-      ? setShowModalAlreadyLogin(true)
-      : setShowModalAlreadyLogin(false);
+
+    const check = async () => {
+      const loggedIn = await userCheckToken();
+      setShowModalAlreadyLogin(loggedIn);
+    };
+
+    check();
   }, [rootNavigationState]);
+
   const haddleAuthStudent = async () => {
     setLoading(true);
     // console.log("username :", username)
