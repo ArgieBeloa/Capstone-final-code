@@ -1,7 +1,11 @@
 import { EventModel } from "@/api/events/model";
 import { EventAttendance } from "@/api/events/utils";
 import { getStudentQRLocal } from "@/api/local/local";
-import { getOfflineEvents, getOfflineStudents } from "@/api/local/userOffline";
+import {
+  deleteStudentOffline,
+  getOfflineEvents,
+  getOfflineStudents,
+} from "@/api/local/userOffline";
 import { getStudentById } from "@/api/students/controller";
 import { StudentModel } from "@/api/students/model";
 import { StudentEventAttendedAndEvaluationDetails } from "@/api/students/utils";
@@ -126,9 +130,11 @@ const Profile = () => {
     if (Platform.OS === "web") {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
+      await deleteStudentOffline(studentData.id as string);
     } else {
       await SecureStore.deleteItemAsync("token");
       await SecureStore.deleteItemAsync("userId");
+      await deleteStudentOffline(studentData.id as string);
     }
   }
 

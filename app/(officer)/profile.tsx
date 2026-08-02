@@ -32,7 +32,10 @@ import {
   loadLocalAttendance,
 } from "@/api/local/local";
 import { LocalEventAttendance } from "@/api/local/localUtils";
-import { getOfflineEvents } from "@/api/local/userOffline";
+import {
+  deleteStudentOffline,
+  getOfflineEvents,
+} from "@/api/local/userOffline";
 
 // Type for local attendance
 type LocalAttendance = {
@@ -162,9 +165,11 @@ const Profile = () => {
     if (Platform.OS === "web") {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
+      await deleteStudentOffline(student.id as string);
     } else {
       await SecureStore.deleteItemAsync("token");
       await SecureStore.deleteItemAsync("userId");
+      await deleteStudentOffline(student.id as string);
     }
   }
 

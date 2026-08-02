@@ -107,6 +107,24 @@ export const getOfflineEvents = async () => {
   }
 };
 
+// delete student by id
+export const deleteStudentOffline = async (id: string) => {
+  try {
+    const existing = await AsyncStorage.getItem(STUDENT_KEY);
+    const students = existing ? JSON.parse(existing) : [];
+
+    const updatedStudents = students.filter(
+      (student: any) => student.id !== id,
+    );
+
+    await AsyncStorage.setItem(STUDENT_KEY, JSON.stringify(updatedStudents));
+
+    console.log("Student deleted successfully.");
+  } catch (error) {
+    console.log("Error deleting student:", error);
+  }
+};
+
 // -----------------------------
 // CLEAR DATA
 // -----------------------------
