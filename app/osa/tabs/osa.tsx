@@ -21,6 +21,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 
+import { deleteStudentOffline } from "@/api/local/userOffline";
 import {
   ActivityIndicator,
   Alert,
@@ -47,7 +48,7 @@ interface StudentSuggestionData {
 
 const OsaScreen: React.FC = () => {
   const officerName = "OSA Officer";
-  const { studentToken } = useUser();
+  const { studentToken, studentData } = useUser();
   const router = useRouter();
   const firstLetterName = officerName.charAt(0).toUpperCase();
 
@@ -108,9 +109,11 @@ const OsaScreen: React.FC = () => {
     if (Platform.OS === "web") {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
+      await deleteStudentOffline(studentData.id as string);
     } else {
       await SecureStore.deleteItemAsync("token");
       await SecureStore.deleteItemAsync("userId");
+      await deleteStudentOffline(studentData.id as string);
     }
   }
 
