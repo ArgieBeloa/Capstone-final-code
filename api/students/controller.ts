@@ -33,8 +33,11 @@ export async function getStudentById(
   studentId: string,
 ): Promise<StudentModel> {
   const res = await axios.get(`${BASE_URL}/${studentId}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token.trim()}`,
+    },
   });
+
   return res.data;
 }
 
