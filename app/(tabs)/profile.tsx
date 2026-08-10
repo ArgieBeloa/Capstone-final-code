@@ -325,9 +325,25 @@ const Profile = () => {
                     entering={FadeInUp.duration(500)}
                     style={styles.eventCard}
                   >
-                    <View>
-                      <Text style={styles.eventText}>{item.eventTitle}</Text>
-                      <Text style={styles.eventText}>
+                    <View
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <Text
+                        style={styles.eventText}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
+                        {item.eventTitle}
+                      </Text>
+
+                      <Text
+                        style={styles.eventText}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
                         {item.eventDateAndTime}
                       </Text>
                     </View>
