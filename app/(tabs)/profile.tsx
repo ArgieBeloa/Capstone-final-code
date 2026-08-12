@@ -16,7 +16,7 @@ import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React, { useCallback, useLayoutEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Dimensions,
   Modal,
@@ -146,7 +146,7 @@ const Profile = () => {
   };
 
   // student qr generated
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (isUserHasInternet) {
       if (studentQR) {
         setStudentDataQR(studentQR);
@@ -159,9 +159,10 @@ const Profile = () => {
           setStudentDataQR(qr);
         }
       };
+
       getLocalQR();
     }
-  }, []);
+  }, [isUserHasInternet, studentQR]);
 
   return (
     <LinearbackGround>

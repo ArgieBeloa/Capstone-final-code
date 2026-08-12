@@ -94,6 +94,7 @@ export default function OfficerScanner() {
         studentNumber: parsedQR.studentNumber,
         studentName: parsedQR.studentName,
         role: parsedQR.role,
+        course: parsedQR.course,
         department: parsedQR.department,
         dateScanned: parsedQR.dateScanned,
       };
