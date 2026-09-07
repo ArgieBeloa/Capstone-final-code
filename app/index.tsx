@@ -134,41 +134,54 @@ export default function Index() {
       await SecureStore.setItemAsync("userId", userId);
     }
   }
+
   const userCheckToken = async () => {
-    try {
-      let token: string | null = null;
-      let userId: string | null = null;
+  try {
+    let token: string | null = null;
+    let userId: string | null = null;
 
-      if (Platform.OS === "web") {
-        token = localStorage.getItem("token");
-        userId = localStorage.getItem("userId");
-      } else {
-        token = await SecureStore.getItemAsync("token");
-        userId = await SecureStore.getItemAsync("userId");
-      }
-
-      if (!token?.trim()) {
-        return false;
-      }
-
-      const userData = await getStudentById(token, userId as string);
-
-      setStudentToken(token);
-      setStudentData(userData);
-      setUserId(userId as string);
-
-      const events = await getAllEvents(token);
-      setEventData(events);
-
-      return true;
-    } catch (error) {
-      console.log(error);
-      return false;
-    } finally {
-      setCheckingToken(false);
+    if (Platform.OS === "web") {
+      token = localStorage.getItem("token");
+      userId = localStorage.getItem("userId");
+    } else {
+      [token, userId] = await Promise.all([
+        SecureStore.getItemAsync("token"),
+        SecureStore.getItemAsync("userId"),
+      ]);
     }
-  };
 
+    if (!token?.trim() || !userId) {
+      return false;
+    }
+
+    const cleanToken = token.trim();
+
+    // Student is required for the session
+    const userData = await getStudentById(cleanToken, userId);
+
+    setStudentToken(cleanToken);
+    setStudentData(userData);
+    setUserId(userId);
+
+    // Events don't need to block login/session
+    getAllEvents(cleanToken)
+      .then((events) => {
+        setEventData(events);
+      })
+      .catch((error) => {
+        console.log("Failed to load events:", error);
+      });
+
+    return true;
+
+  } catch (error) {
+    console.log("Session check failed:", error);
+    return false;
+
+  } finally {
+    setCheckingToken(false);
+  }
+};
   useLayoutEffect(() => {
     console.log("running use layout effect");
     console.log("Get the student QR");
