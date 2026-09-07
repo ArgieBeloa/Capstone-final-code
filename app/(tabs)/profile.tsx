@@ -191,6 +191,7 @@ const Profile = () => {
                   <Text style={{ textAlign: "center" }}>QR</Text>
                 </View>
               </TouchableHighlight>
+              
               {/* QR MODAL */}
               <Modal
                 visible={modalIsVisible}

@@ -207,6 +207,25 @@ export const mobileViewStyles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+   actionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10, // React Native 0.71+. Otherwise use marginRight.
+  },
+
+  manualAttendanceBtn: {
+    backgroundColor: "#2563EB",
+    padding: 10,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+   qrGeneratorbtn: {
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 20,
+    padding: 5,
+    marginLeft: "auto",
+  },
 });
 
 export default mobileViewStyles;

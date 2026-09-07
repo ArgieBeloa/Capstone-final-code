@@ -1,4 +1,4 @@
-import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -270,6 +270,35 @@ const Events = () => {
           )}
 
           <View style={{ padding: 10 }}>
+            {/* ADD QR ADMIN  */}
+            <View style={Styles.actionContainer}>
+              {/* QR Scanner */}
+             
+                <Pressable
+                  style={Styles.qrGeneratorbtn}
+                  onPress={() => router.push(`../../OfficerScanner/${item.id}`)}
+                >
+                  <MaterialIcons name="qr-code-2" size={24} color="black" />
+                </Pressable>
+              
+
+              {/* Manual Attendance */}
+             
+                <Pressable
+                  style={Styles.manualAttendanceBtn}
+                  onPress={() =>
+                    router.push(`../../officerManualAttendance/${item.id}`)
+                  }
+                >
+                  <MaterialIcons
+                    name="person-add-alt-1"
+                    size={24}
+                    color="white"
+                  />
+                </Pressable>
+              
+            </View>
+
             <Text
               style={{
                 fontWeight: "bold",
